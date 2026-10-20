@@ -35,7 +35,9 @@
       <p id="server-address" class="mono"></p>
       <p class="help">局域网 HTTP 未加密，请仅在可信网络使用。</p>
       <button id="diagnostic-button" class="button quiet small" type="button" hidden>诊断</button>
+      <button id="picker-test-button" class="button quiet small" type="button" aria-expanded="false" aria-controls="picker-test-panel" hidden>选取测试</button>
       <button id="disconnect-button" class="button quiet danger" type="button" hidden>断开连接</button>
+      <div id="picker-test-panel" hidden><input id="native-file-input" class="native-picker" type="file" aria-label="原生选取测试（单选）"></div>
     </section>
     <div id="connection-error" class="notice warning" role="status" hidden></div>
     <section id="pair-panel" class="pair-panel" aria-labelledby="pair-title">

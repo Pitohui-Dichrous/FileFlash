@@ -1,6 +1,19 @@
 # 复现测试
 
-本文对应 0.1.5-test.2 预发布版；网页与传输内核沿用 0.1.5-test.1，旧版脚本和证据保留作基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。实体 iPhone 的一次诊断操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)，本版不宣称已解决真实 iOS 上传问题。
+本文对应 0.1.5-test.3 预发布版；网页保留 0.1.5-test.2 选取诊断，Java 传输内核沿用 0.1.5-test.1。实际验证范围见 [TEST_RESULTS.md](TEST_RESULTS.md)。照片库问题与备用方式见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)，本版不宣称已修复 iOS 照片库。
+
+## 照片库选取诊断
+
+```powershell
+$env:FILEFLASH_EVIDENCE_SUFFIX='-test3'
+node scripts/photo-picker-smoke.cjs
+$env:FILEFLASH_BROWSER_ENGINE='webkit'
+node scripts/photo-picker-smoke.cjs
+```
+
+独立夹具验证真实 DOM 点击、原生控件直接点击、无选取结果时不发上传、同文件再次选择、多选与重试切换、32 条内存记录和隐私。可追加私有 ready JSON 路径，对实际 Java 或 Android 服务重复测试；本次报告后缀为 `-test3.json`，不覆盖旧版证据。ready 文件含配对凭据，不应公开。
+
+这些自动测试注入 FileList，使用合成 HEIC/MOV 名称及类型检查字节保持，没有调用 iOS 照片库或解码真实相机媒体，不能证明白圈问题已经修复。真实设备只需在“连接详情 → 选取测试”选一张此前失败的相机照片；卡住时退出选取界面，再“诊断 → 复制诊断”。
 
 ## 工程检查
 
@@ -69,7 +82,7 @@ node scripts/integration-large.cjs
 
 ```powershell
 $env:FILEFLASH_DEDICATED_EMULATOR='1'
-python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.5-test.2.apk --version 0.1.5-test.2
+python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.5-test.3.apk --version 0.1.5-test.3
 ```
 
 脚本启动真实传输内核与限速合成文件，通过实际点击验证连接页进度、完成、失败重试、暂停、防重复和大字号布局，并校验系统下载文件。API 29 使用对应模拟器序号重跑。截图留在私有 `.test-data`，脱敏报告为 `test-evidence/receive-ui-api{29,34}.json`。
@@ -90,7 +103,7 @@ python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/Fil
 
 最终实际体验应使用 Android 手机及 iPhone Safari，在同一可信 Wi-Fi 验证扫码、双向文件、文字、系统保存、断网重试及权限拒绝。长时间后台和热点行为取决于系统与网络，不承诺无限后台持续运行。
 
-用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中仍失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。0.1.5-test.1 的实体 iPhone 验证尚未完成。桌面 WebKit 和 Android 模拟器通过不能替代该项；请先按 [一次诊断步骤](BROWSER_DIAGNOSTICS.md) 获取收发阶段证据，无须反复上传个人文件。
+用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。test.3 尚未在该真机验证；桌面 WebKit 和模拟器不能替代系统照片库测试，相关边界见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)。
 
 ## 存储与卸载检查
 

@@ -1,16 +1,16 @@
 {
   "environment": "Dedicated rooted API29 Android emulator; real native APK client and Java TransferServer via adb reverse; throttled synthetic Source; not physical Wi-Fi or iOS",
-  "version": "0.1.5-test.2",
-  "apkVersion": "0.1.5-test.2",
-  "apkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42",
-  "installedApkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42",
+  "version": "0.1.5-test.3",
+  "apkVersion": "0.1.5-test.3",
+  "apkSha256": "71891301b472916a6fcd1e8654a629bcf0a851b1fbc0914e0e95de3baa2b39ac",
+  "installedApkSha256": "71891301b472916a6fcd1e8654a629bcf0a851b1fbc0914e0e95de3baa2b39ac",
   "passed": true,
   "tests": [
     {
       "name": "signed APK upgrades without clearing saved records",
       "passed": true,
       "apiLevel": 29,
-      "installedApkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42"
+      "installedApkSha256": "71891301b472916a6fcd1e8654a629bcf0a851b1fbc0914e0e95de3baa2b39ac"
     },
     {
       "name": "native connection page pairs with actual TransferServer",
@@ -129,43 +129,43 @@
     {
       "name": "previously saved records remain intact",
       "passed": true,
-      "records": 16
+      "records": 20
     },
     {
       "name": "readable pre-existing Downloads remain byte-identical",
       "passed": true,
-      "readableRecords": 5,
-      "unreadableBefore": 11
+      "readableRecords": 6,
+      "unreadableBefore": 14
     }
   ],
   "screenshots": [
     {
       "stage": "receive-started",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-started.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-started.png"
     },
     {
       "stage": "receive-progress",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-progress.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-progress.png"
     },
     {
       "stage": "receive-complete",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-complete.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-complete.png"
     },
     {
       "stage": "receive-failed",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-failed.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-failed.png"
     },
     {
       "stage": "receive-paused",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-paused.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-paused.png"
     },
     {
       "stage": "receive-paused-after-disconnect-tab-return",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-paused-after-disconnect-tab-return.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-paused-after-disconnect-tab-return.png"
     },
     {
       "stage": "receive-complete-font-1_3",
-      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-complete-font-1_3.png"
+      "path": ".test-data/receive-ui/receive-ui-5556-1792509666307517100/receive-complete-font-1_3.png"
     }
   ]
 }
