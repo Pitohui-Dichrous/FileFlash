@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -167,7 +168,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         }
     }
     qr?.let { value -> AlertDialog(onDismissRequest = { qr = null }, title = { Text("扫码连接") }, text = { Column(horizontalAlignment = Alignment.CenterHorizontally) { QrImage(value); Spacer(Modifier.height(12.dp)); SelectionContainer { Text(value.substringBefore("/#"), fontSize = 14.sp) } } }, confirmButton = { TextButton(onClick = { onCopy(value) }) { Text("复制链接") } }, dismissButton = { TextButton(onClick = { qr = null }) { Text("关闭") } }) }
-    if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, title = { Text("使用与权限") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("两台设备连接同一个 Wi-Fi。开启共享后，iPhone 用相机扫码并在 Safari 打开；另一台 Android 在“连接”中扫码。", fontSize = 14.sp); Text("使用可信局域网：HTTP 传输未加密。二维码链接授予访问权限，请仅与接收方分享。停止共享会撤销当前连接。", fontSize = 14.sp); Text("收到的文件保存在“下载 / FileFlash”。Safari 上传期间保持页面在前台；页面重载后需重新选择原文件才能续传。", fontSize = 14.sp); Text("系统可能限制长时间后台传输。网络改变后重新扫码；访客 Wi-Fi 可能禁止设备互通。", fontSize = 14.sp) } }, confirmButton = { TextButton(onClick = { showInfo = false }) { Text("关闭") } }, dismissButton = { TextButton(onClick = onSettings) { Text("系统设置") } })
+    if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, title = { Text("使用与权限") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("设备连接同一个 Wi-Fi。开启共享后，iPhone 用相机扫码并在 Safari 打开；另一台 Android 在“连接”中扫码。", fontSize = 14.sp); Text("使用可信局域网：HTTP 传输未加密。二维码链接授予访问权限，请仅与接收方分享。停止共享会撤销当前连接。", fontSize = 14.sp); Text("其他设备上传到本机的文件先临时存放，连接本机的第三台设备可直接下载。只有本机点击“保存”，才会保存到“下载 / FileFlash”。临时文件会按缓存规则清理，请及时转发或保存。", fontSize = 14.sp); Text("在“连接”页面点击“接收”，会将所选文件保存到本机。Safari 上传期间保持页面在前台；页面重载后需重新选择原文件才能续传。", fontSize = 14.sp); Text("系统可能限制长时间后台传输。网络改变后重新扫码；访客 Wi-Fi 可能禁止设备互通。", fontSize = 14.sp) } }, confirmButton = { TextButton(onClick = { showInfo = false }) { Text("关闭") } }, dismissButton = { TextButton(onClick = onSettings) { Text("系统设置") } })
 }
 
 @Composable private fun NavGlyph(index: Int, selected: Boolean) {
@@ -184,6 +185,10 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
 }
 
 @Composable private fun HostPage(state: AppState, repository: TransferRepository, start: () -> Unit, pick: () -> Unit, onQr: (String) -> Unit, copy: (String) -> Unit) {
+    var discard by remember { mutableStateOf<RemoteFile?>(null) }
+    val temporaryIds = state.hostTemporary.map { it.id }.toSet()
+    val sharedFiles = state.hostState.files.filterNot { it.id in temporaryIds }
+    discard?.let { file -> DiscardHostFileDialog(file, onDismiss = { discard = null }, onDiscard = { discard = null; repository.discardHostFile(file.id) }) }
     LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             SurfaceBlock {
@@ -208,9 +213,16 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         }
         if (state.hostRunning && state.addresses.isNotEmpty()) item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { QrImage(state.addresses.first(), 188) } }
         if (state.hostRunning) {
-            item { SectionTitle("共享文件", state.hostState.files.size.toString()) }
-            if (state.hostState.files.isEmpty()) item { EmptyRow("暂无共享文件") }
-            items(state.hostState.files, key = { "share-${it.id}" }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.received) " · 已接收" else ""}") { TextButton(onClick = { repository.removeShared(file.id, file.name) }) { Text("移除") } } }
+            item { Text("其他设备上传的文件先临时中转；本机点击“保存”后才进入“下载 / FileFlash”。", color = Muted, fontSize = 13.sp, lineHeight = 20.sp) }
+        }
+        if (state.hostTemporary.isNotEmpty()) {
+            item { SectionTitle("临时文件", state.hostTemporary.size.toString()) }
+            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discard = file }) }
+        }
+        if (state.hostRunning) {
+            if (sharedFiles.isNotEmpty() || state.hostTemporary.isEmpty()) item { SectionTitle("共享文件", sharedFiles.size.toString()) }
+            if (sharedFiles.isEmpty() && state.hostTemporary.isEmpty()) item { EmptyRow("暂无共享文件") }
+            items(sharedFiles, key = { "share-${it.id}" }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.received) " · 已保存" else ""}") { TextButton(onClick = { repository.removeShared(file.id, file.name) }) { Text("移除") } } }
             if (state.hostState.clients.isNotEmpty()) {
                 item { SectionTitle("已配对设备") }
                 items(state.hostState.clients, key = { "client-${it.id}" }) { client -> FileRow(client.name, "已配对") { TextButton(onClick = { repository.revoke(client.id) }) { Text("断开") } } }
@@ -240,7 +252,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         if (state.remoteConnected) {
             item { SectionTitle("对方共享", state.remoteState.files.size.toString()) }
             if (state.remoteState.files.isEmpty()) item { EmptyRow("对方尚未添加文件") }
-            items(state.remoteState.files, key = { it.id }) { file -> FileRow(file.name, bytes(file.size)) { Button(onClick = { repository.download(file) }, shape = Corner) { Text("接收") } } }
+            items(state.remoteState.files, key = { it.id }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.temporary) " · 临时中转" else ""}") { Button(onClick = { repository.download(file) }, shape = Corner) { Text("接收") } } }
         }
     }
 }
@@ -263,25 +275,32 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     var tab by rememberSaveable { mutableStateOf(0) }
     var clearCache by remember { mutableStateOf(false) }
     var discard by remember { mutableStateOf<NativeTask?>(null) }
+    var discardHost by remember { mutableStateOf<RemoteFile?>(null) }
+    val temporaryIds = state.hostTemporary.map { it.id }.toSet()
+    val visibleTasks = state.tasks.filterNot { it.id.startsWith("save-") && it.id.removePrefix("save-") in temporaryIds }
+    val hostUploads = state.hostState.uploads.filterNot { it.status == "complete" && it.id in temporaryIds }
     LaunchedEffect(Unit) { repository.refreshStorageInfo() }
-    if (clearCache) AlertDialog(onDismissRequest = { clearCache = false }, title = { Text("清理临时文件？") }, text = { Text("将清理已暂停或失败任务的续传数据，之后需要重新传输。已保存到“下载 / FileFlash”的文件、等待保存的完整文件和进行中的传输会保留。") }, confirmButton = { TextButton(onClick = { clearCache = false; repository.clearReceivedCache() }) { Text("清理") } }, dismissButton = { TextButton(onClick = { clearCache = false }) { Text("保留") } })
+    if (clearCache) AlertDialog(onDismissRequest = { clearCache = false }, title = { Text("清理临时文件？") }, text = { Text("将删除未在使用的临时中转文件，以及已暂停或失败任务的续传数据。删除后其他设备无法再下载这些文件，需要重新上传。\n\n正在传输、下载或保存的文件、保存失败待重试的文件和旧版待保存文件会保留。已保存到“下载 / FileFlash”的文件不受影响。") }, confirmButton = { TextButton(onClick = { clearCache = false; repository.clearReceivedCache() }) { Text("清理") } }, dismissButton = { TextButton(onClick = { clearCache = false }) { Text("保留") } })
     discard?.let { task -> AlertDialog(onDismissRequest = { discard = null }, title = { Text("丢弃未完成任务？") }, text = { Text("${task.name}\n\n删除此任务的临时数据，之后需要重新传输。原文件和已保存文件会保留。") }, confirmButton = { TextButton(onClick = { discard = null; repository.discardTask(task) }) { Text("丢弃") } }, dismissButton = { TextButton(onClick = { discard = null }) { Text("保留") } }) }
+    discardHost?.let { file -> DiscardHostFileDialog(file, onDismiss = { discardHost = null }, onDiscard = { discardHost = null; repository.discardHostFile(file.id) }) }
     LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { TabRow(selectedTabIndex = tab, containerColor = Background) { Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("任务") }); Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("已接收") }) } }
+        item { TabRow(selectedTabIndex = tab, containerColor = Background) { Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("任务") }); Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("已保存") }) } }
         item { SurfaceBlock {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) { Text("临时文件 ${bytes(state.temporaryBytes)}", fontSize = 14.sp); Text("可清理 ${bytes(state.reclaimableBytes)}", fontSize = 12.sp, color = Muted) }
                 TextButton(onClick = { clearCache = true }, enabled = !state.cacheCleaning) { Text(if (state.cacheCleaning) "清理中" else "清理") }
             }
-            Text("无缩略图磁盘缓存。闲置续传数据保留 24 小时，并以 256 MB 为清理目标；正在传输、最近 30 分钟的任务和等待保存的完整文件会保留。", fontSize = 12.sp, color = Muted, lineHeight = 18.sp)
+            Text("无缩略图磁盘缓存。临时中转文件和闲置续传数据保留 24 小时，以 256 MB 为闲置清理目标；超过目标时优先清理闲置超过 30 分钟的数据。正在传输、下载或保存，以及保存失败待重试和旧版待保存的文件会保留。", fontSize = 12.sp, color = Muted, lineHeight = 18.sp)
         } }
         if (tab == 1) {
-            item { Row(verticalAlignment = Alignment.CenterVertically) { Text("下载 / FileFlash", modifier = Modifier.weight(1f), color = Muted, fontSize = 13.sp); TextButton(onClick = repository::retrySaving) { Text("重试保存") } } }
-            if (state.saved.isEmpty()) item { EmptyRow("暂无接收文件") }
+            item { Text("下载 / FileFlash", color = Muted, fontSize = 13.sp) }
+            if (state.saved.isEmpty()) item { EmptyRow("暂无已保存文件") }
             items(state.saved, key = { it.id }) { saved -> FileRow(saved.name, bytes(saved.size)) { TextButton(onClick = { repository.openSaved(saved) }) { Text("打开") } } }
         } else {
-            if (state.tasks.isEmpty() && state.hostState.uploads.isEmpty() && state.hostState.downloads.isEmpty()) item { EmptyRow("暂无传输任务") }
-            items(state.tasks, key = { "task-${it.id}" }) { task ->
+            if (state.hostTemporary.isNotEmpty()) item { SectionTitle("临时文件", state.hostTemporary.size.toString()) }
+            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discardHost = file }) }
+            if (state.hostTemporary.isEmpty() && visibleTasks.isEmpty() && hostUploads.isEmpty() && state.hostState.downloads.isEmpty()) item { EmptyRow("暂无传输任务") }
+            items(visibleTasks, key = { "task-${it.id}" }) { task ->
                 TaskRow(task.name, task.direction, task.transferred, task.size, task.status, task.speed, task.error) {
                     when (task.status) {
                         "失败", "已暂停", "已取消" -> Column {
@@ -293,10 +312,36 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
                     }
                 }
             }
-            items(state.hostState.uploads.sortedByDescending { it.createdAt }, key = { "hostup-${it.id}" }) { task -> TaskRow(task.name, "接收", task.offset, task.size, hostStatus(task.status), task.speed, task.error) { if (task.status in listOf("uploading", "failed")) TextButton(onClick = { repository.cancelHostUpload(task.id) }) { Text("取消") } } }
+            items(hostUploads.sortedByDescending { it.createdAt }, key = { "hostup-${it.id}" }) { task -> TaskRow(task.name, "接收", task.offset, task.size, hostStatus(task.status), task.speed, task.error) { if (task.status in listOf("uploading", "failed")) TextButton(onClick = { repository.cancelHostUpload(task.id) }) { Text("取消") } } }
             items(state.hostState.downloads, key = { "hostdown-${it.id}" }) { task -> TaskRow(task.name, "发送", task.transferred, task.size, hostStatus(task.status), task.speed, task.error) { if (task.status == "downloading") TextButton(onClick = { repository.cancelHostDownload(task.id) }) { Text("取消") } } }
         }
     }
+}
+
+@Composable private fun HostTemporaryRow(file: RemoteFile, saveTask: NativeTask?, hostRunning: Boolean, onSave: () -> Unit, onDiscard: () -> Unit) {
+    val saving = saveTask?.status == "保存中"
+    val saveFailed = saveTask?.status in listOf("失败", "已暂停", "已取消")
+    SurfaceBlock {
+        Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(4.dp))
+        Text("${bytes(file.size)} · ${if (file.temporary) "临时中转" else "待保存"}", color = Muted, fontSize = 13.sp)
+        Text(if (hostRunning) "连接本机的其他设备可下载；点击“保存”后才进入本机下载目录。" else "重新开启共享后，其他设备可下载；点击“保存”可存入本机下载目录。", color = Muted, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 4.dp))
+        if (saving) {
+            LinearProgressIndicator(progress = { if (file.size > 0) ((saveTask?.transferred ?: 0).toDouble() / file.size).toFloat().coerceIn(0f, 1f) else 0f }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
+        }
+        if (saveFailed) Text("保存失败${saveTask?.error?.takeIf { it.isNotBlank() }?.let { "：$it" } ?: "，可重试"}。文件已保留，等待重试。", color = Error, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onDiscard, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) { Text("丢弃") }
+            OutlinedButton(onClick = onSave, enabled = !saving, shape = Corner, modifier = Modifier.heightIn(min = 48.dp)) {
+                if (saving) { CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp); Spacer(Modifier.size(8.dp)) }
+                Text(if (saving) "保存中" else if (saveFailed) "重试保存" else "保存")
+            }
+        }
+    }
+}
+
+@Composable private fun DiscardHostFileDialog(file: RemoteFile, onDismiss: () -> Unit, onDiscard: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("丢弃临时文件？") }, text = { Text("${file.name}\n\n将删除本机这份临时文件，其他设备将无法再从本机下载，需要重新上传。原文件和已保存文件不受影响。") }, confirmButton = { TextButton(onClick = onDiscard) { Text("丢弃") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("保留") } })
 }
 
 @Composable private fun SurfaceBlock(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) { Card(Modifier.fillMaxWidth(), shape = Corner, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(0.dp)) { Column(Modifier.padding(16.dp), content = content) } }

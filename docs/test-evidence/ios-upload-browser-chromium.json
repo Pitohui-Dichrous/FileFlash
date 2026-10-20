@@ -3,7 +3,7 @@
   "engine": "chromium",
   "browserVersion": "155.0.8059.84",
   "hostPlatform": "win32",
-  "recordedAt": "2026-10-20T11:39:26.967Z",
+  "recordedAt": "2026-10-20T11:54:19.333Z",
   "scope": "Desktop browser engine against a local Node HTTP protocol fixture. Not physical iOS Safari or Android device evidence.",
   "firstSendReadBytes": 2097152,
   "fileBytes": 4194321,

@@ -15,7 +15,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class RemoteFile(val id: String = "", val name: String = "", val size: Long = 0, val mime: String = "application/octet-stream", val sha256: String? = null, val received: Boolean = false, val createdAt: Long = 0)
+data class RemoteFile(val id: String = "", val name: String = "", val size: Long = 0, val mime: String = "application/octet-stream", val sha256: String? = null, val received: Boolean = false, val createdAt: Long = 0, val temporary: Boolean = false)
 data class TextEntry(val id: String = "", val text: String = "", val sender: String = "", val createdAt: Long = 0)
 data class ClientEntry(val id: String = "", val name: String = "", val lastSeen: Long = 0)
 data class UploadEntry(val id: String = "", val name: String = "", val size: Long = 0, val offset: Long = 0, val status: String = "", val error: String? = null, val createdAt: Long = 0, val speed: Long = 0)

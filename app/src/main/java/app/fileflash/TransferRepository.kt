@@ -46,6 +46,7 @@ data class AppState(
     val remoteError: String? = null,
     val tasks: List<NativeTask> = emptyList(),
     val saved: List<SavedFile> = emptyList(),
+    val hostTemporary: List<RemoteFile> = emptyList(),
     val temporaryBytes: Long = 0,
     val reclaimableBytes: Long = 0,
     val cacheCleaning: Boolean = false,
@@ -70,7 +71,6 @@ class TransferRepository(private val context: Context) {
     private val hashing = ConcurrentHashMap<String, AtomicBoolean>()
     private val shareSources = ConcurrentHashMap<String, LocalFile>()
     private val hostSamples = mutableMapOf<String, Pair<Long, Long>>()
-    private val saving = ConcurrentHashMap.newKeySet<String>()
     private val activeExports = ConcurrentHashMap<String, AtomicBoolean>()
     private var shared = mutableListOf<LocalFile>()
     private val maintenanceLock = Any()
@@ -106,13 +106,17 @@ class TransferRepository(private val context: Context) {
                 if (s != null) {
                     runCatching { gson.fromJson(s.state(), ServerState::class.java) }.onSuccess { value ->
                         _state.update { it.copy(hostState = withHostSpeeds(value)) }
-                        value.files.filter { it.received }.forEach { publishReceived(s, it) }
+                        value.files.filter { it.received }.forEach { item ->
+                            _state.value.saved.firstOrNull { it.id == item.id }?.let { releaseSavedCache(s, it, item) }
+                        }
+                        refreshHostTemporary(s, value)
                     }.onFailure { notice("读取传输状态失败：${it.message}") }
                     updateAddresses()
                 }
                 notificationChanged?.invoke()
                 if (System.currentTimeMillis() - lastMaintenance > 60_000) maintainStorage()
                 if (s != null || remote != null || clients.isNotEmpty() || activeExports.isNotEmpty()) withTimeoutOrNull(900L) { hostWake.receive() }
+                else if (_state.value.temporaryBytes > 0) withTimeoutOrNull(60_000L) { hostWake.receive() }
                 else hostWake.receive()
             }
         }
@@ -397,7 +401,7 @@ class TransferRepository(private val context: Context) {
     }
 
     fun retry(task: NativeTask) {
-        if (task.direction == "保存") { retrySaving(); return }
+        if (task.direction == "保存") { saveHostFile(task.id.removePrefix("save-")); return }
         if (task.direction == "共享") {
             val s = server ?: return notice("请先开启共享")
             task.source?.let { prepareShare(s, it, hostGeneration.get()) }
@@ -474,47 +478,85 @@ class TransferRepository(private val context: Context) {
             Storage.acknowledgePublication(context, file.id)
         }
     }
-    private fun publishReceived(s: TransferServer, item: RemoteFile) {
-        _state.value.saved.firstOrNull { it.id == item.id && Storage.isReadable(context, it) }?.let { releaseSavedCache(s, it, item); return }
-        if (s.receivedFile(item.id) == null) return
-        if (!saving.add(item.id)) return
+    private fun refreshHostTemporary(engine: TransferServer, snapshot: ServerState) {
+        val savedById = _state.value.saved.associateBy { it.id }
+        val pending = snapshot.files.filter { it.received && savedById[it.id]?.let { saved -> Storage.isReadable(context, saved) } != true && engine.receivedFile(it.id) != null }
+        _state.update { it.copy(hostTemporary = pending) }
+    }
+
+    /** Upload completion only makes a relay file available. This is the explicit save action. */
+    fun saveHostFile(id: String) {
         val cancelled = AtomicBoolean(false)
-        activeExports[item.id] = cancelled
+        synchronized(lock) {
+            if (_state.value.hostStarting || _state.value.hostStopping) return notice("请等待共享状态更新后重试")
+            if (activeExports.isNotEmpty()) return notice("正在保存另一个文件，请稍后重试")
+            activeExports[id] = cancelled
+        }
         hostWake.trySend(Unit)
-        runCatching { TransferService.ensure(context) }.onFailure { activeExports.remove(item.id); saving.remove(item.id); notice("请回到应用后重试保存：${it.message}"); return }
-        val taskId = "save-${item.id}"
-        val task = NativeTask(id = taskId, name = item.name, size = item.size, direction = "保存", status = "保存中")
-        if (_state.value.tasks.none { it.id == taskId }) addTask(task) else updateTask(taskId) { task }
         scope.launch {
-            var lastProgress = 0L
-            runCatching {
-                val file = s.receivedFile(item.id) ?: throw IOException("文件暂不可用")
-                Storage.publish(context, item.id, file, item.name, item.mime, sha256 = item.sha256, hostReceived = true, progress = { done ->
-                    val now = System.nanoTime()
-                    if (now - lastProgress > 250_000_000) { updateTask(taskId) { it.copy(transferred = done) }; lastProgress = now }
-                }, cancelled = { cancelled.get() })
-            }.mapCatching { saved -> addSaved(saved); releaseSavedCache(s, saved, item); saved }.onSuccess { saved -> saving.remove(item.id); updateTask(taskId) { it.copy(status = "完成", transferred = item.size, savedUri = saved.uri) } }.onFailure { e ->
+            var owned: TransferServer? = null
+            val taskId = "save-$id"
+            try {
+                val (engine, item, claim) = synchronized(maintenanceLock) { synchronized(lock) {
+                    if (_state.value.hostStarting || _state.value.hostStopping) throw IOException("请等待共享状态更新后重试")
+                    if (cancelled.get()) throw TransferCancelled()
+                    val engine = server ?: newEngine().also { owned = it }
+                    val item = gson.fromJson(engine.state(), ServerState::class.java).files.firstOrNull { it.id == id && it.received }
+                        ?: throw IOException("临时文件已清理或不再可用，请重新上传")
+                    Triple(engine, item, engine.claimReceivedSave(id))
+                } }
+                var lastProgress = 0L
+                val saved = claim.use { pinned ->
+                    val task = NativeTask(id = taskId, name = item.name, size = item.size, direction = "保存", status = "保存中", remote = item)
+                    if (_state.value.tasks.none { it.id == taskId }) addTask(task) else updateTask(taskId) { task }
+                    persistTasks()
+                    TransferService.ensure(context)
+                    Storage.publish(context, id, pinned.file(), item.name, item.mime, sha256 = item.sha256, hostReceived = true, progress = { done ->
+                        val now = System.nanoTime()
+                        if (now - lastProgress > 250_000_000) { updateTask(taskId) { it.copy(transferred = done) }; lastProgress = now }
+                    }, cancelled = { cancelled.get() }).also { addSaved(it) }
+                }
+                releaseSavedCache(engine, saved, item)
+                updateTask(taskId) { it.copy(status = "完成", transferred = item.size, savedUri = saved.uri, error = null) }
+                notice("已保存到下载 / FileFlash")
+            } catch (e: Exception) {
                 updateTask(taskId) { it.copy(status = if (e is TransferCancelled) "已暂停" else "失败", error = e.message) }
-                notice("${item.name} 保存失败：${e.message}。释放空间后点击“重试保存”")
+                notice("保存失败：${e.message}")
+            } finally {
+                // Offline engines must close before maintenance or host startup opens the same metadata.
+                runCatching { owned?.close() }
+                activeExports.remove(id)
+                persistTasks()
+                runCatching { maintainStorage(force = true) }
+                hostWake.trySend(Unit); stopServiceIfIdle()
             }
-            activeExports.remove(item.id)
-            persistTasks(); stopServiceIfIdle()
+        }
+    }
+
+    fun discardHostFile(id: String) {
+        scope.launch {
+            runCatching {
+                synchronized(maintenanceLock) { synchronized(lock) {
+                    if (_state.value.hostStarting || _state.value.hostStopping || activeExports.isNotEmpty()) throw IOException("任务正在处理中，请稍后重试")
+                    if (_state.value.saved.any { it.id == id && Storage.isReadable(context, it) }) throw IOException("文件已保存，请从系统文件管理器管理")
+                    val current = server
+                    val engine = current ?: newEngine()
+                    try { engine.removeReceivedFile(id); refreshHostTemporary(engine, gson.fromJson(engine.state(), ServerState::class.java)) }
+                    finally { if (current == null) engine.close() }
+                    _state.update { it.copy(tasks = it.tasks.filterNot { task -> task.id == "save-$id" }) }
+                    persistTasks()
+                } }
+                maintainStorage(force = true)
+            }.onSuccess { notice("已丢弃临时文件") }.onFailure { notice("丢弃失败：${it.message}") }
         }
     }
     fun retrySaving() {
         scope.launch {
             if (_state.value.hostStopping || _state.value.hostStarting) return@launch notice("请等待共享状态更新后重试")
             Storage.recoverPublications(context, cleanupPending = false).forEach { recovered -> runCatching { addSaved(recovered) } }
-            saving.removeIf { id -> !activeExports.containsKey(id) && _state.value.saved.none { it.id == id && Storage.isReadable(context, it) } }
-            runCatching {
-                synchronized(lock) {
-                    val current = server
-                    if (current == null && (_state.value.hostStarting || _state.value.hostStopping)) return@synchronized
-                    val engine = current ?: TransferServer(File(context.filesDir, "server")) { path -> runCatching { context.assets.open("web/$path") }.getOrNull() }
-                    try { gson.fromJson(engine.state(), ServerState::class.java).files.filter { it.received }.forEach { publishReceived(engine, it) } }
-                    finally { if (current == null) engine.close() }
-                }
-            }.onFailure { notice("保存重试失败：${it.message}") }
+            // Only retry a save the host previously requested; never save all relay files.
+            _state.value.tasks.firstOrNull { it.direction == "保存" && it.status in listOf("失败", "已暂停", "已取消") }
+                ?.let { saveHostFile(it.id.removePrefix("save-")) }
         }
     }
     fun clearReceivedCache() {
@@ -530,6 +572,7 @@ class TransferRepository(private val context: Context) {
     }
 
     fun discardTask(task: NativeTask) {
+        if (task.direction == "保存") { discardHostFile(task.id.removePrefix("save-")); return }
         scope.launch {
             if (_state.value.hostStarting || _state.value.hostStopping) return@launch notice("请等待共享状态更新后重试")
             if (clients.containsKey(task.id) || hashing.containsKey(task.id) || (task.id.startsWith("save-") && activeExports.containsKey(task.id.removePrefix("save-")))) return@launch notice("任务仍在处理中，请暂停后稍候")
@@ -544,7 +587,6 @@ class TransferRepository(private val context: Context) {
                             try {
                                 val id = task.id.removePrefix("save-")
                                 if (_state.value.saved.none { it.id == id && Storage.isReadable(context, it) } && engine.receivedFile(id) != null) engine.removeReceivedFile(id)
-                                saving.remove(id)
                             } finally { if (current == null) engine.close() }
                         }
                     } else discardLocalTask(task)
@@ -627,7 +669,7 @@ class TransferRepository(private val context: Context) {
         }
         synchronized(lock) {
             val current = server
-            if (current == null && (_state.value.hostStarting || _state.value.hostStopping)) return@synchronized
+            if (current == null && (_state.value.hostStarting || _state.value.hostStopping || activeExports.isNotEmpty())) return@synchronized
             val engine = current ?: newEngine()
             try {
                 val originalFiles = gson.fromJson(engine.state(), ServerState::class.java).files.associateBy { it.id }
@@ -635,6 +677,7 @@ class TransferRepository(private val context: Context) {
                 // One shared idle-data target across native receiving and the browser upload engine.
                 val remainingBudget = (idleBudget - idleBytes).coerceAtLeast(0)
                 removed += engine.cleanupStaleUploads(if (explicit) 0 else idleTtl, if (explicit) 0 else remainingBudget, now)
+                refreshHostTemporary(engine, gson.fromJson(engine.state(), ServerState::class.java))
                 val nativeReclaimable = (dir.listFiles() ?: emptyArray()).filter { it.name.endsWith(".part") && !clients.containsKey(it.name.removeSuffix(".part")) && !protectedPart(it) }.sumOf { it.length() }
                 val temporary = (dir.listFiles() ?: emptyArray()).filter { it.isFile }.sumOf { it.length() } + File(context.filesDir, "server/uploads").listFiles().orEmpty().filter { it.name.endsWith(".part") }.sumOf { it.length() } + File(context.filesDir, "server/received").listFiles().orEmpty().filter { it.isFile }.sumOf { it.length() }
                 _state.update { it.copy(temporaryBytes = temporary, reclaimableBytes = nativeReclaimable + engine.reclaimableCacheBytes()) }

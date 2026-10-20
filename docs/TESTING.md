@@ -1,6 +1,6 @@
 # 复现测试
 
-本文对应 0.1.2。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 0.1.3。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
 
 ## 工程检查
 
@@ -67,9 +67,9 @@ node scripts/integration-large.cjs
 
 `android-cache-smoke.py` 对专用可 root 的 API 34 模拟器执行缓存专项：需先安装带有合成测试数据的 0.1.0，再提供 `app/build/outputs/apk/release/app-release.apk`。脚本会覆盖升级、构造应用自己的中断保存状态、点击“清理 / 丢弃”、卸载并重装，结果写入 `docs/test-evidence/cache-android.json`。它会卸载测试应用，不能在个人手机上执行。
 
-`android-upload-smoke.py` 只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1` 的专用模拟器，并检查设备序号及 `ro.kernel.qemu`。提供最终签名 Release APK，验证覆盖升级保留文件、上传、前缀核对、系统保存、副本释放及重启后的回执与下载一致性。运行完成保留服务，将配对凭据仅写入私有 `.test-data/upload-android-ready.json`。
+`android-upload-smoke.py` 保留作 0.1.2 自动保存基线；0.1.3 改为手动保存后，请改用 `android-relay-smoke.py --version 0.1.3`。该脚本只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1`、指定模拟器序号并通过 `ro.kernel.qemu` 检查的专用 API 29 / 34 模拟器。它覆盖签名升级保留数据、B/C 独立会话、上传后没有下载目录副本、C 直接下载、重启恢复、停止共享后点保存、丢弃、手动清理以及启动自动过期清理；只修改本轮合成数据的时间，不删除已有用户保存文件。配对凭据仅写入私有 `.test-data/relay-android-api{N}-ready.json`。
 
-接着运行 `node scripts/web-upload-regression.cjs`：桌面 WebKit 模拟 iPhone UA/触控特征，向实际 APK 上传旧安装包，在六个空闲预连接存在时丢弃 2 MiB 位置下一块的确认，验证自动恢复、首次只读 512 KiB、最终校验和浏览器下载内容一致。测试经本机 ADB 转发，不替代真实 iPhone 和局域网。
+接着运行 `node scripts/web-upload-regression.cjs .test-data/relay-android-api34-ready.json`：桌面 WebKit 模拟 iPhone UA/触控特征，B 向实际 APK 上传旧安装包，在六个空闲预连接存在时丢弃 2 MiB 位置下一块的确认，验证自动恢复及首次只读 512 KiB。C 使用另一个浏览器上下文配对，在 A 未点保存时直接下载，并核对完整字节与摘要。测试经本机 ADB 转发，不替代真实 iPhone 和局域网。
 
 ## 仍需真实设备
 

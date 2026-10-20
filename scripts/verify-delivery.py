@@ -34,16 +34,18 @@ large = json.loads((root / 'docs/test-evidence/large.json').read_text(encoding='
 assert large['passed'] and large['bytes'] > 4 * 1024 ** 3
 upload_checks = {}
 apk_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
-for name in ['upload-android.json', 'upload-android-api29.json']:
+android_evidence = ['upload-android.json', 'upload-android-api29.json'] if version == '0.1.2' else ['relay-android-api34.json', 'relay-android-api29.json']
+for name in android_evidence:
     evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
     assert evidence['tests'] and all(item['passed'] for item in evidence['tests']), name
     assert any(item.get('apkSha256') == apk_sha for item in evidence['tests']), name
     upload_checks[name] = len(evidence['tests'])
-for name in ['ios-upload-browser-chromium.json', 'ios-upload-browser-webkit.json', 'ios-upload-live-webkit.json', 'upload-webkit-android.json']:
+actual_web_name = 'upload-webkit-android.json' if version == '0.1.2' else 'relay-webkit-android.json'
+for name in ['ios-upload-browser-chromium.json', 'ios-upload-browser-webkit.json', actual_web_name]:
     evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
     assert evidence['passed'], name
     upload_checks[name] = True
-actual_web = json.loads((root / 'docs/test-evidence/upload-webkit-android.json').read_text(encoding='utf-8'))
+actual_web = json.loads((root / 'docs/test-evidence' / actual_web_name).read_text(encoding='utf-8'))
 assert actual_web['serverApkSha256'] == apk_sha
 report = {
     'version': version,

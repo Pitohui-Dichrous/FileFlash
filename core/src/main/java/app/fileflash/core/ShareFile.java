@@ -8,5 +8,7 @@ public final class ShareFile {
     public String sha256;
     public long createdAt;
     public boolean received;
+    /** Completed private relay data that has not been explicitly retained by the host. */
+    public boolean temporary;
     transient volatile Source source;
 }

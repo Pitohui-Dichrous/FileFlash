@@ -136,7 +136,7 @@
     if(!server.files.length) { list.append(node('p','empty','暂无可接收文件')); return; }
     server.files.slice().reverse().forEach(file => {
       const row=node('div','file-row'),mark=node('span','file-icon'),info=node('div','file-info');mark.append(icon('file'));
-      info.append(node('div','file-name',file.name),node('div','file-meta',[bytes(file.size),date(file.createdAt)].filter(Boolean).join(' · ')));
+      info.append(node('div','file-name',file.name),node('div','file-meta',[bytes(file.size),file.temporary?'临时中转':null,date(file.createdAt)].filter(Boolean).join(' · ')));
       const download=button('下载','file-action',async () => {
         download.disabled=true; download.textContent='准备中';
         try {

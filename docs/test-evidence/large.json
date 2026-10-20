@@ -1,7 +1,7 @@
 {
   "passed": true,
   "bytes": 4295032835,
-  "sha256": "e91c006fa854557f285d2a185654101ad3d33aa3ec8d21ff40291347879b1579",
+  "sha256": "19976311dc8093fcfb7f36eae809f23eb98a46158cd5808e9c09cfb787bcb954",
   "checks": [
     "unauthenticated state rejected",
     "lost-response duplicate chunk idempotent",
@@ -13,9 +13,9 @@
     "full streamed download exact length and SHA-256",
     "Unicode multiline long text roundtrip"
   ],
-  "networkRetries": 1,
+  "networkRetries": 0,
   "javaMaxHeapMiB": 128,
-  "nodePeakRssMiB": 201,
+  "nodePeakRssMiB": 203,
   "elapsedSeconds": 73,
   "environment": "Windows JVM real HTTP; not Android/iOS device validation"
 }

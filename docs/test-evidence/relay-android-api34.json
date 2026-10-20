@@ -1,0 +1,99 @@
+{
+  "environment": "Dedicated rooted Android API34 emulator; two desktop HTTP sessions over adb forwarding, not physical Wi-Fi or iOS",
+  "run": "1792497818793282700",
+  "tests": [
+    {
+      "name": "dedicated emulator guard and existing saved-file baseline recorded",
+      "passed": true,
+      "api": 34,
+      "previousVersion": {
+        "name": "0.1.3",
+        "code": 5
+      },
+      "savedFiles": 6,
+      "readableDownloads": 5,
+      "unreadableBefore": 1
+    },
+    {
+      "name": "new signed build upgrades without uninstall",
+      "passed": true,
+      "apkSha256": "ee1991f855d38737adcc4a4a18abcd1395fe71dbf5034084b7490eb68a6a64e7"
+    },
+    {
+      "name": "expected relay release version installed",
+      "passed": true,
+      "installed": {
+        "name": "0.1.3",
+        "code": 5
+      }
+    },
+    {
+      "name": "upgrade retains existing saved ledger and Downloads bytes",
+      "passed": true,
+      "ledgerEntries": 6,
+      "readableDownloads": 5
+    },
+    {
+      "name": "B and C authenticate as separate clients on the Android A host",
+      "passed": true
+    },
+    {
+      "name": "B upload remains a private temporary relay without saved ledger or MediaStore publication",
+      "passed": true,
+      "bytes": 4194503,
+      "sha256": "f8a12c364c182d9a777d09d5e8fdc04cac0dbc21733b1b0d256cebc444bdeec0"
+    },
+    {
+      "name": "separate client C downloads B temporary upload byte-for-byte before A saves",
+      "passed": true
+    },
+    {
+      "name": "unsaved temporary file restores after hard process restart without automatic publication",
+      "passed": true
+    },
+    {
+      "name": "A explicit Save works with sharing stopped and publishes exact Downloads bytes with durable ledger",
+      "passed": true,
+      "sha256": "f8a12c364c182d9a777d09d5e8fdc04cac0dbc21733b1b0d256cebc444bdeec0"
+    },
+    {
+      "name": "explicit Save releases private duplicate while preserving C same-id download",
+      "passed": true
+    },
+    {
+      "name": "A explicit Discard deletes private relay and removes C access without creating a saved copy",
+      "passed": true
+    },
+    {
+      "name": "manual cache clear removes idle completed unsaved relay immediately",
+      "passed": true
+    },
+    {
+      "name": "Discard and cache clear preserve permanent saved and prior Downloads",
+      "passed": true
+    },
+    {
+      "name": "hard restart restores saved and unsaved files together with correct storage semantics",
+      "passed": true
+    },
+    {
+      "name": "startup automatic TTL removes only aged unsaved relay while preserving saved Downloads",
+      "passed": true,
+      "simulatedIdleHours": 25,
+      "policyHours": 24
+    },
+    {
+      "name": "repeated manual cleanup leaves saved Downloads usable",
+      "passed": true
+    },
+    {
+      "name": "fault-injected deleted Downloads copy leaves its retained private source accessible for explicit management",
+      "passed": true,
+      "faultInjection": "Only this run's saved URI was deleted and same-id private metadata/bytes restored to model deferred-release process death; not a real download race"
+    },
+    {
+      "name": "deleted saved URI does not strand retained private bytes: A can discard the temporary card",
+      "passed": true
+    }
+  ]
+}

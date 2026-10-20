@@ -3,7 +3,7 @@
   "engine": "webkit",
   "browserVersion": "26.5",
   "hostPlatform": "win32",
-  "recordedAt": "2026-10-20T11:40:08.703Z",
+  "recordedAt": "2026-10-20T11:54:46.024Z",
   "scope": "Desktop browser engine against a local Node HTTP protocol fixture. Not physical iOS Safari or Android device evidence.",
   "firstSendReadBytes": 2097152,
   "fileBytes": 4194321,

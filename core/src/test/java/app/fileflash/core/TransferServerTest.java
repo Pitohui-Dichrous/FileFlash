@@ -185,12 +185,13 @@ class TransferServerTest {
         assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()));assertTrue(Files.exists(published));
     }
 
-    @Test void idleCleanupExpiresPartsPreservesRecentResumeGraceAndCompletedData() throws Exception {
+    @Test void idleCleanupExpiresPartsPreservesRecentResumeGraceAndExplicitlyRetainedData() throws Exception {
         byte[] data={1,2,3};String checksum=sha(data);
         JsonObject old=create("old.bin",6,null),recent=create("recent.bin",6,null),aged=create("aged.bin",6,null),complete=create("keep.bin",3,checksum);
         for(JsonObject upload:List.of(old,recent,aged,complete))assertEquals(200,chunk(upload,0,data,checksum).statusCode());
         String oldId=old.get("id").getAsString(),recentId=recent.get("id").getAsString(),agedId=aged.get("id").getAsString(),completeId=complete.get("id").getAsString();
         assertEquals(200,json("POST","/api/uploads/"+completeId+"/complete","{}",true).statusCode());
+        try(TransferServer.ReceivedSave ignored=server.claimReceivedSave(completeId)) { /* Explicit save intent protects a retry. */ }
         server.stop();long time=System.currentTimeMillis();
         setUpdatedAt(oldId,time-25L*60*60_000);setUpdatedAt(agedId,time-31L*60_000);setUpdatedAt(recentId,time-5L*60_000);
         open();pair();assertEquals(9,server.reclaimableCacheBytes());
@@ -284,6 +285,117 @@ class TransferServerTest {
 
     void setUpdatedAt(String id,long time) throws Exception {
         Path path=directory.resolve("uploads").resolve(id+".json");JsonObject metadata=JsonParser.parseString(Files.readString(path)).getAsJsonObject();metadata.addProperty("updatedAt",time);Files.writeString(path,metadata.toString());
+    }
+
+    JsonObject completeRelay(String name,byte[] data) throws Exception {
+        JsonObject upload=create(name,data.length,sha(data));
+        for(int offset=0;offset<data.length;) {
+            int end=Math.min(data.length,offset+TransferServer.CHUNK_SIZE);byte[] block=Arrays.copyOfRange(data,offset,end);
+            assertEquals(200,chunk(upload,offset,block,sha(block)).statusCode());offset=end;
+        }
+        assertEquals(200,json("POST","/api/uploads/"+upload.get("id").getAsString()+"/complete","{}",true).statusCode());return upload;
+    }
+
+    JsonObject metadata(String id) throws Exception {return JsonParser.parseString(Files.readString(directory.resolve("uploads").resolve(id+".json"))).getAsJsonObject();}
+    void awaitReclaimable(long bytes) throws Exception {
+        long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+        while(server.reclaimableCacheBytes()!=bytes&&System.nanoTime()<deadline)Thread.sleep(5);
+        assertEquals(bytes,server.reclaimableCacheBytes());
+    }
+
+    @Test void temporaryRelayCanBeDownloadedByAnotherPairedClientAndSurvivesRestart() throws Exception {
+        byte[] data="B sends through A to C 😀".getBytes(StandardCharsets.UTF_8);
+        JsonObject upload=completeRelay("relay.apk",data);String id=upload.get("id").getAsString();
+        JsonObject initial=JsonParser.parseString(server.state()).getAsJsonObject();
+        assertTrue(initial.getAsJsonArray("files").get(0).getAsJsonObject().get("temporary").getAsBoolean());
+        assertTrue(initial.getAsJsonArray("uploads").get(0).getAsJsonObject().get("temporary").getAsBoolean());
+        awaitReclaimable(data.length);assertEquals(0,server.protectedReceivedBytes());
+        server.revokeClient(clientId);pair(); // C has its own session and no B recovery key.
+        assertEquals(403,json("GET","/api/uploads/"+id,null,true).statusCode());
+        assertArrayEquals(data,json("GET","/api/files/"+id,null,true).body());
+        server.stop();open();pair();
+        assertTrue(JsonParser.parseString(server.state()).getAsJsonObject().getAsJsonArray("files").get(0).getAsJsonObject().get("temporary").getAsBoolean());
+        assertArrayEquals(data,json("GET","/api/files/"+id,null,true).body());
+        awaitReclaimable(data.length);
+    }
+
+    @Test void sharedIdleBudgetEvictsOldPartialAndTemporaryCompleteWithoutTouchingRecentRelay() throws Exception {
+        byte[] data={1,2,3};JsonObject partial=create("partial.bin",6,null);
+        assertEquals(200,chunk(partial,0,data,sha(data)).statusCode());
+        String partialId=partial.get("id").getAsString(),oldId=completeRelay("old-relay.bin",data).get("id").getAsString(),recentId=completeRelay("recent-relay.bin",data).get("id").getAsString();
+        String ticket=object(json("POST","/api/files/"+oldId+"/ticket",null,true)).get("url").getAsString();
+        server.stop();long time=System.currentTimeMillis();setUpdatedAt(partialId,time-32L*60_000);setUpdatedAt(oldId,time-31L*60_000);setUpdatedAt(recentId,time-5L*60_000);
+        open();pair();assertEquals(9,server.reclaimableCacheBytes());assertEquals(6,server.cleanupStaleUploads(24L*60*60_000,3,time));
+        assertEquals(404,json("GET","/api/files/"+oldId,null,true).statusCode());
+        assertEquals(401,json("GET",ticket,null,false).statusCode());
+        assertFalse(Files.exists(directory.resolve("uploads").resolve(oldId+".json")));assertFalse(Files.exists(directory.resolve("received").resolve("old-relay.bin")));
+        assertArrayEquals(data,json("GET","/api/files/"+recentId,null,true).body());awaitReclaimable(3);
+    }
+
+    @Test void statePollingTicketsAndHeadDoNotKeepExpiredRelayAlive() throws Exception {
+        byte[] data={9,8,7};String id=completeRelay("expire.bin",data).get("id").getAsString();
+        server.stop();long time=System.currentTimeMillis(),old=time-25L*60*60_000;setUpdatedAt(id,old);open();pair();
+        assertEquals(200,json("GET","/api/state",null,true).statusCode());
+        assertEquals(200,json("HEAD","/api/files/"+id,null,true).statusCode());
+        assertEquals(200,json("POST","/api/files/"+id+"/ticket",null,true).statusCode());
+        assertEquals(old,metadata(id).get("updatedAt").getAsLong());
+        assertEquals(data.length,server.cleanupStaleUploads(24L*60*60_000,256L*1024*1024,time));assertNull(server.receivedFile(id));
+        assertTrue(JsonParser.parseString(server.state()).getAsJsonObject().getAsJsonArray("files").isEmpty());
+    }
+
+    @Test void actualDownloadRenewsRelayIdleLifetimeDurably() throws Exception {
+        byte[] data={9,8,7};String id=completeRelay("renew.bin",data).get("id").getAsString();
+        server.stop();long time=System.currentTimeMillis(),old=time-25L*60*60_000;setUpdatedAt(id,old);open();pair();
+        assertArrayEquals(data,json("GET","/api/files/"+id,null,true).body());
+        assertTrue(metadata(id).get("updatedAt").getAsLong()>=time);
+        server.stop();open();pair();assertEquals(0,server.cleanupStaleUploads(24L*60*60_000,256L*1024*1024,System.currentTimeMillis()));assertNotNull(server.receivedFile(id));
+    }
+
+    @Test void activeRelayDownloadPinsBeforeSourceOpenAndRenewsAfterFinishing() throws Exception {
+        byte[] data={4,5,6};String checksum=sha(data),id=completeRelay("busy-relay.bin",data).get("id").getAsString();
+        CountDownLatch opened=new CountDownLatch(1),unblock=new CountDownLatch(1);
+        Source slow=offset->{opened.countDown();try{if(!unblock.await(5,TimeUnit.SECONDS))throw new IOException("test timeout");}catch(InterruptedException failure){throw new InterruptedIOException();}return new ByteArrayInputStream(Arrays.copyOfRange(data,(int)offset,data.length));};
+        server.restoreReceivedShare(id,"busy-relay.bin",3,"application/octet-stream",checksum,System.currentTimeMillis(),slow);
+        java.util.concurrent.CompletableFuture<HttpResponse<byte[]>> active=client.sendAsync(HttpRequest.newBuilder(URI.create(base+"/api/files/"+id)).header("Authorization","Bearer "+session).GET().build(),HttpResponse.BodyHandlers.ofByteArray());
+        long beforeFinish;
+        try {
+            assertTrue(opened.await(5,TimeUnit.SECONDS));assertEquals(0,server.reclaimableCacheBytes());
+            assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()+25L*60*60_000));assertNotNull(server.receivedFile(id));
+            assertThrows(IOException.class,()->server.removeReceivedFile(id));beforeFinish=System.currentTimeMillis();
+        } finally {unblock.countDown();}
+        assertArrayEquals(data,active.get(5,TimeUnit.SECONDS).body());
+        long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+        while(server.reclaimableCacheBytes()!=3&&System.nanoTime()<deadline)Thread.sleep(5);
+        assertTrue(metadata(id).get("updatedAt").getAsLong()>=beforeFinish);
+        assertEquals(3,server.cleanupStaleUploads(0,0,System.currentTimeMillis()));assertNull(server.receivedFile(id));
+    }
+
+    @Test void explicitSaveClaimPinsAndFailedSaveIntentSurvivesRestartUntilDiscard() throws Exception {
+        byte[] data={2,3,4};String id=completeRelay("save-retry.bin",data).get("id").getAsString();
+        TransferServer.ReceivedSave claim=server.claimReceivedSave(id);
+        assertArrayEquals(data,Files.readAllBytes(claim.file().toPath()));assertTrue(metadata(id).get("saveRequested").getAsBoolean());
+        assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()+25L*60*60_000));assertThrows(IOException.class,()->server.removeReceivedFile(id));
+        claim.close();claim.close();assertEquals(0,server.reclaimableCacheBytes());assertEquals(data.length,server.protectedReceivedBytes());
+        server.stop();open();pair();assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()+25L*60*60_000));
+        assertFalse(JsonParser.parseString(server.state()).getAsJsonObject().getAsJsonArray("files").get(0).getAsJsonObject().get("temporary").getAsBoolean());
+        try(TransferServer.ReceivedSave retry=server.claimReceivedSave(id)) {assertArrayEquals(data,Files.readAllBytes(retry.file().toPath()));}
+        server.removeReceivedFile(id);assertNull(server.receivedFile(id));assertFalse(Files.exists(directory.resolve("uploads").resolve(id+".json")));
+    }
+
+    @Test void legacyCompletedMetadataRemainsProtectedWhenTemporaryFlagWasAbsent() throws Exception {
+        byte[] data={6,7,8};String id=completeRelay("legacy.bin",data).get("id").getAsString();server.stop();
+        JsonObject old=metadata(id);old.remove("temporaryReceived");old.remove("saveRequested");old.addProperty("updatedAt",0);Files.writeString(directory.resolve("uploads").resolve(id+".json"),old.toString());
+        open();pair();assertEquals(0,server.reclaimableCacheBytes());assertEquals(data.length,server.protectedReceivedBytes());
+        assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()));assertNotNull(server.receivedFile(id));
+        assertFalse(JsonParser.parseString(server.state()).getAsJsonObject().getAsJsonArray("files").get(0).getAsJsonObject().get("temporary").getAsBoolean());
+    }
+
+    @Test void discardingTemporaryRelayRemovesItsShareTicketAndCompletionReceipt() throws Exception {
+        byte[] data={7,8,9};JsonObject upload=completeRelay("discard-relay.bin",data);String id=upload.get("id").getAsString();
+        String ticket=object(json("POST","/api/files/"+id+"/ticket",null,true)).get("url").getAsString();awaitReclaimable(data.length);server.removeReceivedFile(id);
+        assertEquals(404,json("GET","/api/files/"+id,null,true).statusCode());assertEquals(401,json("GET",ticket,null,false).statusCode());
+        assertEquals(404,json("POST","/api/uploads/"+id+"/complete","{}",true).statusCode());server.stop();open();pair();
+        assertNull(server.receivedFile(id));assertEquals(0,server.reclaimableCacheBytes());assertEquals(0,server.protectedReceivedBytes());
     }
 
     @Test void sixIdlePreconnectionsCannotStarveStateOrUploadWorkers() throws Exception {
