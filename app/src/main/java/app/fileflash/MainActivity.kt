@@ -212,9 +212,6 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
             }
         }
         if (state.hostRunning && state.addresses.isNotEmpty()) item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { QrImage(state.addresses.first(), 188) } }
-        if (state.hostRunning) {
-            item { Text("其他设备上传的文件先临时中转；本机点击“保存”后才进入“下载 / FileFlash”。", color = Muted, fontSize = 13.sp, lineHeight = 20.sp) }
-        }
         if (state.hostTemporary.isNotEmpty()) {
             item { SectionTitle("临时文件", state.hostTemporary.size.toString()) }
             items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discard = file }) }

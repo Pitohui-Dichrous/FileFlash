@@ -6,7 +6,7 @@
 
 Android / iPhone 局域网文件与文字互传。
 
-[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.3/FileFlash-0.1.3.apk)
+[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.4/FileFlash-0.1.4.apk)
 
 Android 10 及以上安装 APK，iPhone 用 Safari 扫码使用，两台设备连接同一个 Wi-Fi。
 
