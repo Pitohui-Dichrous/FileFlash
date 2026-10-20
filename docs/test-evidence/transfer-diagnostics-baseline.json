@@ -1,0 +1,564 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-20T12:32:40.860Z",
+  "scope": "Synthetic Node HTTP framing and optional actual desktop browser UI. No physical iOS, Wi-Fi, personal file or phone-runtime claim.",
+  "framing": [
+    {
+      "mode": "coalesced",
+      "bodyBytes": 524325,
+      "status": 200,
+      "acknowledgedBytes": 524325,
+      "firstResponseByteMs": 19.18,
+      "totalMs": 19.32,
+      "finalSha256Matches": true
+    },
+    {
+      "mode": "delayed-body",
+      "bodyBytes": 524325,
+      "status": 200,
+      "acknowledgedBytes": 524325,
+      "firstResponseByteMs": 152.57,
+      "totalMs": 152.7,
+      "finalSha256Matches": true
+    },
+    {
+      "mode": "fragmented-headers",
+      "bodyBytes": 524325,
+      "status": 200,
+      "acknowledgedBytes": 524325,
+      "firstResponseByteMs": 322.92,
+      "totalMs": 322.98,
+      "finalSha256Matches": true
+    },
+    {
+      "mode": "fragmented-body",
+      "bodyBytes": 524325,
+      "status": 200,
+      "acknowledgedBytes": 524325,
+      "firstResponseByteMs": 500.99,
+      "totalMs": 501.06,
+      "finalSha256Matches": true
+    },
+    {
+      "mode": "expect-continue",
+      "status": 417,
+      "errorCode": "expectation_failed",
+      "totalMs": 1.19,
+      "acknowledgedBytes": 0
+    },
+    {
+      "mode": "transfer-encoding",
+      "status": 400,
+      "errorCode": "unsupported_encoding",
+      "totalMs": 0.72,
+      "acknowledgedBytes": 0
+    }
+  ],
+  "benchmarks": [
+    {
+      "profile": "Node HTTP requests with native client chunk size; not Android runtime",
+      "fileBytes": 62914560,
+      "chunkBytes": 2097152,
+      "uploadMs": 805.33,
+      "completeMs": 123.6,
+      "totalMs": 928.93,
+      "finalSha256Matches": true,
+      "puts": [
+        {
+          "offset": 0,
+          "bodyBytes": 2097152,
+          "hashMs": 1.01,
+          "betweenPreviousAckAndSendMs": 1.03,
+          "requestMs": 15.43,
+          "firstResponseByteMs": 15.34,
+          "ackGapMs": 16.49
+        },
+        {
+          "offset": 2097152,
+          "bodyBytes": 2097152,
+          "hashMs": 0.88,
+          "betweenPreviousAckAndSendMs": 0.92,
+          "requestMs": 29.18,
+          "firstResponseByteMs": 29.09,
+          "ackGapMs": 30.12
+        },
+        {
+          "offset": 4194304,
+          "bodyBytes": 2097152,
+          "hashMs": 0.82,
+          "betweenPreviousAckAndSendMs": 0.83,
+          "requestMs": 25.75,
+          "firstResponseByteMs": 25.66,
+          "ackGapMs": 26.6
+        },
+        {
+          "offset": 6291456,
+          "bodyBytes": 2097152,
+          "hashMs": 0.98,
+          "betweenPreviousAckAndSendMs": 1,
+          "requestMs": 27.1,
+          "firstResponseByteMs": 27,
+          "ackGapMs": 28.12
+        },
+        {
+          "offset": 8388608,
+          "bodyBytes": 2097152,
+          "hashMs": 0.89,
+          "betweenPreviousAckAndSendMs": 0.91,
+          "requestMs": 24.31,
+          "firstResponseByteMs": 24.2,
+          "ackGapMs": 25.24
+        },
+        {
+          "offset": 10485760,
+          "bodyBytes": 2097152,
+          "hashMs": 0.85,
+          "betweenPreviousAckAndSendMs": 0.87,
+          "requestMs": 27.39,
+          "firstResponseByteMs": 27.3,
+          "ackGapMs": 28.28
+        },
+        {
+          "offset": 12582912,
+          "bodyBytes": 2097152,
+          "hashMs": 0.96,
+          "betweenPreviousAckAndSendMs": 0.97,
+          "requestMs": 27.4,
+          "firstResponseByteMs": 27.3,
+          "ackGapMs": 28.39
+        },
+        {
+          "offset": 14680064,
+          "bodyBytes": 2097152,
+          "hashMs": 0.94,
+          "betweenPreviousAckAndSendMs": 0.96,
+          "requestMs": 29.12,
+          "firstResponseByteMs": 29.02,
+          "ackGapMs": 30.11
+        },
+        {
+          "offset": 16777216,
+          "bodyBytes": 2097152,
+          "hashMs": 0.91,
+          "betweenPreviousAckAndSendMs": 0.93,
+          "requestMs": 25.31,
+          "firstResponseByteMs": 25.2,
+          "ackGapMs": 26.26
+        },
+        {
+          "offset": 18874368,
+          "bodyBytes": 2097152,
+          "hashMs": 1.38,
+          "betweenPreviousAckAndSendMs": 1.4,
+          "requestMs": 28.08,
+          "firstResponseByteMs": 27.99,
+          "ackGapMs": 29.49
+        },
+        {
+          "offset": 20971520,
+          "bodyBytes": 2097152,
+          "hashMs": 1.16,
+          "betweenPreviousAckAndSendMs": 1.18,
+          "requestMs": 23.4,
+          "firstResponseByteMs": 23.31,
+          "ackGapMs": 24.6
+        },
+        {
+          "offset": 23068672,
+          "bodyBytes": 2097152,
+          "hashMs": 1.11,
+          "betweenPreviousAckAndSendMs": 1.13,
+          "requestMs": 31.47,
+          "firstResponseByteMs": 31.38,
+          "ackGapMs": 32.62
+        },
+        {
+          "offset": 25165824,
+          "bodyBytes": 2097152,
+          "hashMs": 0.83,
+          "betweenPreviousAckAndSendMs": 0.85,
+          "requestMs": 27.23,
+          "firstResponseByteMs": 27.14,
+          "ackGapMs": 28.11
+        },
+        {
+          "offset": 27262976,
+          "bodyBytes": 2097152,
+          "hashMs": 0.87,
+          "betweenPreviousAckAndSendMs": 0.89,
+          "requestMs": 24.41,
+          "firstResponseByteMs": 24.31,
+          "ackGapMs": 25.32
+        },
+        {
+          "offset": 29360128,
+          "bodyBytes": 2097152,
+          "hashMs": 0.83,
+          "betweenPreviousAckAndSendMs": 0.84,
+          "requestMs": 24.85,
+          "firstResponseByteMs": 24.76,
+          "ackGapMs": 25.71
+        },
+        {
+          "offset": 31457280,
+          "bodyBytes": 2097152,
+          "hashMs": 0.87,
+          "betweenPreviousAckAndSendMs": 0.89,
+          "requestMs": 20.61,
+          "firstResponseByteMs": 20.48,
+          "ackGapMs": 21.52
+        },
+        {
+          "offset": 33554432,
+          "bodyBytes": 2097152,
+          "hashMs": 0.96,
+          "betweenPreviousAckAndSendMs": 0.97,
+          "requestMs": 25.18,
+          "firstResponseByteMs": 25.07,
+          "ackGapMs": 26.18
+        },
+        {
+          "offset": 35651584,
+          "bodyBytes": 2097152,
+          "hashMs": 0.95,
+          "betweenPreviousAckAndSendMs": 0.98,
+          "requestMs": 27.88,
+          "firstResponseByteMs": 27.78,
+          "ackGapMs": 28.89
+        },
+        {
+          "offset": 37748736,
+          "bodyBytes": 2097152,
+          "hashMs": 0.92,
+          "betweenPreviousAckAndSendMs": 0.93,
+          "requestMs": 27.97,
+          "firstResponseByteMs": 27.86,
+          "ackGapMs": 28.92
+        },
+        {
+          "offset": 39845888,
+          "bodyBytes": 2097152,
+          "hashMs": 1.21,
+          "betweenPreviousAckAndSendMs": 1.22,
+          "requestMs": 25.03,
+          "firstResponseByteMs": 24.93,
+          "ackGapMs": 26.3
+        },
+        {
+          "offset": 41943040,
+          "bodyBytes": 2097152,
+          "hashMs": 0.88,
+          "betweenPreviousAckAndSendMs": 0.88,
+          "requestMs": 28.15,
+          "firstResponseByteMs": 28,
+          "ackGapMs": 29.05
+        },
+        {
+          "offset": 44040192,
+          "bodyBytes": 2097152,
+          "hashMs": 0.97,
+          "betweenPreviousAckAndSendMs": 0.97,
+          "requestMs": 26.63,
+          "firstResponseByteMs": 26.53,
+          "ackGapMs": 27.61
+        },
+        {
+          "offset": 46137344,
+          "bodyBytes": 2097152,
+          "hashMs": 1,
+          "betweenPreviousAckAndSendMs": 1,
+          "requestMs": 27.59,
+          "firstResponseByteMs": 27.45,
+          "ackGapMs": 28.6
+        },
+        {
+          "offset": 48234496,
+          "bodyBytes": 2097152,
+          "hashMs": 1.05,
+          "betweenPreviousAckAndSendMs": 1.05,
+          "requestMs": 24.72,
+          "firstResponseByteMs": 24.63,
+          "ackGapMs": 25.78
+        },
+        {
+          "offset": 50331648,
+          "bodyBytes": 2097152,
+          "hashMs": 0.92,
+          "betweenPreviousAckAndSendMs": 0.92,
+          "requestMs": 26.32,
+          "firstResponseByteMs": 26.22,
+          "ackGapMs": 27.29
+        },
+        {
+          "offset": 52428800,
+          "bodyBytes": 2097152,
+          "hashMs": 0.92,
+          "betweenPreviousAckAndSendMs": 0.93,
+          "requestMs": 24.31,
+          "firstResponseByteMs": 24.19,
+          "ackGapMs": 25.25
+        },
+        {
+          "offset": 54525952,
+          "bodyBytes": 2097152,
+          "hashMs": 0.87,
+          "betweenPreviousAckAndSendMs": 0.88,
+          "requestMs": 25.04,
+          "firstResponseByteMs": 24.95,
+          "ackGapMs": 25.93
+        },
+        {
+          "offset": 56623104,
+          "bodyBytes": 2097152,
+          "hashMs": 0.87,
+          "betweenPreviousAckAndSendMs": 0.87,
+          "requestMs": 26.84,
+          "firstResponseByteMs": 26.72,
+          "ackGapMs": 27.72
+        },
+        {
+          "offset": 58720256,
+          "bodyBytes": 2097152,
+          "hashMs": 0.87,
+          "betweenPreviousAckAndSendMs": 0.87,
+          "requestMs": 25.11,
+          "firstResponseByteMs": 25.01,
+          "ackGapMs": 25.99
+        },
+        {
+          "offset": 60817408,
+          "bodyBytes": 2097152,
+          "hashMs": 0.85,
+          "betweenPreviousAckAndSendMs": 0.85,
+          "requestMs": 23.95,
+          "firstResponseByteMs": 23.87,
+          "ackGapMs": 24.81
+        }
+      ]
+    },
+    {
+      "profile": "Actual app.js in desktop chromium; not physical iOS/Android browser",
+      "browserVersion": "155.0.8059.84",
+      "fileBytes": 62914560,
+      "totalMs": 2913.42,
+      "uploadRequestSpanMs": 2609.6,
+      "readMs": 85.7,
+      "firstReadBytes": 2097152,
+      "firstPutBytes": 2097152,
+      "finalSha256Matches": true,
+      "pageErrors": [],
+      "puts": [
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 0,
+          "uploadEventMs": 63.8,
+          "requestMs": 73.8,
+          "ackGapMs": 73.8
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12,
+          "uploadEventMs": 62.5,
+          "requestMs": 72.2,
+          "ackGapMs": 84.2
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.9,
+          "uploadEventMs": 64.6,
+          "requestMs": 74.5,
+          "ackGapMs": 87.4
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.6,
+          "uploadEventMs": 64.3,
+          "requestMs": 74.6,
+          "ackGapMs": 87.2
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.4,
+          "uploadEventMs": 70.1,
+          "requestMs": 80.2,
+          "ackGapMs": 93.6
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.9,
+          "uploadEventMs": 69.7,
+          "requestMs": 80.8,
+          "ackGapMs": 93.7
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 14.4,
+          "uploadEventMs": 69.4,
+          "requestMs": 80.2,
+          "ackGapMs": 94.6
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.9,
+          "uploadEventMs": 67.4,
+          "requestMs": 77.2,
+          "ackGapMs": 90.1
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.8,
+          "uploadEventMs": 65.5,
+          "requestMs": 75.5,
+          "ackGapMs": 87.3
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.6,
+          "uploadEventMs": 65.1,
+          "requestMs": 75.1,
+          "ackGapMs": 87.7
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.8,
+          "uploadEventMs": 64.3,
+          "requestMs": 74.3,
+          "ackGapMs": 88.1
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.5,
+          "uploadEventMs": 70.3,
+          "requestMs": 80.7,
+          "ackGapMs": 93.2
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.5,
+          "uploadEventMs": 70.9,
+          "requestMs": 81.6,
+          "ackGapMs": 94.1
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.2,
+          "uploadEventMs": 61.8,
+          "requestMs": 71.8,
+          "ackGapMs": 84
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.8,
+          "uploadEventMs": 63.5,
+          "requestMs": 73.3,
+          "ackGapMs": 87.1
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.2,
+          "uploadEventMs": 62.5,
+          "requestMs": 72.5,
+          "ackGapMs": 83.7
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.5,
+          "uploadEventMs": 62.1,
+          "requestMs": 71.9,
+          "ackGapMs": 83.4
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.7,
+          "uploadEventMs": 62.6,
+          "requestMs": 72.4,
+          "ackGapMs": 84.1
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.6,
+          "uploadEventMs": 63.1,
+          "requestMs": 72.8,
+          "ackGapMs": 84.4
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.7,
+          "uploadEventMs": 63,
+          "requestMs": 73.1,
+          "ackGapMs": 84.8
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.5,
+          "uploadEventMs": 63.8,
+          "requestMs": 73.5,
+          "ackGapMs": 87
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.2,
+          "uploadEventMs": 63.5,
+          "requestMs": 73.3,
+          "ackGapMs": 86.5
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.7,
+          "uploadEventMs": 61.9,
+          "requestMs": 71.6,
+          "ackGapMs": 83.3
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.9,
+          "uploadEventMs": 62.8,
+          "requestMs": 72.6,
+          "ackGapMs": 85.5
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12,
+          "uploadEventMs": 63.2,
+          "requestMs": 73,
+          "ackGapMs": 85
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.8,
+          "uploadEventMs": 63.8,
+          "requestMs": 73.5,
+          "ackGapMs": 86.3
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 13.3,
+          "uploadEventMs": 63.3,
+          "requestMs": 73.2,
+          "ackGapMs": 86.5
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 11.7,
+          "uploadEventMs": 64.1,
+          "requestMs": 74,
+          "ackGapMs": 85.7
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 12.1,
+          "uploadEventMs": 63,
+          "requestMs": 72.8,
+          "ackGapMs": 84.9
+        },
+        {
+          "bodyBytes": 2097152,
+          "betweenPreviousAckAndSendMs": 14.1,
+          "uploadEventMs": 65.8,
+          "requestMs": 78.3,
+          "ackGapMs": 92.4
+        }
+      ]
+    }
+  ]
+}

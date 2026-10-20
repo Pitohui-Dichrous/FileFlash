@@ -34,6 +34,7 @@
       <div class="details-top"><strong id="server-name">连接详情</strong><button id="refresh-button" class="button quiet small" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg>重新连接</button></div>
       <p id="server-address" class="mono"></p>
       <p class="help">局域网 HTTP 未加密，请仅在可信网络使用。</p>
+      <button id="diagnostic-button" class="button quiet small" type="button" hidden>诊断</button>
       <button id="disconnect-button" class="button quiet danger" type="button" hidden>断开连接</button>
     </section>
     <div id="connection-error" class="notice warning" role="status" hidden></div>
@@ -73,7 +74,7 @@
       </section>
       <section id="panel-tasks" class="panel" aria-label="任务" hidden>
         <div class="section-heading task-heading"><h1>传输任务</h1><button id="clear-tasks" class="button quiet small" type="button">清除已结束</button></div>
-        <p id="foreground-note" class="notice" hidden>大文件传输时请保持此页面在前台。锁屏或切换应用可能中断上传；重新打开后可选择原文件继续。</p>
+        <p id="foreground-note" class="notice" hidden>大文件传输时请保持此页面在前台。锁屏或切换应用可能中断上传，失败后需重新发送。</p>
         <div id="task-list" class="list"></div>
       </section>
     </div>

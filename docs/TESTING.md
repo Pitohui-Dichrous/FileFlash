@@ -1,6 +1,6 @@
 # 复现测试
 
-本文对应 0.1.3。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 0.1.5-test.1 诊断预发布版；0.1.3 及以前的脚本保留作历史基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。实体 iPhone 的一次诊断操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)，本版不宣称已解决真实 iOS 上传问题。
 
 ## 工程检查
 
@@ -8,7 +8,7 @@
 .\gradlew.bat :core:test :app:assembleDebug :app:lintDebug
 ```
 
-核心测试会在本机临时目录运行真实 HTTP 服务，验证认证、分块、校验、重启恢复、取消、路径和长度参数、缓存清理及 4 GiB 以上偏移。
+核心测试会在本机临时目录运行真实 HTTP 服务，验证认证、分块、校验、重启恢复、取消、路径和长度参数、缓存清理及 4 GiB 以上偏移。本次 49 项通过，另覆盖有界内存诊断、合成探测、100 Continue、连续上传的长度与 EOF 清理、并行创建、取消、重启及保存保护；原生分块接口的鉴权和幂等检查保留。
 
 ## 桌面浏览器
 
@@ -22,7 +22,7 @@ node scripts/web-smoke.cjs
 
 默认使用 Playwright 安装的 Chromium；也可设置 `FILEFLASH_BROWSER_CHANNEL=chrome` 使用已经安装的 Chrome。设置 `FILEFLASH_BROWSER_ENGINE=webkit` 可运行桌面 WebKit。
 
-夹具还验证：完成历史在运行中和重新打开时最多 100 条、超过 7 天清理，105 个暂停任务仍保留；完成记录不再保留续传密钥，文件选择框不持有文件；过期断点明确提示从零重传；取消请求失败时仍可恢复或再次取消。
+当前夹具验证单次 File 请求、上传时不调用 Blob.arrayBuffer 或发送端 SHA、等待最终确认、失败清理、重新创建任务重传、取消、空文件、多文件队列、文字复制和诊断。历史版本的历史条数及期限专项证据保留在 `test-evidence/cache-browser.txt`，没有将其冒充本次重跑项目。
 
 `web-smoke.cjs` 是协议夹具测试，不能代替真实服务。实际服务测试先构建并在另一个终端启动：
 
@@ -41,9 +41,11 @@ $env:FILEFLASH_BROWSER_ENGINE='webkit'
 node scripts/web-live.cjs
 ```
 
-本地 ready 文件含临时配对凭据，不应公开。该测试通过桌面引擎实际上传、下载、校验和恢复文件，不能证明实体 iPhone 的相机扫码、系统文件选择、锁屏或后台行为。
+本地 ready 文件含临时配对凭据，不应公开。该测试通过桌面引擎实际上传、下载、比对内容并验证失败重传，不能证明实体 iPhone 的相机扫码、系统文件选择、锁屏或后台行为。
 
-0.1.2 的夹具另注入丢失确认、提交前断线、等待确认时的进度、校验失败、恢复期间暂停/取消，以及旧任务完整摘要与新选文件尾部不同的情况。`web-ios-live.cjs` 使用 iPhone 和 iPad 桌面模式的浏览器特征，验证 512 KiB 分块、边传边校验，以及旧版 2 MiB 断点继续上传；它仍是桌面引擎测试。
+0.1.2 的旧夹具曾注入丢失确认、提交前断线、等待确认时的进度、校验失败、恢复期间暂停/取消，以及旧任务完整摘要与新选文件尾部不同的情况。这些是历史分块方案的证据。
+
+0.1.5-test.1 网页改为 `restartOnly:true` 任务与单次 `POST /api/uploads/{id}/stream`，直接发送原 File；不预读或计算发送端摘要，不逐块确认，不保留断点。当前夹具和 `web-ios-live.cjs` 验证单次连续上传、错误后删除、人工重试从零、无暂停入口、诊断及有证据的人工重试通道切换；模拟浏览器特征仍不能证明真实 iOS 行为。
 
 ## 实际大文件
 
@@ -55,7 +57,11 @@ node scripts/integration-large.cjs
 
 默认通过 HTTP 上传并下载 4 GiB + 65539 字节，服务最大 Java 堆 128 MiB；包含强制终止进程、追加未提交尾部、重新配对及继续上传，最终校验完整长度和 SHA-256。成功时删除本次创建的数据目录，报告保存在 `.test-data/reports/large.json`；失败时保留数据供排查。`FILEFLASH_TEST_BYTES` 可设置较小的整数用于快速检查，但小文件运行不能作为 4 GiB 验证。
 
-`node scripts/hash-large.cjs` 单独检验网页增量 SHA-256 在 4 GiB 以上的正确性，与 Node.js 标准库比较，不需要存储完整文件。
+网页连续协议另运行 `node scripts/integration-browser-stream.cjs`：同样使用 128 MiB Java 堆，以单个 HTTP 请求流式发送 4 GiB + 65539 字节，并由另一会话下载及核对 Range、长度和内容摘要；还检查断线、取消与强制终止进程后的临时文件清理。结果写入 `docs/test-evidence/browser-stream-large.json`。它是本机 HTTP 协议验证，不代表浏览器、iOS 文件选择器或 Wi-Fi。
+
+`node scripts/hash-large.cjs` 保留检验增量 SHA-256 实现在 4 GiB 以上的正确性，与 Node.js 标准库比较，不需要存储完整文件；当前网页连续上传路径不在发送端计算该摘要。
+
+新版浏览器接口另用 `node scripts/integration-browser-stream.cjs`：默认经一次 HTTP POST 发送 4 GiB + 65539 字节，服务 Java 堆上限 128 MiB，源数据按 128 KiB 生成，不缓存整文件。验证接收端完整摘要、独立会话下载及 Range、断线/取消/强制终止后的临时数据删除；不恢复断点。结果写入 `docs/test-evidence/browser-stream-large.json`，小文件运行仍不能替代 4 GiB 验证。旧 `integration-large.cjs` 保留验证原生分块和续传协议。
 
 ## Android 模拟器
 
@@ -67,15 +73,15 @@ node scripts/integration-large.cjs
 
 `android-cache-smoke.py` 对专用可 root 的 API 34 模拟器执行缓存专项：需先安装带有合成测试数据的 0.1.0，再提供 `app/build/outputs/apk/release/app-release.apk`。脚本会覆盖升级、构造应用自己的中断保存状态、点击“清理 / 丢弃”、卸载并重装，结果写入 `docs/test-evidence/cache-android.json`。它会卸载测试应用，不能在个人手机上执行。
 
-`android-upload-smoke.py` 保留作 0.1.2 自动保存基线；0.1.3 改为手动保存后，请改用 `android-relay-smoke.py --version 0.1.3`。该脚本只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1`、指定模拟器序号并通过 `ro.kernel.qemu` 检查的专用 API 29 / 34 模拟器。它覆盖签名升级保留数据、B/C 独立会话、上传后没有下载目录副本、C 直接下载、重启恢复、停止共享后点保存、丢弃、手动清理以及启动自动过期清理；只修改本轮合成数据的时间，不删除已有用户保存文件。配对凭据仅写入私有 `.test-data/relay-android-api{N}-ready.json`。
+`android-upload-smoke.py` 保留作 0.1.2 自动保存基线；0.1.3 起改为手动保存，请使用 `android-relay-smoke.py --version 0.1.5-test.1` 并先构建对应 APK。该脚本只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1`、指定模拟器序号并通过 `ro.kernel.qemu` 检查的专用 API 29 / 34 模拟器。它覆盖签名升级保留数据、B/C 独立会话、上传后没有下载目录副本、C 直接下载、重启恢复、停止共享后点保存、丢弃、手动清理以及启动自动过期清理；只修改本轮合成数据的时间，不删除已有用户保存文件。配对凭据仅写入私有 `.test-data/relay-android-api{N}-ready.json`。
 
-接着运行 `node scripts/web-upload-regression.cjs .test-data/relay-android-api34-ready.json`：桌面 WebKit 模拟 iPhone UA/触控特征，B 向实际 APK 上传旧安装包，在六个空闲预连接存在时丢弃 2 MiB 位置下一块的确认，验证自动恢复及首次只读 512 KiB。C 使用另一个浏览器上下文配对，在 A 未点保存时直接下载，并核对完整字节与摘要。测试经本机 ADB 转发，不替代真实 iPhone 和局域网。
+0.1.3 曾使用 `web-upload-regression.cjs` 验证六个空闲预连接、分块丢确认恢复及 B/C 中转。0.1.5-test.1 的实际 APK 浏览器路径改由 `transfer-diagnostics.cjs` 等当前专项脚本记录，验证连续请求及诊断；具体执行参数与结果见交付证据。ADB 转发、模拟器 WebView、桌面浏览器均不替代真实 iPhone 和局域网。
 
 ## 仍需真实设备
 
 最终实际体验应使用 Android 手机及 iPhone Safari，在同一可信 Wi-Fi 验证扫码、双向文件、文字、系统保存、断网重试及权限拒绝。长时间后台和热点行为取决于系统与网络，不承诺无限后台持续运行。
 
-当前未完成实体 iPhone Safari 验证。桌面 WebKit 和 Android 模拟器通过不能替代该项。
+用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中仍失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。0.1.5-test.1 的实体 iPhone 验证尚未完成。桌面 WebKit 和 Android 模拟器通过不能替代该项；请先按 [一次诊断步骤](BROWSER_DIAGNOSTICS.md) 获取收发阶段证据，无须反复上传个人文件。
 
 ## 存储与卸载检查
 

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.1",
+  "engine": "webkit",
+  "browserVersion": "26.5",
+  "scope": "Desktop WebKit with simulated iPhone/iPad identification against actual Java core, not physical iOS networking or file pickers.",
+  "recordedAt": "2026-10-20T12:58:42.897Z",
+  "results": [
+    {
+      "identification": "iPhone iOS27 identification",
+      "fileBytes": 4194477,
+      "streamRequests": 1,
+      "requestMethod": "POST",
+      "browserFileReads": 0,
+      "bodies": [
+        {
+          "type": "[object File]",
+          "bytes": 4194477,
+          "overallTimeoutMs": 0
+        }
+      ],
+      "downloadByteEquality": true,
+      "passed": true
+    },
+    {
+      "identification": "iPad desktop identification",
+      "fileBytes": 4194477,
+      "streamRequests": 1,
+      "requestMethod": "POST",
+      "browserFileReads": 0,
+      "bodies": [
+        {
+          "type": "[object File]",
+          "bytes": 4194477,
+          "overallTimeoutMs": 0
+        }
+      ],
+      "downloadByteEquality": true,
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

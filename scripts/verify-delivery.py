@@ -34,19 +34,38 @@ large = json.loads((root / 'docs/test-evidence/large.json').read_text(encoding='
 assert large['passed'] and large['bytes'] > 4 * 1024 ** 3
 upload_checks = {}
 apk_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
-android_evidence = ['upload-android.json', 'upload-android-api29.json'] if version == '0.1.2' else ['relay-android-api34.json', 'relay-android-api29.json']
+diagnostic_release = version.startswith('0.1.5-test.')
+android_evidence = (['transport-upgrade-emulator-5554.json', 'transport-upgrade-emulator-5556.json'] if diagnostic_release else
+    ['upload-android.json', 'upload-android-api29.json'] if version == '0.1.2' else ['relay-android-api34.json', 'relay-android-api29.json'])
 for name in android_evidence:
     evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
     assert evidence['tests'] and all(item['passed'] for item in evidence['tests']), name
-    assert any(item.get('apkSha256') == apk_sha for item in evidence['tests']), name
+    if diagnostic_release:
+        assert evidence.get('serverApkSha256') == apk_sha and evidence.get('version') == version, name
+    else:
+        assert any(item.get('apkSha256') == apk_sha for item in evidence['tests']), name
     upload_checks[name] = len(evidence['tests'])
-actual_web_name = 'upload-webkit-android.json' if version == '0.1.2' else 'relay-webkit-android.json'
-for name in ['ios-upload-browser-chromium.json', 'ios-upload-browser-webkit.json', actual_web_name]:
+actual_web_name = 'transport-webview-api34.json' if diagnostic_release else 'upload-webkit-android.json' if version == '0.1.2' else 'relay-webkit-android.json'
+browser_evidence = (['stream-browser-chromium.json', 'stream-browser-webkit.json'] if diagnostic_release else
+    ['ios-upload-browser-chromium.json', 'ios-upload-browser-webkit.json'])
+if diagnostic_release:
+    browser_evidence += ['stream-live-chromium.json', 'stream-live-webkit.json', 'stream-ios-live-webkit.json', 'stream-relay-webkit-android.json']
+for name in browser_evidence + [actual_web_name]:
     evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
     assert evidence['passed'], name
     upload_checks[name] = True
 actual_web = json.loads((root / 'docs/test-evidence' / actual_web_name).read_text(encoding='utf-8'))
 assert actual_web['serverApkSha256'] == apk_sha
+if diagnostic_release:
+    assert actual_web['version'] == version and actual_web['fileBytes'] == 60 * 1024 ** 2
+    native = json.loads((root / 'docs/test-evidence/transport-native-api34.json').read_text(encoding='utf-8'))
+    assert native['passed'] and native['version'] == version and native['serverApkSha256'] == apk_sha
+    upload_checks['transport-native-api34.json'] = True
+    stream = json.loads((root / 'docs/test-evidence/browser-stream-large.json').read_text(encoding='utf-8'))
+    assert stream['passed'] and stream['bytes'] > 4 * 1024 ** 3
+    upload_checks['browser-stream-large.json'] = True
+    relay_web = json.loads((root / 'docs/test-evidence/stream-relay-webkit-android.json').read_text(encoding='utf-8'))
+    assert relay_web['serverApkSha256'] == apk_sha and relay_web['version'] == version
 report = {
     'version': version,
     'apkZipCrc': True,
@@ -60,6 +79,7 @@ report = {
     'currentUploadChecks': upload_checks,
     'minimumAndroidApi': 29,
     'realHttpLargeFileBytes': large['bytes'],
+    **({'browserSingleRequestBytes': stream['bytes'], 'physicalIPhoneVerified': False} if diagnostic_release else {}),
     'artifacts': [{'name': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in [apk, source]],
 }
 (root / 'dist/verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')

@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "environment": "Dedicated emulator, not a personal phone",
+  "api": 34,
+  "previousVersion": {
+    "name": "0.1.3",
+    "code": 5
+  },
+  "installedVersion": {
+    "name": "0.1.4",
+    "code": 6
+  },
+  "serverApkSha256": "37bb873ebecc10dd5bca394bce075973d6f2aa891453b0e79f3b85d132a9dc3a",
+  "savedFilesRetained": 8,
+  "savedBytesUnchanged": true,
+  "uninstalled": false
+}

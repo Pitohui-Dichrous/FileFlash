@@ -1,0 +1,289 @@
+{
+  "passed": true,
+  "scope": "Actual Android HttpURLConnection and SHA-256 in a separate dedicated-emulator test app, same-emulator loopback to signed FileFlash; not personal phones, Wi-Fi or production NativeClient UI.",
+  "fileBytes": 62914560,
+  "sha256": "783695af90d3cb759fe1059408ba478df64e5150129dd4136de91d79fe2b5e8c",
+  "uploadMs": 1473.4733819999965,
+  "completeMs": 44.48636499996064,
+  "totalMs": 1519.187287000008,
+  "readMs": 14.18379500019364,
+  "chunkHashMs": 96.20397700014291,
+  "puts": [
+    {
+      "offset": 0,
+      "bodyBytes": 2097152,
+      "readMs": 1.1496090000146069,
+      "chunkHashMs": 4.545708000019658,
+      "betweenPreviousAckAndSendMs": 6.0282700000097975,
+      "requestMs": 24.286009999981616,
+      "ackGapMs": 30.314279999991413
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "readMs": 0.24849900003755465,
+      "chunkHashMs": 2.337760000023991,
+      "betweenPreviousAckAndSendMs": 3.7465030000312254,
+      "requestMs": 76.13925199996447,
+      "ackGapMs": 79.8857549999957
+    },
+    {
+      "offset": 4194304,
+      "bodyBytes": 2097152,
+      "readMs": 0.5187819999991916,
+      "chunkHashMs": 2.825023000012152,
+      "betweenPreviousAckAndSendMs": 5.388799000007566,
+      "requestMs": 45.426307999994606,
+      "ackGapMs": 50.81510700000217
+    },
+    {
+      "offset": 6291456,
+      "bodyBytes": 2097152,
+      "readMs": 1.0760429999791086,
+      "chunkHashMs": 5.127281999972183,
+      "betweenPreviousAckAndSendMs": 8.629352000018116,
+      "requestMs": 46.78928999998607,
+      "ackGapMs": 55.41864200000418
+    },
+    {
+      "offset": 8388608,
+      "bodyBytes": 2097152,
+      "readMs": 0.29967899998882785,
+      "chunkHashMs": 4.338147000002209,
+      "betweenPreviousAckAndSendMs": 5.81823199999053,
+      "requestMs": 72.24258600000758,
+      "ackGapMs": 78.06081799999811
+    },
+    {
+      "offset": 10485760,
+      "bodyBytes": 2097152,
+      "readMs": 0.3664800000260584,
+      "chunkHashMs": 2.5502160000032745,
+      "betweenPreviousAckAndSendMs": 4.306847000028938,
+      "requestMs": 85.02285899996059,
+      "ackGapMs": 89.32970599998953
+    },
+    {
+      "offset": 12582912,
+      "bodyBytes": 2097152,
+      "readMs": 0.34687800001120195,
+      "chunkHashMs": 8.034012000018265,
+      "betweenPreviousAckAndSendMs": 9.559066000045277,
+      "requestMs": 73.63933299999917,
+      "ackGapMs": 83.19839900004445
+    },
+    {
+      "offset": 14680064,
+      "bodyBytes": 2097152,
+      "readMs": 0.482927999983076,
+      "chunkHashMs": 5.390041999984533,
+      "betweenPreviousAckAndSendMs": 7.4533769999979995,
+      "requestMs": 42.32024699996691,
+      "ackGapMs": 49.77362399996491
+    },
+    {
+      "offset": 16777216,
+      "bodyBytes": 2097152,
+      "readMs": 0.4928199999849312,
+      "chunkHashMs": 5.206494000041857,
+      "betweenPreviousAckAndSendMs": 7.103241000033449,
+      "requestMs": 45.424421999952756,
+      "ackGapMs": 52.527662999986205
+    },
+    {
+      "offset": 18874368,
+      "bodyBytes": 2097152,
+      "readMs": 0.8061679999809712,
+      "chunkHashMs": 3.9543439999688417,
+      "betweenPreviousAckAndSendMs": 8.029901000030804,
+      "requestMs": 30.579748999967705,
+      "ackGapMs": 38.60964999999851
+    },
+    {
+      "offset": 20971520,
+      "bodyBytes": 2097152,
+      "readMs": 0.5429190000286326,
+      "chunkHashMs": 4.113522999978159,
+      "betweenPreviousAckAndSendMs": 6.101986000023317,
+      "requestMs": 80.17966399999568,
+      "ackGapMs": 86.281650000019
+    },
+    {
+      "offset": 23068672,
+      "bodyBytes": 2097152,
+      "readMs": 0.5972140000085346,
+      "chunkHashMs": 2.4986059999791905,
+      "betweenPreviousAckAndSendMs": 4.239784000033978,
+      "requestMs": 67.44509499997366,
+      "ackGapMs": 71.68487900000764
+    },
+    {
+      "offset": 25165824,
+      "bodyBytes": 2097152,
+      "readMs": 0.42151100002229214,
+      "chunkHashMs": 2.7189150000340305,
+      "betweenPreviousAckAndSendMs": 4.6063759999815375,
+      "requestMs": 77.69897600001423,
+      "ackGapMs": 82.30535199999576
+    },
+    {
+      "offset": 27262976,
+      "bodyBytes": 2097152,
+      "readMs": 0.4213910000398755,
+      "chunkHashMs": 3.2943400000222027,
+      "betweenPreviousAckAndSendMs": 4.920874000003096,
+      "requestMs": 36.233528000011574,
+      "ackGapMs": 41.15440200001467
+    },
+    {
+      "offset": 29360128,
+      "bodyBytes": 2097152,
+      "readMs": 0.30448400002205744,
+      "chunkHashMs": 2.4744080000091344,
+      "betweenPreviousAckAndSendMs": 3.8564369999803603,
+      "requestMs": 17.577463000023272,
+      "ackGapMs": 21.433900000003632
+    },
+    {
+      "offset": 31457280,
+      "bodyBytes": 2097152,
+      "readMs": 0.386289999994915,
+      "chunkHashMs": 2.1256500000017695,
+      "betweenPreviousAckAndSendMs": 3.685993999999482,
+      "requestMs": 17.07815600000322,
+      "ackGapMs": 20.7641500000027
+    },
+    {
+      "offset": 33554432,
+      "bodyBytes": 2097152,
+      "readMs": 0.42076300003100187,
+      "chunkHashMs": 2.5201530000194907,
+      "betweenPreviousAckAndSendMs": 3.946317999972962,
+      "requestMs": 21.87077199999476,
+      "ackGapMs": 25.81708999996772
+    },
+    {
+      "offset": 35651584,
+      "bodyBytes": 2097152,
+      "readMs": 0.41200900002149865,
+      "chunkHashMs": 2.633105000015348,
+      "betweenPreviousAckAndSendMs": 4.1055279999854974,
+      "requestMs": 18.93607300001895,
+      "ackGapMs": 23.041601000004448
+    },
+    {
+      "offset": 37748736,
+      "bodyBytes": 2097152,
+      "readMs": 0.3623739999602549,
+      "chunkHashMs": 2.388263000000734,
+      "betweenPreviousAckAndSendMs": 3.7574570000288077,
+      "requestMs": 35.27037199999904,
+      "ackGapMs": 39.02782900002785
+    },
+    {
+      "offset": 39845888,
+      "bodyBytes": 2097152,
+      "readMs": 0.4965100000263192,
+      "chunkHashMs": 2.776772000011988,
+      "betweenPreviousAckAndSendMs": 4.605695999984164,
+      "requestMs": 22.696979000000283,
+      "ackGapMs": 27.302674999984447
+    },
+    {
+      "offset": 41943040,
+      "bodyBytes": 2097152,
+      "readMs": 0.3995720000239089,
+      "chunkHashMs": 2.202581999998074,
+      "betweenPreviousAckAndSendMs": 3.806001999997534,
+      "requestMs": 24.256036999984644,
+      "ackGapMs": 28.062038999982178
+    },
+    {
+      "offset": 44040192,
+      "bodyBytes": 2097152,
+      "readMs": 0.32752399996388704,
+      "chunkHashMs": 2.432211000006646,
+      "betweenPreviousAckAndSendMs": 4.265605000022333,
+      "requestMs": 71.04673599998932,
+      "ackGapMs": 75.31234100001166
+    },
+    {
+      "offset": 46137344,
+      "bodyBytes": 2097152,
+      "readMs": 0.4758029999793507,
+      "chunkHashMs": 2.1686000000336207,
+      "betweenPreviousAckAndSendMs": 3.6965320000308566,
+      "requestMs": 24.9734939999762,
+      "ackGapMs": 28.670026000007056
+    },
+    {
+      "offset": 48234496,
+      "bodyBytes": 2097152,
+      "readMs": 0.40026000002399087,
+      "chunkHashMs": 2.1482880000257865,
+      "betweenPreviousAckAndSendMs": 3.957927000010386,
+      "requestMs": 26.79073199996492,
+      "ackGapMs": 30.748658999975305
+    },
+    {
+      "offset": 50331648,
+      "bodyBytes": 2097152,
+      "readMs": 0.684069000009913,
+      "chunkHashMs": 2.547867000044789,
+      "betweenPreviousAckAndSendMs": 4.38150499999756,
+      "requestMs": 26.50855800003046,
+      "ackGapMs": 30.89006300002802
+    },
+    {
+      "offset": 52428800,
+      "bodyBytes": 2097152,
+      "readMs": 0.3272839999990538,
+      "chunkHashMs": 2.335168999969028,
+      "betweenPreviousAckAndSendMs": 3.7162590000079945,
+      "requestMs": 36.48579999996582,
+      "ackGapMs": 40.202058999973815
+    },
+    {
+      "offset": 54525952,
+      "bodyBytes": 2097152,
+      "readMs": 0.3175650000339374,
+      "chunkHashMs": 2.958660999953281,
+      "betweenPreviousAckAndSendMs": 4.3380250000045635,
+      "requestMs": 40.32889200001955,
+      "ackGapMs": 44.666917000024114
+    },
+    {
+      "offset": 56623104,
+      "bodyBytes": 2097152,
+      "readMs": 0.28590499999700114,
+      "chunkHashMs": 2.5015520000015385,
+      "betweenPreviousAckAndSendMs": 3.8049749999772757,
+      "requestMs": 50.932238000037614,
+      "ackGapMs": 54.73721300001489
+    },
+    {
+      "offset": 58720256,
+      "bodyBytes": 2097152,
+      "readMs": 0.4153059999807738,
+      "chunkHashMs": 2.58978899999056,
+      "betweenPreviousAckAndSendMs": 4.067910999991,
+      "requestMs": 47.29332699999213,
+      "ackGapMs": 51.36123799998313
+    },
+    {
+      "offset": 60817408,
+      "bodyBytes": 2097152,
+      "readMs": 0.3971560000209138,
+      "chunkHashMs": 2.4664950000005774,
+      "betweenPreviousAckAndSendMs": 3.8877140000113286,
+      "requestMs": 37.165477000002284,
+      "ackGapMs": 41.05319100001361
+    }
+  ],
+  "version": "0.1.4",
+  "serverVersion": "0.1.4",
+  "serverApkSha256": "37bb873ebecc10dd5bca394bce075973d6f2aa891453b0e79f3b85d132a9dc3a",
+  "api": 34,
+  "terminalResponseIncluded": true,
+  "transferToCompletionMs": 1519.187287000008
+}

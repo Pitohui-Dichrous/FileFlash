@@ -1,6 +1,21 @@
 # 验证结果与兼容性
 
-验证日期：2026-10-21。交付版本：0.1.3。下文保留旧版基线，并单独标明本次重跑范围。
+验证日期：2026-10-21。交付版本：0.1.5-test.1 预发布版。下文保留旧版基线，并单独标明本次重跑范围。
+
+## 0.1.5-test.1 网页连续上传
+
+根据用户允许失败后重传的使用方式，网页改为一个 File POST 连续发送，不再预先校验原文件、逐块确认或保存断点。失败和取消会删除本轮临时数据，重试创建新任务从零开始；异常终止后在服务恢复时删除未完成连续上传。原生 Android 客户端保留原有分块、完整校验及续传协议。
+
+- **49 项核心测试通过，Release 构建及 Android lint 无错误**。覆盖长度不符、缺失长度、部分正文 EOF、取消、停止、崩溃恢复、并行创建与状态查询，以及不误删活动下载或明确保存的文件。最低 Android 10 / API 29、同一项目签名、版本代码 7。
+- 最终同一 APK 在 API 29、API 34 专用模拟器覆盖升级，各 8 项检查通过；原有公共下载文件、保存账本及 MediaStore 行保持一致。另验证认证诊断、合成探测、单次 10 MiB 连续上传与丢弃，以及原生 2 MiB 分块和幂等重发。见 `test-evidence/transport-upgrade-emulator-5554.json`、`transport-upgrade-emulator-5556.json`。
+- 桌面 Chrome 和 WebKit 的连续上传夹具各通过 12 组检查：实际请求体为 File，发送不调用 Blob.arrayBuffer 或发送端 SHA；覆盖最终确认、丢失确认后清理、新任务重传、取消、空文件、队列、文字与诊断。见 `test-evidence/stream-browser-chromium.json`、`stream-browser-webkit.json`。
+- 两种桌面引擎的真实 Java 服务上传、失败重传、临时中转下载与诊断通过，WebKit 的 iPhone / iPad 特征识别也通过。桌面 WebKit 另向最终签名 APK 单次上传 21,750,204 字节文件，六个空闲连接并存、JavaScript 文件读取次数为 0，独立 C 页面可在 A 未保存时下载且内容一致。见 `test-evidence/stream-desktop-live.txt`、`stream-relay-webkit-android.json`；这仍不是实体 iOS。
+- **实际 Android 14 WebView 单轮控制测试**：同一模拟器内，60 MiB 合成文件由 0.1.4 的 30 个分块请求、含最终确认 3,599.8 ms，变为本版 1 个 File POST、1,024.7 ms。当前上传主线程 SHA 调用为 0；服务器边收边算接收摘要约 37.9 ms，末尾数据同步约 163.7 ms。Android Java HttpURLConnection 原分块路径仍通过，30 块加最终确认约 1,279.3 ms。见 `test-evidence/transport-webview-api34*.json`、`transport-native-api34*.json`。这是本机模拟器回环及合成可定位文件提供器，不能推出实体 Wi-Fi 的耗时，也没有复现用户的 30 秒。
+- 新网页协议通过真实 HTTP 单请求发送 **4,295,032,835 字节**，Java 堆上限 128 MiB，源缓冲 128 KiB。服务器摘要、独立 C 会话完整下载摘要和源摘要一致，超过 4 GiB 的 Range 正确；断线、取消和真正强制结束后的残留清理通过。见 `test-evidence/browser-stream-large.json`。该项是 JVM 协议验证，没有冒充真实浏览器或手机测试。
+- 原生协议的 4 GiB 上传、强制重启续传、前缀摘要、Range 与完整下载也重新通过，76 秒，使用 1 次有界分块重试。见 `test-evidence/large.json`。
+- 源码 ZIP 在全新目录、不含签名文件及本地工程配置的情况下，使用公开依赖缓存离线构建 Debug APK 并通过全部 49 项核心测试。见 `test-evidence/browser-clean-build.txt`。
+
+用户确认 iPhone 17 Pro / iOS 27 在 ROG 9 Pro、红魔 9 Pro 服务端均可复现旧版问题。**本版尚未经该实体 iPhone 验证，不能宣称已修复 iOS**。网页现在可复制前后端阶段诊断，合成探测不落盘；具体操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)。诊断报告无文件名、配对或会话凭据、IP、完整 User-Agent 及正文。
 
 ## 0.1.3 临时中转与手动保存
 
@@ -73,11 +88,11 @@
 最终一次运行摘要：
 
 ```text
-SHA-256: 19976311dc8093fcfb7f36eae809f23eb98a46158cd5808e9c09cfb787bcb954
+SHA-256: e3111d957c1dc03414015b5a64fad5b9277998e503a014604f489efb885ca6cd
 Range 起点: 4295032771
-实际运行: 73 秒
+实际运行: 76 秒
 环境: Windows JVM / 实际 HTTP
-连接失败重试: 0 次
+连接失败重试: 1 次
 ```
 
 该结果证明当前内核可以处理超过 4 GiB 的数据与偏移，不代表任何手机、存储设备或 Wi-Fi 都能达到相同速度。
@@ -86,7 +101,7 @@ Range 起点: 4295032771
 
 ## 真实设备仍未验证
 
-- iPhone / iOS 26 Safari：相机扫码、系统文件选择器、下载保存、锁屏、切换应用后的行为。
+- iPhone 17 Pro / iOS 27：本版上传、系统文件选择器、下载保存、锁屏、切换应用后的行为。
 - Android 17 的局域网权限弹窗、拒绝与恢复：已按官方规则实现并编译，尚未在 API 37 实机运行。
 - 两台实体 Android、Android 与 iPhone 在真实 Wi-Fi 上的双向传输。
 - 无互联网的实体 Wi-Fi、手机热点、访客网络、极端省电、长时间锁屏、大文件在手机存储不足时的系统行为。

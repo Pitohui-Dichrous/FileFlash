@@ -17,7 +17,9 @@ final class HttpServer {
     static final long HEADER_TIMEOUT_MS = 5_000;
     static final int BODY_TIMEOUT_MS = 120_000;
     private final Handler handler;
+    private final TransportDiagnostics diagnostics=new TransportDiagnostics();
     private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
+    private volatile int pendingHeaders;
     private ServerSocketChannel listener;
     private Selector readiness;
     private Thread acceptor;
@@ -72,10 +74,10 @@ final class HttpServer {
                         SocketChannel channel;
                         while((channel=listening.accept())!=null) {
                             try {
-                                if(!running||pending.size()>=MAX_PENDING_HEADERS||sockets.size()>=MAX_OPEN_CONNECTIONS) {channel.close();continue;}
+                                if(!running||pending.size()>=MAX_PENDING_HEADERS||sockets.size()>=MAX_OPEN_CONNECTIONS) {diagnostics.increment("connection-limit");channel.close();continue;}
                                 Socket socket=channel.socket();socket.setTcpNoDelay(true);sockets.add(socket);
                                 channel.configureBlocking(false);
-                                PendingHeader header=new PendingHeader(channel);pending.put(channel,header);
+                                PendingHeader header=new PendingHeader(channel,diagnostics.accepted());pending.put(channel,header);pendingHeaders=pending.size();
                                 channel.register(selector,SelectionKey.OP_READ,header);
                             } catch(IOException|ClosedSelectorException e) {pending.remove(channel);close(channel);}
                         }
@@ -84,13 +86,16 @@ final class HttpServer {
                         try {
                             int count=header.channel.read(header.bytes);
                             if(count<0) {
-                                if(header.bytes.position()==0) {key.cancel();pending.remove(header.channel);close(header.channel);continue;}
+                                if(header.bytes.position()==0) {header.trace.mark("idle-eof");header.trace.closed=true;key.cancel();pending.remove(header.channel);close(header.channel);continue;}
                                 header.error=new HttpError(400,"unexpected_eof","请求不完整");
                             } else if(count==0)continue;
                             if(header.error!=null||header.scan()) {
+                                header.trace.headerBytes=header.scanned;
+                                header.trace.prefetchedBytes=Math.max(0,header.bytes.position()-header.scanned);
+                                header.trace.mark("headers-ready");
                                 key.cancel();pending.remove(header.channel);ready.add(header);
                             }
-                        } catch(IOException e) {key.cancel();pending.remove(header.channel);close(header.channel);}
+                        } catch(IOException e) {header.trace.error(e);header.trace.closed=true;key.cancel();pending.remove(header.channel);close(header.channel);}
                     }
                 }
                 now=System.nanoTime();
@@ -98,6 +103,7 @@ final class HttpServer {
                 while(waiting.hasNext()) {
                     PendingHeader header=waiting.next();
                     if(TimeUnit.NANOSECONDS.toMillis(now-header.startedAt)>=HEADER_TIMEOUT_MS) {
+                        diagnostics.increment("header-timeout");header.trace.mark("header-timeout");header.trace.closed=true;
                         SelectionKey key=header.channel.keyFor(selector);if(key!=null)key.cancel();waiting.remove();close(header.channel);
                     }
                 }
@@ -110,15 +116,18 @@ final class HttpServer {
                             Socket socket=header.channel.socket();socket.setSoTimeout(BODY_TIMEOUT_MS);
                             byte[] prefix=Arrays.copyOf(header.bytes.array(),header.bytes.position());
                             HttpError error=header.error;
-                            pool.execute(() -> serve(socket,prefix,error));
-                        } catch(IOException|RejectedExecutionException e) {close(header.channel);}
+                            header.trace.mark("worker-queued");
+                            pool.execute(() -> serve(socket,prefix,error,header.trace));
+                        } catch(IOException|RejectedExecutionException e) {diagnostics.increment("dispatch-error");header.trace.error(e);header.trace.closed=true;close(header.channel);}
                     }
                 }
+                pendingHeaders=pending.size();
             }
         } catch(IOException|ClosedSelectorException ignored) {
             // Stopping the host closes both listener and selector to wake this thread.
         } finally {
-            for(PendingHeader header:pending.values())close(header.channel);
+            for(PendingHeader header:pending.values()){header.trace.mark("host-stopped");header.trace.closed=true;close(header.channel);}
+            pendingHeaders=0;
         }
     }
 
@@ -129,11 +138,12 @@ final class HttpServer {
     /** Idle/preconnecting and fragmented-header sockets never occupy a transfer worker. */
     private static final class PendingHeader {
         final SocketChannel channel;
+        final TransportDiagnostics.Trace trace;
         final ByteBuffer bytes=ByteBuffer.allocate(MAX_HEADER_BYTES);
         final long startedAt=System.nanoTime();
         int scanned,previous=-1,ending;
         HttpError error;
-        PendingHeader(SocketChannel channel) {this.channel=channel;}
+        PendingHeader(SocketChannel channel,TransportDiagnostics.Trace trace) {this.channel=channel;this.trace=trace;}
         boolean scan() {
             while(scanned<bytes.position()) {
                 int next=bytes.get(scanned++)&255;
@@ -150,11 +160,12 @@ final class HttpServer {
         }
     }
 
-    private void serve(Socket socket,byte[] prefix,HttpError headerError) {
+    private void serve(Socket socket,byte[] prefix,HttpError headerError,TransportDiagnostics.Trace trace) {
         Response response = null;
         Request request = null;
         try {
-            response = new Response(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024));
+            trace.mark("worker-started");
+            response = new Response(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024),trace);
             if(headerError!=null)throw headerError;
             // Never close the socket on input EOF, or combine a short prefetched header read with
             // a blocking network read before the parser has seen those already available bytes.
@@ -169,22 +180,29 @@ final class HttpServer {
                 }
                 @Override public int available() throws IOException {return prefix.length-position+network.available();}
             };
-            request = parse(new BufferedInputStream(input, 32 * 1024), socket);
+            request = parse(new BufferedInputStream(input, 32 * 1024), socket,trace);
+            request.response=response;
+            trace.mark("handler-started");
             handler.handle(request, response);
+            trace.mark("handler-complete");
         } catch (HttpError e) {
+            trace.error(e);
             if (response != null && !response.started) try { response.error(e.status, e.code, e.getMessage()); } catch (IOException ignored) { }
         } catch (SocketTimeoutException e) {
+            diagnostics.increment("body-timeout");trace.error(e);
             if (response != null && !response.started) try { response.error(408, "timeout", "连接超时，请重试"); } catch (IOException ignored) { }
         } catch (Exception e) {
+            trace.error(e);
             if (response != null && !response.started) try { response.error(500, "internal_error", "操作失败，请重试或检查剩余存储空间"); } catch (IOException ignored) { }
         } finally {
-            if (response != null) try { response.flush(); } catch (IOException ignored) { }
+            if (response != null) try { response.flush(); } catch (IOException e) {trace.error(e);}
             // Send FIN after the response before closing an early-rejected request. Closing with
             // unread body bytes immediately can reset TCP and hide an otherwise valid 409/4xx.
             try {socket.shutdownOutput();}catch(IOException ignored){ }
             drainRejectedBody(request,socket);
             try { socket.close(); } catch (IOException ignored) { }
             sockets.remove(socket);
+            trace.closed=true;trace.mark("closed");
         }
     }
 
@@ -212,7 +230,15 @@ final class HttpServer {
         if (workers != null) try { workers.awaitTermination(5, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 
-    private static Request parse(InputStream in, Socket socket) throws IOException {
+    com.google.gson.JsonObject diagnostics() {
+        com.google.gson.JsonObject result=diagnostics.snapshot();
+        result.addProperty("openConnections",sockets.size());result.addProperty("pendingHeaders",pendingHeaders);
+        ThreadPoolExecutor pool=workers;
+        result.addProperty("workersActive",pool==null?0:pool.getActiveCount());result.addProperty("workersQueued",pool==null?0:pool.getQueue().size());
+        return result;
+    }
+
+    private static Request parse(InputStream in, Socket socket,TransportDiagnostics.Trace trace) throws IOException {
         int[] budget = {MAX_HEADER_BYTES};
         String line = readLine(in, budget);
         String[] start = line.split(" ", -1);
@@ -232,21 +258,22 @@ final class HttpServer {
             if (headers.put(key, value) != null)
                 throw new HttpError(400, "duplicate_header", "不允许重复请求头");
         }
+        int query = start[1].indexOf('?');
+        String path = query < 0 ? start[1] : start[1].substring(0, query);
+        trace.headers(start[0],path,headers);
         if (!headers.containsKey("host") || headers.get("host").isEmpty())
             throw new HttpError(400, "missing_host", "缺少 Host");
         if (headers.containsKey("transfer-encoding"))
             throw new HttpError(400, "unsupported_encoding", "请使用明确的 Content-Length");
-        if (headers.containsKey("expect")) throw new HttpError(417, "expectation_failed", "不支持 Expect 请求头");
+        if (headers.containsKey("expect")&&!headers.get("expect").equalsIgnoreCase("100-continue")) throw new HttpError(417, "expectation_failed", "不支持此 Expect 请求头");
         String length = headers.getOrDefault("content-length", "0");
         if (!length.matches("[0-9]{1,19}")) throw new HttpError(400, "bad_length", "无效的请求长度");
         long size;
         try { size = Long.parseLong(length); } catch (NumberFormatException e) { throw new HttpError(400, "bad_length", "请求长度超出范围"); }
-        int query = start[1].indexOf('?');
-        String path = query < 0 ? start[1] : start[1].substring(0, query);
         // Routing identifiers contain no escapes. Never decode a path into a filesystem path.
         if (path.contains("%") || path.contains("\\") || path.contains("..") || path.contains("\0"))
             throw new HttpError(400, "bad_path", "无效的请求路径");
-        return new Request(start[0], path, headers, size, in, socket);
+        return new Request(start[0], path, headers, size, in, socket,trace);
     }
 
     private static String readLine(InputStream in, int[] budget) throws IOException {
@@ -273,31 +300,61 @@ final class HttpServer {
         final long length;
         final InputStream body;
         final Socket socket;
+        final TransportDiagnostics.Trace trace;
+        Response response;
+        boolean continued;
         long consumed;
-        Request(String method, String path, Map<String,String> headers, long length, InputStream body, Socket socket) {
-            this.method=method; this.path=path; this.headers=headers; this.length=length; this.body=body; this.socket=socket;
+        Request(String method, String path, Map<String,String> headers, long length, InputStream body, Socket socket,TransportDiagnostics.Trace trace) {
+            this.method=method; this.path=path; this.headers=headers; this.length=length; this.body=body; this.socket=socket;this.trace=trace;
         }
         String header(String name) { return headers.get(name.toLowerCase(Locale.ROOT)); }
+        void beginStreamBody() throws IOException {
+            if(length>0&&!continued&&"100-continue".equalsIgnoreCase(header("expect"))) {continued=true;response.continueRequest();}
+            trace.mark("body-reading");
+        }
+        int readStreamBody(byte[] buffer) throws IOException {
+            if(consumed==length)return -1;
+            long started=System.nanoTime();
+            try {
+                int count=body.read(buffer,0,(int)Math.min(buffer.length,length-consumed));
+                if(count<0)throw new HttpError(400,"incomplete_body","传输中断，请重新上传");
+                if(count>0){consumed+=count;trace.received(count);if(consumed==length)trace.mark("body-complete");}
+                return count;
+            } finally {trace.addDuration("bodyRead",started);}
+        }
         byte[] readBody(int maximum) throws IOException {
             if (length > maximum) throw new HttpError(413, "body_too_large", "请求内容过大");
+            if(length>0&&!continued&&"100-continue".equalsIgnoreCase(header("expect"))) {
+                continued=true;response.continueRequest();
+            }
             byte[] data = new byte[(int) length];
             int offset=0;
+            long started=System.nanoTime();trace.mark("body-reading");
+            try {
             while (offset < data.length) {
                 int count = body.read(data, offset, data.length-offset);
                 if (count < 0) throw new HttpError(400, "incomplete_body", "传输中断，请重试");
-                offset += count;consumed+=count;
+                if(count==0)continue;
+                offset += count;consumed+=count;trace.received(count);
             }
+            trace.mark("body-complete");
             return data;
+            } finally {trace.duration("bodyRead",started);}
         }
     }
 
     static final class Response {
         private final OutputStream out;
+        final TransportDiagnostics.Trace trace;
         boolean started;
-        Response(OutputStream out) { this.out=out; }
+        Response(OutputStream out,TransportDiagnostics.Trace trace) { this.out=out;this.trace=trace; }
+        void continueRequest() throws IOException {
+            out.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.ISO_8859_1));out.flush();trace.mark("continue-flushed");
+        }
         void begin(int status, String mime, long length, Map<String,String> extra) throws IOException {
             if (started) throw new IOException("Response already started");
             started=true;
+            trace.status=status;trace.mark("response-started");
             StringBuilder h = new StringBuilder("HTTP/1.1 ").append(status).append(' ').append(reason(status)).append("\r\n");
             h.append("Content-Length: ").append(length).append("\r\nContent-Type: ").append(mime)
              .append("\r\nConnection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n")
@@ -307,15 +364,16 @@ final class HttpServer {
             out.write(h.toString().getBytes(StandardCharsets.ISO_8859_1));
         }
         void bytes(int status, String mime, byte[] body, Map<String,String> headers) throws IOException {
-            begin(status,mime,body.length,headers); out.write(body); out.flush();
+            begin(status,mime,body.length,headers); out.write(body); flush();
         }
         void json(int status, String json) throws IOException { bytes(status,"application/json; charset=utf-8",json.getBytes(StandardCharsets.UTF_8),null); }
         void error(int status,String code,String message) throws IOException {
+            trace.errorCode=code;
             com.google.gson.JsonObject error = new com.google.gson.JsonObject();
             error.addProperty("error",message); error.addProperty("code",code); json(status,error.toString());
         }
         void write(byte[] bytes,int off,int count) throws IOException { out.write(bytes,off,count); }
-        void flush() throws IOException { out.flush(); }
+        void flush() throws IOException {long at=System.nanoTime();out.flush();if(started&&!trace.flushed){trace.duration("responseFlush",at);trace.flushed=true;trace.mark("response-flushed");}}
         private static String reason(int status) {
             switch(status) {
                 case 200:return "OK";case 201:return "Created";case 204:return "No Content";case 206:return "Partial Content";

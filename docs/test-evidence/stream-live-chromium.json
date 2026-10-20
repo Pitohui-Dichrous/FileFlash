@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.1",
+  "engine": "chromium",
+  "fileBytes": 4194477,
+  "streamRequests": [
+    {
+      "method": "POST",
+      "bytes": 4194477
+    },
+    {
+      "method": "POST",
+      "bytes": 4194477
+    },
+    {
+      "method": "POST",
+      "bytes": 4194477
+    },
+    {
+      "method": "POST",
+      "bytes": 4194477
+    }
+  ],
+  "browserFileReads": 0,
+  "lostAckCleanupFreshRetry": true,
+  "temporaryRelayDownloadByteEquality": true,
+  "emptyAndBatch": true,
+  "diagnosticProbes": [
+    {
+      "mode": "xhr-post-blob",
+      "requestId": "83f2ae4d-e95f-4f4f-af93-28375adac993",
+      "bytes": 524288,
+      "valid": true,
+      "status": 200,
+      "elapsedMs": 23,
+      "bodySent": true
+    },
+    {
+      "mode": "fetch-put-buffer",
+      "requestId": "09afdc8c-da53-4fde-944e-2bac6ebc42b0",
+      "bytes": 524288,
+      "valid": true,
+      "status": 200,
+      "elapsedMs": 34
+    },
+    {
+      "mode": "fetch-post-buffer",
+      "requestId": "baa30bad-61a7-4d63-a788-810747fd705b",
+      "bytes": 524288,
+      "valid": true,
+      "status": 200,
+      "elapsedMs": 36
+    },
+    {
+      "mode": "fetch-post-blob",
+      "requestId": "431de425-2391-4aff-b758-7e6f555f725d",
+      "bytes": 524288,
+      "valid": true,
+      "status": 200,
+      "elapsedMs": 15
+    }
+  ],
+  "scope": "Actual Java core with desktop browser. Lost-ACK injection proxies the first body using the known fixture bytes; the explicit retry sends the actual native File. Not a physical iPhone/Wi-Fi test.",
+  "recordedAt": "2026-10-20T12:58:32.118Z",
+  "pageErrors": []
+}

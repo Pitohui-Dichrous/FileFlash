@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.1",
+  "environment": "Dedicated emulator, not a personal phone",
+  "api": 29,
+  "previousVersion": {
+    "name": "0.1.4",
+    "code": 6
+  },
+  "installedVersion": {
+    "name": "0.1.5-test.1",
+    "code": 7
+  },
+  "serverApkSha256": "a612b1a915c8ff18f400a845aa69baa2dde241148d4ee63449afc7a1a3c2d5dd",
+  "savedFilesRetained": 6,
+  "savedBytesUnchanged": true,
+  "uninstalled": false,
+  "tests": [
+    {
+      "name": "dedicated rooted emulator guard",
+      "passed": true
+    },
+    {
+      "name": "signed in-place upgrade without uninstall",
+      "passed": true
+    },
+    {
+      "name": "expected version installed",
+      "passed": true
+    },
+    {
+      "name": "existing saved ledger and Download bytes unchanged",
+      "passed": true
+    },
+    {
+      "name": "server starts and independent sessions pair",
+      "passed": true
+    },
+    {
+      "name": "native and browser uploads leave saved ledger unchanged",
+      "passed": true
+    },
+    {
+      "name": "temporary upload and memory probe create no public MediaStore row",
+      "passed": true
+    },
+    {
+      "name": "existing Download bytes remain unchanged after transport regression",
+      "passed": true
+    }
+  ],
+  "testsAfterTransport": true
+}

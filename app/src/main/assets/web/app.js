@@ -2,10 +2,8 @@
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  // Keep iOS requests smaller; the protocol still accepts the original 2 MiB
-  // maximum, so older checkpoints remain valid at any confirmed offset.
   const IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const CHUNK = (IOS ? 512 : 2048) * 1024;
+  const DEFAULT_UPLOAD_CHANNEL='xhr-post-file';
   const HISTORY_LIMIT = 100, HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
   const SESSION_KEY = 'fileflash.session.v1', TASKS_KEY = 'fileflash.tasks.v1';
   const pendingHashToken = new URLSearchParams(location.hash.slice(1)).get('pair');
@@ -16,11 +14,12 @@
   let server = { files: [], texts: [], uploads: [], downloads: [] };
   const storedTasks = readStore(TASKS_KEY, []);
   let tasks = (Array.isArray(storedTasks) ? storedTasks : []).filter(validStoredTask).map(t => Object.assign(t, {
-    key: t.key || localId(), status: ['complete', 'cancelled'].includes(t.status) ? t.status : 'paused',
-    file: null, speed: 0, loaded: t.offset || 0, hashBytes: 0,
-    error: ['complete', 'cancelled'].includes(t.status) ? t.error : '重新选择原文件以继续。'
+    key: t.key || localId(), status: ['complete', 'cancelled'].includes(t.status) ? t.status : 'failed',
+    file: null, speed: 0, loaded: 0,
+    error: ['complete', 'cancelled'].includes(t.status) ? t.error : '重新选择文件以重传。'
   }));
   let busy = false, current = null, refreshing = false, poll = null, targetSelection = null, textSending = false;
+  let uploadChannel=DEFAULT_UPLOAD_CHANNEL;
   let filesSignature = '', textsSignature = '', storageWarned = false, renderPending = false;
   let toastTimer, seenTexts = new Set();
   const taskRows = new Map(), textRows = new Map();
@@ -30,10 +29,9 @@
   } }
   function validStoredTask(t) { return t && typeof t.name === 'string' && Number.isSafeInteger(t.size) && t.size >= 0 && (!t.id || /^[A-Za-z0-9_-]+$/.test(t.id)); }
   function terminalTask(task) { return ['complete', 'cancelled'].includes(task.status); }
-  function clearHash(task) { delete task.hashStream;delete task.hashFile;delete task.hashOffset; }
-  function finishTask(task, status) { task.status = status; task.file = null; task.phase=''; clearHash(task); delete task.resumeKey; task.finishedAt = Date.now(); }
+  function finishTask(task, status) { task.status = status; task.file = null; task.phase=''; delete task.resumeKey; task.finishedAt = Date.now(); }
   function trimHistory() {
-    // History is metadata only. Keep every resumable task, while completed rows and their secrets are disposable.
+    // History is metadata only. Keep unfinished tasks and pending cleanup keys.
     const cutoff = Date.now() - HISTORY_TTL;
     const endedAt = task => Number(task.finishedAt) || Number(task.createdAt) || 0;
     const recent = new Set(tasks.slice().reverse().filter(task => terminalTask(task) && endedAt(task) >= cutoff).sort((a,b) => endedAt(b) - endedAt(a)).slice(0,HISTORY_LIMIT));
@@ -45,7 +43,7 @@
   }
   function persistTasks() {
     trimHistory();
-    store(TASKS_KEY, tasks.map(t => ({ key:t.key,id:t.id,resumeKey:t.resumeKey,name:t.name,size:t.size,mime:t.mime,sha256:t.sha256,offset:t.offset||0,status:t.status,createdAt:t.createdAt,finishedAt:t.finishedAt,error:t.error||'' })));
+    store(TASKS_KEY, tasks.map(t => ({ key:t.key,id:t.id,resumeKey:t.resumeKey,name:t.name,size:t.size,mime:t.mime,offset:t.offset||0,status:t.status,createdAt:t.createdAt,finishedAt:t.finishedAt,error:t.error||'' })));
   }
   function localId() { return 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2); }
   function node(tag, cls, text) { const el = document.createElement(tag); if (cls) el.className = cls; if (text !== undefined) el.textContent = text; return el; }
@@ -57,6 +55,67 @@
   function date(value) { if (!value) return ''; const d = new Date(value); return isNaN(d.getTime()) ? '' : d.toLocaleString('zh-CN', { month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit' }); }
   function errorText(err) { if (err && err.name === 'AbortError') return '操作已中断，可重试。'; return err && err.message ? err.message : '连接失败，请检查两台设备的网络。'; }
   class ApiError extends Error { constructor(message, status, code) { super(message); this.status = status; this.code = code; } }
+  function requestId(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.floor(Math.random()*16);return(ch==='x'?n:(n&3)|8).toString(16);});}
+  function trace(task,event,values){
+    if(!task.traceStart)task.traceStart=performance.now();
+    const entry=Object.assign({atMs:Math.round(performance.now()-task.traceStart),event},values||{});
+    Object.keys(entry).forEach(key=>{if(typeof entry[key]==='number')entry[key]=Math.round(entry[key]*10)/10;});
+    if(!task.trace)task.trace=[];task.trace.push(entry);if(task.trace.length>96)task.trace.shift();
+  }
+  function diagnosticText(task){
+    return JSON.stringify({schemaVersion:1,client:{platform:IOS?'iOS':/Android/i.test(navigator.userAgent)?'Android':'desktop',engine:/Firefox/i.test(navigator.userAgent)?'Firefox':/AppleWebKit/i.test(navigator.userAgent)&&!/(Chrome|Chromium|Edg)/i.test(navigator.userAgent)?'WebKit':'Chromium',uploadChannel},task:{size:task.size,sentBytes:task.loaded||0,restartOnly:true},events:task.trace||[],probes:task.probes||[],server:task.serverDiagnostic||null},null,2);
+  }
+  function captureDiagnostics(task,error){
+    trace(task,'failed',{status:error.status||0,code:error.code||'',name:error.name||'Error'});task.serverDiagnostic=null;
+    // Fetch ahead of the user's copy gesture. Plain local HTTP cannot rely on
+    // asynchronous clipboard access retaining iOS user activation.
+    api('/api/diagnostics',{timeout:4500}).then(value=>{task.serverDiagnostic=value;},()=>{trace(task,'diagnostics-unavailable');});
+  }
+  async function copyDiagnostic(task,item){
+    showDiagnostic(task,item);
+    const text=diagnosticText(task);item.diagnostic.value=text;item.diagnosticNote.textContent='';
+    if(window.isSecureContext&&navigator.clipboard&&typeof navigator.clipboard.writeText==='function')try{await navigator.clipboard.writeText(text);item.diagnosticNote.textContent='已复制';return;}catch(_){}
+    item.diagnostic.focus();item.diagnostic.select();item.diagnostic.setSelectionRange(0,text.length);
+    let copied=false;try{copied=document.execCommand('copy');}catch(_){}
+    item.diagnosticNote.textContent=copied?'已复制':'已选中文字，请长按并选择“复制”。';
+  }
+  function showDiagnostic(task,item){
+    if(!item.diagnostic){item.diagnostic=node('textarea','received-text');item.diagnostic.readOnly=true;item.diagnostic.rows=8;item.diagnostic.setAttribute('aria-label','传输诊断');item.diagnosticNote=node('p','copy-note');item.row.append(item.diagnostic,item.diagnosticNote);}
+    item.diagnostic.hidden=false;item.diagnosticNote.hidden=false;item.diagnostic.value=diagnosticText(task);
+  }
+  async function diagnose(task,item,control){
+    control.disabled=true;control.textContent='诊断中';showDiagnostic(task,item);task.probes=[];
+    const bytes=new Uint8Array(512*1024);for(let i=0;i<bytes.length;i++)bytes[i]=(i*31+7)&255;
+    const expected=new FileFlashSHA256().update(bytes).hex(),deadline=performance.now()+12000;
+    for(const mode of ['xhr-post-blob','fetch-put-buffer','fetch-post-buffer','fetch-post-blob']){
+      if(!session||performance.now()>=deadline)break;
+      const id=requestId(),start=performance.now(),timeout=Math.max(1,Math.min(3000,deadline-start));let status=0,bodySent=false;
+      const result={mode,requestId:id,bytes:bytes.length};
+      try{
+        const headers={'Authorization':'Bearer '+session,'Content-Type':'application/octet-stream','X-Request-ID':id};let value;
+        if(mode==='xhr-post-blob')value=await new Promise((resolve,reject)=>{
+          const xhr=new XMLHttpRequest();xhr.open('POST','/api/diagnostics/probe');xhr.timeout=timeout;Object.keys(headers).forEach(key=>xhr.setRequestHeader(key,headers[key]));xhr.upload.onload=()=>{bodySent=true;};
+          xhr.onload=()=>{status=xhr.status;try{const data=JSON.parse(xhr.responseText);status>=200&&status<300?resolve(data):reject(new Error('http'));}catch(error){reject(error);}};
+          xhr.onerror=()=>reject(new Error('network'));xhr.ontimeout=()=>reject(new Error('timeout'));xhr.onabort=()=>reject(new Error('abort'));xhr.send(new Blob([bytes],{type:'application/octet-stream'}));
+        });
+        else{
+          const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+          try{const response=await fetch('/api/diagnostics/probe',{method:mode.includes('-put-')?'PUT':'POST',headers,body:mode.endsWith('-blob')?new Blob([bytes],{type:'application/octet-stream'}):bytes.buffer.slice(0),signal:controller.signal});status=response.status;if(!response.ok)throw new Error('http');value=await response.json();}finally{clearTimeout(timer);}
+        }
+        result.valid=value.length===bytes.length&&value.sha256===expected;if(!result.valid)result.error='checksum';
+      }catch(error){result.valid=false;result.error=error.name==='AbortError'?'timeout':['network','timeout','abort','http'].includes(error.message)?error.message:'response';}
+      Object.assign(result,{status,elapsedMs:Math.round(performance.now()-start),...(mode==='xhr-post-blob'?{bodySent}:{})});task.probes.push(result);showDiagnostic(task,item);
+    }
+    const xhrFailure=task.probes.find(value=>value.mode==='xhr-post-blob'&&!value.valid);
+    const transportFailed=xhrFailure&&((xhrFailure.status===0&&['network','timeout','abort'].includes(xhrFailure.error))||(xhrFailure.status>=200&&xhrFailure.status<300&&xhrFailure.error==='checksum'));
+    if(transportFailed||task.transportFailureMode===DEFAULT_UPLOAD_CHANNEL){
+      if(task.probes.some(value=>value.mode.startsWith('fetch-post-')&&value.valid)){uploadChannel='fetch-post-file';trace(task,'transport-selected',{mode:uploadChannel});}
+    }
+    try{task.serverDiagnostic=await api('/api/diagnostics',{timeout:2000});}catch(_){trace(task,'diagnostics-unavailable');}
+    showDiagnostic(task,item);control.disabled=false;control.textContent='诊断';
+    if(!item.copyDiagnosticButton){item.copyDiagnosticButton=button('复制诊断','quiet small',()=>copyDiagnostic(task,item),'copy');item.actions.append(item.copyDiagnosticButton);}
+    toast('诊断完成');
+  }
   async function api(path, options) {
     const opts = Object.assign({ method:'GET' }, options || {});
     opts.headers = Object.assign({}, opts.headers || {});
@@ -85,6 +144,7 @@
     $('workspace').hidden = !session;
     $('pair-panel').hidden = !!session;
     $('disconnect-button').hidden = !session;
+    $('diagnostic-button').hidden = !session;
     $('server-address').textContent = location.origin;
     $('server-name').textContent = server.serverName || '连接详情';
     message($('connection-error'), reason || (next === 'disconnected' && session ? '连接已中断。请确认 Android 服务已启动，两台设备连接同一 Wi-Fi；恢复后会自动重连。' : ''));
@@ -93,7 +153,7 @@
   }
   function expired() {
     session = null; clientId = null; store(SESSION_KEY, null);
-    if(current) { current.pauseRequested = true; if(current.abort) current.abort(); }
+    if(current) { current.interrupted = true; if(current.abort) current.abort(); }
     clearInterval(poll); poll = null;
     setConnection('expired');
     message($('pair-error'), '配对已失效。请重新扫描 Android 上的二维码。');
@@ -106,6 +166,7 @@
       const result = await api('/api/pair', { method:'POST',json:{token:token.trim(),name} });
       if(!result.session) throw new Error('设备未返回配对凭据。');
       session = result.session; clientId = result.clientId; store(SESSION_KEY, { session,clientId,name });
+      uploadChannel=DEFAULT_UPLOAD_CHANNEL;
       $('pair-token').value = ''; await refresh(true); startPolling();
     } catch(err) { setConnection('unpaired'); message($('pair-error'), errorText(err)); }
     finally { $('pair-button').disabled = false; $('pair-button').textContent = '连接'; }
@@ -184,7 +245,7 @@
     textRows.forEach((card,id)=>{if(!alive.has(id)){card.remove();textRows.delete(id);}});
     ordered.forEach((card,index)=>{if(list.children[index]!==card)list.insertBefore(card,list.children[index]||null);});
   }
-  const statusLabels = {queued:'排队中',hashing:'核对已收断点',uploading:'发送中',verifying:'最终校验',cancelling:'取消中',complete:'已完成',failed:'失败',paused:'已暂停',cancelled:'已取消'};
+  const statusLabels = {queued:'排队中',uploading:'发送中',cancelling:'取消中',complete:'已完成',failed:'失败',cancelled:'已取消'};
   function renderTaskRow(task, remote) {
     const key = remote ? 'download-'+task.id : task.key;
     let item=taskRows.get(key);
@@ -195,14 +256,15 @@
       const detail=node('div','task-detail'),amount=node('span'),speed=node('span'),error=node('div','task-error'),actions=node('div','task-actions');detail.append(amount,speed);row.append(top,progress,detail,error,actions);
       item={row,name,meta,state,progress,amount,speed,error,actions,actionKey:''};taskRows.set(key,item);
     }
-    const status=task.status||'uploading',hashing=status==='hashing';
+    const status=task.status||'uploading';
+    if(item.diagnostic){item.diagnostic.hidden=status!=='failed';item.diagnosticNote.hidden=status!=='failed';}
     item.name.textContent=task.name;item.meta.textContent=(remote?'接收 · ':'发送 · ')+bytes(task.size);
     item.state.textContent=remote?(status==='complete'?'传输完成':status==='failed'?'下载中断':status==='cancelled'?'已取消':'浏览器下载中'):(statusLabels[status]||status);
     item.state.className='task-state '+status;
-    const loaded=remote?(task.transferred||0):hashing?(task.hashBytes||0):status==='complete'?task.size:(task.offset||0),total=hashing?task.hashTotal:task.size;
+    const loaded=remote?(task.transferred||0):status==='complete'?task.size:(task.loaded||0),total=task.size;
     item.progress.value=total?Math.min(1,loaded/total):(status==='complete'?1:0);
     item.progress.setAttribute('aria-valuetext',bytes(loaded)+' / '+bytes(total));
-    item.amount.textContent=(hashing?'已核对 ':!remote&&status!=='complete'?'接收端已确认 ':'')+bytes(loaded)+' / '+bytes(total);
+    item.amount.textContent=(!remote&&status!=='complete'?'已发送 ':'')+bytes(loaded)+' / '+bytes(total);
     item.speed.textContent=!remote&&status==='uploading'?(task.phase|| (task.speed>0?bytes(task.speed)+'/s':'')):'';
     const error=remote?(status==='complete'?'保存结果请查看 Safari 下载管理器。':task.error||''):task.error||'';
     item.error.textContent=error;item.error.hidden=!error;item.error.className=remote&&status==='complete'?'task-note':'task-error';
@@ -210,18 +272,18 @@
     if(item.actionKey!==actionKey){
       item.actionKey=actionKey;item.actions.replaceChildren();
       if(!remote && status !== 'cancelling'){
-        if(['queued','hashing','uploading','verifying'].includes(status)) item.actions.append(button('暂停','quiet small',()=>pauseTask(task)));
-        if(['failed','paused'].includes(status)) item.actions.append(button(task.file?'重试':'选择原文件','quiet small',()=>{
+        if(status==='failed') item.actions.append(button(task.file?'重试':'选择文件','quiet small',()=>{
           if(task.file){task.status='queued';task.error='';persistTasks();renderTasks();pump();}
           else chooseFile(task);
         },'refresh'));
+        if(status==='failed'){const diagnostic=button('诊断','quiet small',()=>diagnose(task,item,diagnostic));item.actions.append(diagnostic);item.copyDiagnosticButton=button('复制诊断','quiet small',()=>copyDiagnostic(task,item),'copy');item.actions.append(item.copyDiagnosticButton);}
         if(!['complete','cancelled'].includes(status)) item.actions.append(button('取消','quiet small danger',()=>cancelTask(task)));
       }
     }
     return item.row;
   }
   function renderTasks() {
-    const list=$('task-list'),active=tasks.filter(t=>['queued','hashing','uploading','verifying'].includes(t.status)).length;
+    const list=$('task-list'),active=tasks.filter(t=>['queued','uploading'].includes(t.status)).length;
     $('task-badge').textContent=active;$('task-badge').hidden=!active;
     $('foreground-note').hidden=!tasks.some(t=>!['complete','cancelled'].includes(t.status));
     $('queue-summary').textContent=active?active+' 个任务进行中':'支持多选';
@@ -237,151 +299,90 @@
   function chooseFile(task) { targetSelection=task||null;$('file-input').multiple=!task;$('file-input').value='';$('file-input').click(); }
   function addFiles(files) {
     if(!session||connection!=='connected'){toast('请先连接 Android。');return;}
-    if(targetSelection){const task=targetSelection;targetSelection=null;if(!files.length)return;task.file=files[0];task.status='queued';task.error='';}
+    if(targetSelection){const task=targetSelection;targetSelection=null;if(!files.length)return;task.file=files[0];task.name=task.file.name;task.size=task.file.size;task.mime=task.file.type||'application/octet-stream';task.offset=0;task.loaded=0;task.status='queued';task.error='';}
     else Array.from(files).forEach(file=>{if(!Number.isSafeInteger(file.size)){toast('此文件的大小超过浏览器可安全处理的范围。',6000);return;}tasks.push({key:localId(),name:file.name,size:file.size,mime:file.type||'application/octet-stream',file,offset:0,loaded:0,hashBytes:0,speed:0,status:'queued',createdAt:Date.now()});});
     persistTasks();renderTasks();switchTab('tasks');pump();
   }
-  function stopCheck(task) { if(task.cancelRequested||task.pauseRequested||!session) { const err=new Error('paused');err.name='AbortError';throw err; } }
-  async function taskApi(task,path,options) {
-    const controller=new AbortController(),abort=()=>controller.abort();task.abort=abort;
-    try{return await api(path,Object.assign({},options||{},{signal:controller.signal}));}
+  function stopCheck(task) { if(task.cancelRequested||task.interrupted||!session){const error=new Error('操作已中断，需重新发送。');error.name='AbortError';throw error;} }
+  async function taskApi(task,path,options){
+    const controller=new AbortController(),abort=()=>controller.abort(),id=requestId(),start=performance.now(),method=options&&options.method||'GET';task.abort=abort;
+    const opts=Object.assign({},options||{},{signal:controller.signal});opts.headers=Object.assign({},opts.headers,{'X-Request-ID':id});trace(task,'request',{requestId:id,route:'upload',method});
+    try{const result=await api(path,opts);trace(task,'response',{requestId:id,route:'upload',method,elapsedMs:performance.now()-start,status:result.status});return result;}
+    catch(error){trace(task,'request-error',{requestId:id,route:'upload',method,elapsedMs:performance.now()-start,status:error.status||0});throw error;}
     finally{if(task.abort===abort)task.abort=null;}
   }
-  async function hashPrefix(task,offset) {
-    const hash=new FileFlashSHA256();task.status='hashing';task.hashBytes=0;task.hashTotal=offset;task.error='';renderTasks();
-    // Only a reselected file's already-received prefix is read before resuming.
-    for(let start=0;start<offset;start+=512*1024){
-      stopCheck(task);const end=Math.min(start+512*1024,offset),data=await task.file.slice(start,end).arrayBuffer();stopCheck(task);
-      if(data.byteLength!==end-start)throw new Error('无法读取完整分块，请重新选择原文件。');
-      hash.update(data);task.hashBytes=end;scheduleRender();await retryDelay(task,0);
-    }
-    stopCheck(task);return hash;
+  async function cleanTemporary(task){
+    if(!task.id)return;
+    try{await api('/api/uploads/'+encodeURIComponent(task.id),{method:'DELETE',headers:uploadHeaders(task),timeout:8000});}
+    catch(error){if(error.status!==404&&error.status!==410){trace(task,'cleanup-unconfirmed',{status:error.status||0});throw error;}}
+    trace(task,'temporary-removed');task.id=null;delete task.resumeKey;task.offset=0;task.loaded=0;persistTasks();
   }
-  function retryDelay(task,millis) {
+  function streamHeaders(task,id){return Object.assign(uploadHeaders(task),{'Authorization':'Bearer '+session,'Content-Type':'application/octet-stream','X-Request-ID':id});}
+  function sendFile(task){return uploadChannel==='fetch-post-file'?sendFetchFile(task):sendXhrFile(task);}
+  function sendXhrFile(task){
     return new Promise((resolve,reject)=>{
-      const abort=()=>{clearTimeout(timer);const err=new Error('paused');err.name='AbortError';reject(err);};
-      const timer=setTimeout(()=>{if(task.abort===abort)task.abort=null;resolve();},millis);task.abort=abort;
-      if(task.cancelRequested||task.pauseRequested||!session)abort();
+      const xhr=new XMLHttpRequest(),file=task.file,id=requestId(),start=performance.now();let timer=null,settled=false,timedOut=false;task.transportFailureMode=null;
+      const arm=()=>{clearTimeout(timer);timer=setTimeout(()=>{timedOut=true;xhr.abort();},120000);};
+      const done=(fn,value)=>{if(settled)return;settled=true;clearTimeout(timer);task.abort=null;trace(task,'stream-response',{requestId:id,mode:'xhr-post-file',status:xhr.status,readyState:xhr.readyState,elapsedMs:performance.now()-start,expectedBytes:file.size,sentBytes:task.loaded||0,timedOut});fn(value);};
+      xhr.open('POST','/api/uploads/'+encodeURIComponent(task.id)+'/stream');xhr.timeout=0;const headers=streamHeaders(task,id);Object.keys(headers).forEach(key=>xhr.setRequestHeader(key,headers[key]));
+      xhr.upload.onprogress=event=>{arm();task.loaded=Math.min(file.size,event.loaded);task.speed=event.loaded/Math.max(.001,(performance.now()-start)/1000);task.phase=task.speed>0?bytes(task.speed)+'/s':'';scheduleRender();};
+      xhr.upload.onload=event=>{arm();if(event.lengthComputable)task.loaded=Math.min(file.size,event.loaded);task.phase='等待完成';trace(task,'stream-body-sent',{requestId:id,expectedBytes:file.size,reportedBytes:event.loaded,elapsedMs:performance.now()-start});scheduleRender();};
+      xhr.onload=()=>{let result;try{result=JSON.parse(xhr.responseText);}catch(_){return done(reject,new Error('设备返回了无效的上传结果。'));}if(xhr.status>=200&&xhr.status<300)done(resolve,result);else{if(xhr.status===401)expired();done(reject,new ApiError(result.error||'上传失败（'+xhr.status+'）',xhr.status,result.code));}};
+      xhr.onerror=()=>{task.transportFailureMode='xhr-post-file';done(reject,new Error('连接中断，请重新发送。'));};
+      xhr.ontimeout=()=>{task.transportFailureMode='xhr-post-file';done(reject,new Error('上传超时，请重新发送。'));};
+      xhr.onabort=()=>{if(timedOut){task.transportFailureMode='xhr-post-file';return done(reject,new Error('上传停滞超时，请重新发送。'));}const error=new Error('操作已中断，需重新发送。');error.name='AbortError';done(reject,error);};
+      task.abort=()=>xhr.abort();trace(task,'stream-send',{requestId:id,mode:'xhr-post-file',method:'POST',bodyType:Object.prototype.toString.call(file),expectedBytes:file.size});arm();xhr.send(file);
     });
   }
-  function transportError(message) { const err=new Error(message);err.retryable=true;return err; }
-  function canRetry(err) { return !!err.retryable||[408,429,503].includes(err.status); }
-  async function recoverHash(task,remote) {
-    const offset=validateOffset(remote.offset,task.size);
-    if(task.hashStream&&task.hashFile===task.file&&task.hashOffset===offset)return task.hashStream;
-    if(!offset)return new FileFlashSHA256();
-    const prefix=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/prefix',{headers:uploadHeaders(task),timeout:600000});stopCheck(task);
-    if(prefix.id!==task.id||prefix.size!==task.size||validateOffset(prefix.offset,task.size)!==offset||!/^[a-f0-9]{64}$/i.test(prefix.prefixSha256||''))throw new Error('接收端断点已变化，请重试。');
-    const hash=await hashPrefix(task,offset);
-    if(hash.clone().hex()!==prefix.prefixSha256.toLowerCase()){task.file=null;clearHash(task);throw new Error('所选文件与原文件内容不同。请重新选择原文件。');}
-    return hash;
+  async function sendFetchFile(task){
+    const controller=new AbortController(),file=task.file,id=requestId(),start=performance.now(),duration=Math.min(86400000,120000+Math.ceil(file.size/65536)*1000);let status=0,timedOut=false;
+    const timer=setTimeout(()=>{timedOut=true;controller.abort();},duration),abort=()=>controller.abort();task.abort=abort;task.phase='发送中';trace(task,'stream-send',{requestId:id,mode:'fetch-post-file',method:'POST',bodyType:Object.prototype.toString.call(file),expectedBytes:file.size,timeoutMs:duration});
+    try{
+      let response;try{response=await fetch('/api/uploads/'+encodeURIComponent(task.id)+'/stream',{method:'POST',headers:streamHeaders(task,id),body:file,signal:controller.signal});}
+      catch(error){if(task.cancelRequested||task.interrupted||!session)throw error;throw new Error(timedOut?'上传超时，请重新发送。':'连接中断，请重新发送。');}
+      status=response.status;let result;try{result=await response.json();}catch(_){throw new Error('设备返回了无效的上传结果。');}if(!response.ok){if(status===401)expired();throw new ApiError(result.error||'上传失败（'+status+'）',status,result.code);}return result;
+    }finally{clearTimeout(timer);if(task.abort===abort)task.abort=null;trace(task,'stream-response',{requestId:id,mode:'fetch-post-file',status,elapsedMs:performance.now()-start,expectedBytes:file.size,timedOut});}
   }
-  function sendChunk(task, data, chunkHash) {
-    return new Promise((resolve,reject)=>{
-      const xhr=new XMLHttpRequest(),start=performance.now(),base=task.offset;let settled=false,ackTimer=null,ackTimeout=false;
-      const done=(fn,value)=>{if(settled)return;settled=true;clearTimeout(ackTimer);task.abort=null;fn(value);};
-      xhr.open('PUT','/api/uploads/'+encodeURIComponent(task.id));xhr.timeout=120000;
-      xhr.setRequestHeader('Authorization','Bearer '+session);xhr.setRequestHeader('Content-Type','application/octet-stream');xhr.setRequestHeader('X-Offset',String(base));xhr.setRequestHeader('X-Chunk-SHA256',chunkHash);
-      if(task.resumeKey)xhr.setRequestHeader('X-Upload-Key',task.resumeKey);
-      task.phase='正在发送本块';
-      xhr.upload.onprogress=e=>{task.loaded=base+e.loaded;task.speed=e.loaded/Math.max(.001,(performance.now()-start)/1000);task.phase='本块 '+bytes(e.loaded)+' / '+bytes(data.byteLength);scheduleRender();};
-      xhr.upload.onload=()=>{task.phase='本块已发送，等待确认';scheduleRender();ackTimer=setTimeout(()=>{ackTimeout=true;xhr.abort();},20000);};
-      xhr.onload=()=>{let result;try{result=JSON.parse(xhr.responseText);}catch(_){return done(reject,new Error('设备返回了无效的分块结果。'));}if(xhr.status>=200&&xhr.status<300)done(resolve,result);else{if(xhr.status===401)expired();done(reject,new ApiError(result.error||'分块发送失败（'+xhr.status+'）',xhr.status,result.code));}};
-      xhr.onerror=()=>done(reject,transportError('连接中断。恢复网络后可重试，已接收的分块会保留。'));
-      xhr.ontimeout=()=>done(reject,transportError('发送超时。请保持页面在前台，恢复连接后重试。'));
-      xhr.onabort=()=>{if(ackTimeout)return done(reject,transportError('等待接收端确认超时，正在检查已接收进度。'));const err=new Error('paused');err.name='AbortError';done(reject,err);};
-      task.abort=()=>xhr.abort();xhr.send(data);
-    });
-  }
-  async function sendReliable(task,data,chunkHash) {
-    const base=task.offset,end=base+data.byteLength;let lastError;
-    for(let attempt=0;attempt<4;attempt++){
-      stopCheck(task);
-      try{return await sendChunk(task,data,chunkHash);}
-      catch(err){
-        stopCheck(task);if(!canRetry(err))throw err;lastError=err;if(attempt===3)break;
-        task.phase='连接中断，正在恢复（'+(attempt+1)+'/3）';task.speed=0;scheduleRender();await retryDelay(task,400*Math.pow(2,attempt)+Math.random()*150);stopCheck(task);
-        try{
-          const remote=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id),{headers:uploadHeaders(task),timeout:12000});stopCheck(task);
-          const offset=validateOffset(remote.offset,task.size);
-          if(remote.size!==task.size||(offset!==base&&offset!==end))throw new Error('接收端断点已变化，请重试。');
-          // Resend the exact block even if its response was lost: the server verifies
-          // duplicate offset + length + checksum before acknowledging it again.
-        }catch(queryError){stopCheck(task);if(queryError instanceof ApiError&&!canRetry(queryError))throw queryError;if(!canRetry(queryError)&&queryError.message!=='连接中断或请求超时。请保持页面在前台，并检查 Android 服务与 Wi-Fi。')throw queryError;}
-      }
-    }
-    task.phase='';throw lastError;
-  }
-  function validateOffset(value,size) { if(!Number.isSafeInteger(value)||value<0||value>size)throw new Error('设备返回了无效的文件偏移，已停止传输。');return value; }
-  async function processTask(task) {
-    task.pauseRequested=false;task.cancelRequested=false;task.speed=0;task.phase='';
-    if(task.size!==task.file.size){task.file=null;clearHash(task);throw new Error('所选文件大小与原文件不同。请重新选择原文件。');}
-    stopCheck(task);let remote;
-    if(task.id){
-      try{remote=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id),{headers:uploadHeaders(task)});}
-      catch(err){if(err.status===404||err.status===410){task.id=null;task.resumeKey=null;task.offset=0;task.loaded=0;clearHash(task);toast('断点已清理，将重新发送。',6000);}else throw err;}
-    }
-    if(remote&&remote.status==='complete'){if(task.sha256&&remote.sha256&&remote.sha256!==task.sha256)throw new Error('接收端校验值不一致。');task.sha256=remote.sha256||task.sha256;task.name=remote.name||task.name;task.offset=task.size;task.loaded=task.size;task.error='';finishTask(task,'complete');persistTasks();return;}
-    if(remote&&remote.status==='cancelled'){task.id=null;task.resumeKey=null;remote=null;clearHash(task);}
-    if(!task.id){task.status='uploading';task.phase='准备发送';renderTasks();remote=await taskApi(task,'/api/uploads',{method:'POST',json:{name:task.name,size:task.size,mime:task.mime,sha256:task.sha256}});task.id=remote.id;task.resumeKey=remote.resumeKey;}
-    if(!task.id||!remote)throw new Error('设备未创建传输任务。');
-    if(remote.size!==task.size||(task.sha256&&remote.sha256&&remote.sha256!==task.sha256))throw new Error('接收端任务与原文件不一致，已停止传输。');
-    task.resumeKey=remote.resumeKey||task.resumeKey;task.offset=validateOffset(remote.offset,task.size);task.loaded=task.offset;persistTasks();
-    const hash=await recoverHash(task,remote);stopCheck(task);task.hashStream=hash;task.hashFile=task.file;task.hashOffset=task.offset;
-    task.status='uploading';task.phase='';task.error='';renderTasks();
-    while(task.offset<task.size){
-      stopCheck(task);const start=task.offset,end=Math.min(start+CHUNK,task.size),data=await task.file.slice(start,end).arrayBuffer();stopCheck(task);
-      if(data.byteLength!==end-start)throw new Error('无法读取完整分块，请重新选择原文件。');
-      const chunkHash=new FileFlashSHA256().update(data).hex();stopCheck(task);
-      const result=await sendReliable(task,data,chunkHash);stopCheck(task);
-      const confirmed=validateOffset(result.offset,task.size);
-      if(confirmed!==end)throw new Error('接收端确认的分块长度不一致，请重试。');
-      hash.update(data);task.hashOffset=confirmed;task.offset=confirmed;task.loaded=confirmed;task.phase='';persistTasks();scheduleRender();
-    }
-    stopCheck(task);const digest=hash.clone().hex();
-    if(task.sha256&&task.sha256!==digest){
-      // A legacy task may already know the original whole-file hash. If a
-      // reselected file only diverged after the accepted prefix, let the server
-      // check that original value and reset the invalid bytes before reselection.
-      try{await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/complete',{method:'POST',json:{sha256:task.sha256},headers:uploadHeaders(task),timeout:600000});}
-      catch(err){if(err.code==='file_checksum'){task.offset=0;task.loaded=0;clearHash(task);}else{stopCheck(task);throw err;}}
-      task.file=null;clearHash(task);throw new Error('所选文件与原文件内容不同。请重新选择原文件。');
-    }
-    task.sha256=digest;task.status='verifying';task.speed=0;persistTasks();renderTasks();
-    const result=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/complete',{method:'POST',json:{sha256:digest},headers:uploadHeaders(task),timeout:600000});
-    stopCheck(task);
-    if(result.status!=='complete')throw new Error(result.error||'接收端尚未完成文件校验，请重试。');
-    if(result.sha256&&result.sha256!==digest)throw new Error('接收端校验值不一致。');
+  async function processTask(task){
+    task.cancelRequested=false;task.interrupted=false;task.speed=0;task.phase='';task.loaded=0;task.offset=0;
+    stopCheck(task);await cleanTemporary(task);stopCheck(task);
+    task.status='uploading';task.error='';renderTasks();
+    const remote=await taskApi(task,'/api/uploads',{method:'POST',json:{name:task.name,size:task.file.size,mime:task.mime,restartOnly:true}});
+    task.id=remote.id;task.resumeKey=remote.resumeKey;persistTasks();stopCheck(task);
+    if(!task.id||remote.size!==task.size||remote.restartOnly!==true)throw new Error('设备未创建有效的上传任务。');
+    const result=await sendFile(task);stopCheck(task);
+    if(result.status!=='complete'||result.size!==task.size||result.offset!==task.size)throw new Error('接收端未完整接收文件，请重新发送。');
     task.name=result.name||task.name;task.offset=task.size;task.loaded=task.size;task.speed=0;task.error='';finishTask(task,'complete');persistTasks();refresh(false);
   }
-  async function pump() {
+  async function pump(){
     if(busy||!session||connection!=='connected')return;busy=true;
-    try{
-      let task;
-      while(session&&connection==='connected'&&(task=tasks.find(t=>t.status==='queued'&&t.file))){
-        current=task;
-        try{await processTask(task);}
-        catch(err){task.speed=0;task.loaded=task.offset||0;if(!task.cancelRequested){task.status=task.pauseRequested||err.name==='AbortError'?'paused':'failed';task.error=task.status==='paused'?'可继续发送；关闭页面后需要重新选择原文件。':errorText(err);}}
-        finally{task.abort=null;persistTasks();renderTasks();current=null;}
-      }
-    }finally{busy=false;}
+    try{let task;while(session&&connection==='connected'&&(task=tasks.find(value=>value.status==='queued'&&value.file))){
+      current=task;let stopped;task.settled=new Promise(resolve=>{stopped=resolve;});
+      try{await processTask(task);}
+      catch(error){task.speed=0;if(!task.cancelRequested){task.status='failed';task.error=errorText(error);captureDiagnostics(task,error);persistTasks();renderTasks();try{await cleanTemporary(task);}catch(_){task.error+=' 临时文件清理未确认，可重试清理。';}}}
+      finally{task.abort=null;persistTasks();renderTasks();current=null;stopped();delete task.settled;}
+    }}finally{busy=false;}
   }
-  function pauseTask(task) { task.pauseRequested=true;if(task.abort)task.abort();if(task!==current){task.status='paused';task.error='';persistTasks();renderTasks();} }
-  async function cancelTask(task) {
-    task.cancelRequested=true;if(task.abort)task.abort();task.status='cancelling';task.loaded=task.offset||0;task.error='';persistTasks();renderTasks();
-    try{
-      if(task.id){if(!session)throw new Error('请重新连接后取消。');await api('/api/uploads/'+encodeURIComponent(task.id),{method:'DELETE',headers:uploadHeaders(task)});}
-      task.error='';finishTask(task,'cancelled');
-    }catch(err){task.status='failed';task.error='未能在 Android 上取消：'+errorText(err);}
+  function interruptTask(task){task.interrupted=true;if(task.abort)task.abort();}
+  async function cancelTask(task){
+    task.cancelRequested=true;if(task.abort)task.abort();task.status='cancelling';task.error='';persistTasks();renderTasks();
+    try{if(task.settled)await task.settled;await cleanTemporary(task);task.error='';finishTask(task,'cancelled');}
+    catch(error){task.status='failed';task.error='未能清理临时文件：'+errorText(error);captureDiagnostics(task,error);}
     finally{persistTasks();renderTasks();}
   }
   $('pair-form').addEventListener('submit',event=>{event.preventDefault();pair($('pair-token').value);});
   $('connection-button').addEventListener('click',()=>{const details=$('connection-details');details.hidden=!details.hidden;$('connection-button').setAttribute('aria-expanded',String(!details.hidden));});
   $('refresh-button').addEventListener('click',()=>refresh(true));
+  let connectionDiagnostic=null;
+  $('diagnostic-button').addEventListener('click',async()=>{
+    if(!connectionDiagnostic){connectionDiagnostic={row:$('connection-details'),actions:node('div','task-actions')};$('connection-details').append(connectionDiagnostic.actions);}
+    const task=tasks.slice().reverse().find(value=>value.status==='failed')||{size:0,offset:0,trace:[]};
+    await diagnose(task,connectionDiagnostic,$('diagnostic-button'));
+  });
   $('disconnect-button').addEventListener('click',async()=>{
     const oldSession=session;
-    if(current)pauseTask(current);
-    tasks.forEach(t=>{if(t.status==='queued'){t.status='paused';t.error='重新连接后可继续。';}});persistTasks();
+    if(current)interruptTask(current);
+    tasks.forEach(t=>{if(t.status==='queued'){t.status='failed';t.error='重新连接后重传。';}});persistTasks();
     try{await api('/api/session',{method:'DELETE',timeout:8000});}catch(_){}
     if(session===oldSession){session=null;clientId=null;store(SESSION_KEY,null);clearInterval(poll);poll=null;server={files:[],texts:[],uploads:[],downloads:[]};filesSignature='';textsSignature='';setConnection('unpaired');$('connection-details').hidden=true;$('connection-button').setAttribute('aria-expanded','false');}
   });
@@ -400,8 +401,8 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session)refresh(false);});
   window.addEventListener('online',()=>{if(session)refresh(false);});
   window.addEventListener('offline',()=>{if(session)setConnection('disconnected');});
-  window.addEventListener('pagehide',()=>{if(current){current.pauseRequested=true;if(current.abort)current.abort();}persistTasks();});
-  window.addEventListener('beforeunload',event=>{if(tasks.some(t=>['hashing','uploading','verifying'].includes(t.status))){event.preventDefault();event.returnValue='';}});
+  window.addEventListener('pagehide',()=>{if(current)interruptTask(current);persistTasks();});
+  window.addEventListener('beforeunload',event=>{if(tasks.some(t=>t.status==='uploading')){event.preventDefault();event.returnValue='';}});
   $('device-name').value=(saved&&saved.name)||(/iPhone/i.test(navigator.userAgent)?'iPhone':/iPad/i.test(navigator.userAgent)?'iPad':/Android/i.test(navigator.userAgent)?'Android':'浏览器');
   persistTasks();renderTasks();$('send-text').disabled=true;
   if(pendingHashToken){$('pair-token').value=pendingHashToken;session=null;clientId=null;store(SESSION_KEY,null);pair(pendingHashToken);}

@@ -1,0 +1,141 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-20T12:56:02.495Z",
+  "scope": "Actual Android system WebView in a separate test app, on a dedicated emulator, uploading a seekable synthetic content URI to the signed FileFlash APK in the same emulator. Does not verify physical phones, external file providers, iOS or Wi-Fi.",
+  "browserVersion": "Chrome/113.0.5672.136",
+  "userAgent": "Mozilla/5.0 (Linux; Android 14; Android SDK built for x86_64 Build/UE1A.230829.036.A1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/113.0.5672.136 Mobile Safari/537.36",
+  "hardwareConcurrency": 4,
+  "fileBytes": 62914560,
+  "sha256": "783695af90d3cb759fe1059408ba478df64e5150129dd4136de91d79fe2b5e8c",
+  "uploadRequestSpanMs": 1024.7,
+  "readMs": 0,
+  "mainThreadHashMs": 0,
+  "mainThreadHashCalls": 0,
+  "localStorageMs": 0.2,
+  "pageErrors": [],
+  "puts": [
+    {
+      "method": "POST",
+      "bodyType": "[object File]",
+      "requestId": "65f7d87f-4ac2-4024-b6e1-bf0df525959d",
+      "offset": null,
+      "bodyBytes": 62914560,
+      "betweenPreviousAckAndSendMs": 0,
+      "uploadEventMs": 908.7,
+      "requestMs": 1024.7,
+      "ackGapMs": 1024.7
+    }
+  ],
+  "transferToCompletionMs": 1024.7,
+  "terminalResponseIncluded": true,
+  "api": 34,
+  "version": "0.1.5-test.1",
+  "serverVersion": "0.1.5-test.1",
+  "serverApkSha256": "a612b1a915c8ff18f400a845aa69baa2dde241148d4ee63449afc7a1a3c2d5dd",
+  "coreTimingMs": {
+    "bodyRead": {
+      "average": 660.804,
+      "maximum": 660.804,
+      "total": 660.804
+    },
+    "dataSync": {
+      "average": 163.738,
+      "maximum": 163.738,
+      "total": 163.738
+    },
+    "metadataSync": {
+      "average": 2.521,
+      "maximum": 2.521,
+      "total": 2.521
+    },
+    "responseFlush": {
+      "average": 0.094,
+      "maximum": 0.094,
+      "total": 0.094
+    },
+    "streamHash": {
+      "average": 37.9,
+      "maximum": 37.9,
+      "total": 37.9
+    },
+    "streamWrite": {
+      "average": 140.712,
+      "maximum": 140.712,
+      "total": 140.712
+    },
+    "uploadLockWait": {
+      "average": 0.0,
+      "maximum": 0,
+      "total": 0
+    },
+    "workerQueue": {
+      "average": 0.057,
+      "maximum": 0.057,
+      "total": 0.057
+    },
+    "parsedHeaderToFirstBodyByte": {
+      "average": 0.243,
+      "maximum": 0.243,
+      "total": 0.243
+    },
+    "acceptedToFlushed": {
+      "average": 1016.819,
+      "maximum": 1016.819,
+      "total": 1016.819
+    }
+  },
+  "coreChunkTraceCount": 1,
+  "coreChunkTraces": [
+    {
+      "sequence": 45,
+      "clientRequestId": "65f7d87f-4ac2-4024-b6e1-bf0df525959d",
+      "method": "POST",
+      "route": "upload-stream",
+      "platform": "android",
+      "stage": "closed",
+      "contentLength": 62914560,
+      "hasContentLength": true,
+      "transferEncoding": "none",
+      "expect": "none",
+      "contentType": "octet-stream",
+      "headerBytes": 769,
+      "prefetchedBytes": 0,
+      "receivedBytes": 62914560,
+      "status": 200,
+      "flushed": true,
+      "closed": true,
+      "ageMs": 1228.612,
+      "atMs": {
+        "accepted": 78798.067,
+        "headers-ready": 78798.642,
+        "worker-queued": 78798.655,
+        "worker-started": 78798.712,
+        "headers-parsed": 78799.055,
+        "handler-started": 78799.063,
+        "upload-lock-wait": 78799.105,
+        "upload-lock-acquired": 78799.106,
+        "stream-receiving": 78799.144,
+        "body-reading": 78799.203,
+        "body-first-byte": 78799.298,
+        "body-complete": 79648.003,
+        "stream-received": 79648.11,
+        "data-syncing": 79648.111,
+        "stream-promoting": 79811.93,
+        "metadata-syncing": 79813.357,
+        "response-started": 79814.778,
+        "response-flushed": 79814.886,
+        "handler-complete": 79814.894,
+        "closed": 79814.921
+      },
+      "durationMs": {
+        "uploadLockWait": 0,
+        "bodyRead": 660.8040000000019,
+        "streamWrite": 140.71200000000007,
+        "streamHash": 37.90000000000039,
+        "dataSync": 163.738,
+        "metadataSync": 2.521,
+        "responseFlush": 0.094
+      }
+    }
+  ]
+}

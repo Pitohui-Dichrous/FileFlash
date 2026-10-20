@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.1",
+  "engine": "webkit",
+  "serverApkSha256": "a612b1a915c8ff18f400a845aa69baa2dde241148d4ee63449afc7a1a3c2d5dd",
+  "scope": "Signed Android APK via adb forwarding and desktop browser with iPhone identification. Not a physical iPhone or real Wi-Fi speed test.",
+  "fileBytes": 21750204,
+  "sha256": "bcdb2e833f3befa43d6028fd584a2729fb0021bd87a29fcbbc615bb6629f83ee",
+  "streamRequests": 1,
+  "nativeFileBody": true,
+  "browserFileReads": 0,
+  "uploadMs": 743,
+  "simultaneousIdleSockets": 6,
+  "idleConnectionsOpened": 6,
+  "separateReceiverBrowser": true,
+  "temporaryRelayWithoutHostSave": true,
+  "downloadByteEquality": true,
+  "recordedAt": "2026-10-20T12:59:12.575Z",
+  "pageErrors": []
+}

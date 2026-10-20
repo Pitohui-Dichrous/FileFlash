@@ -64,6 +64,10 @@ public final class TransferServer implements AutoCloseable {
         sessions.clear(); tickets.clear();
         pairToken = randomToken(24);
         http.stop();
+        for(Upload upload:uploads.values())if(upload.restartOnly&&!isComplete(upload)) {
+            requestCancel(upload);
+            if(upload.activeRequests==0)synchronized(upload) {try {discardRestartOnly(upload);}catch(IOException ignored){ }}
+        }
         for (Download d : downloads.values()) synchronized (d) {
             if (d.status.equals("downloading")) { d.status="failed"; d.error="服务已停止"; }
         }
@@ -349,6 +353,8 @@ public final class TransferServer implements AutoCloseable {
         Session session=authenticate(request);
         session.connections.add(request.socket);
         try {
+        if (path.equals("/api/diagnostics")) { requireMethod(request,"GET");response.json(200,diagnostics().toString());return; }
+        if (path.equals("/api/diagnostics/probe")) {diagnosticProbe(request,response);return;}
         if (path.equals("/api/state")) { requireMethod(request,"GET");response.json(200,state());return; }
         if (path.equals("/api/session")) {
             requireMethod(request,"DELETE");response.json(200,"{\"ok\":true}");revokeClient(session.id);return;
@@ -388,6 +394,30 @@ public final class TransferServer implements AutoCloseable {
         } finally {session.connections.remove(request.socket);}
     }
 
+    /** This snapshot is authenticated, memory-only and contains no addresses, file names or credentials. */
+    private JsonObject diagnostics() {
+        JsonObject result=new JsonObject();result.addProperty("schema",1);result.addProperty("running",running);
+        result.add("transport",http.diagnostics());
+        JsonObject engine=new JsonObject();engine.addProperty("uploadSlotsAvailable",uploadSlots.availablePermits());
+        engine.addProperty("downloadSlotsAvailable",downloadSlots.availablePermits());
+        int active=0,maintenance=0,incomplete=0;
+        for(Upload upload:uploads.values()) {if(upload.activeRequests>0)active++;if(upload.maintenance)maintenance++;if(isIncomplete(upload))incomplete++;}
+        engine.addProperty("uploadsActive",active);engine.addProperty("uploadsMaintaining",maintenance);engine.addProperty("uploadsIncomplete",incomplete);
+        result.add("engine",engine);return result;
+    }
+
+    /** Tiny opt-in browser interoperability probe: no task, file, payload echo or persistent record. */
+    private void diagnosticProbe(HttpServer.Request request,HttpServer.Response response) throws IOException {
+        if(!request.method.equals("POST")&&!request.method.equals("PUT"))throw error(405,"method_not_allowed","不支持此操作");
+        if(request.length>512*1024)throw error(413,"probe_size","诊断数据最多 512 KiB");
+        if(!uploadSlots.tryAcquire())throw error(429,"transfer_limit","传输任务繁忙，请稍后重试");
+        try {
+            byte[] bytes=request.readBody(512*1024);
+            JsonObject result=new JsonObject();result.addProperty("length",bytes.length);result.addProperty("sha256",hex(digest().digest(bytes)));
+            response.json(200,result.toString());
+        } finally {uploadSlots.release();}
+    }
+
     private void pair(HttpServer.Request request,HttpServer.Response response) throws IOException {
         ratePair(request.socket.getInetAddress().getHostAddress());
         JsonObject body=readJson(request,16*1024);
@@ -418,17 +448,29 @@ public final class TransferServer implements AutoCloseable {
         JsonObject body=readJson(request,16*1024);
         String name=safeName(string(body,"name",true));long size=nonNegativeLong(body,"size");
         String mime=safeMime(string(body,"mime",false));String sha=optionalSha(body,"sha256");
+        boolean restartOnly=optionalBoolean(body,"restartOnly");if(restartOnly)sha=null;
         synchronized(uploads) {
-            if(sha!=null) for(Upload u:uploads.values()) synchronized(u) {
+            if(sha!=null) for(Upload u:uploads.values()) if(!u.restartOnly)synchronized(u) {
                 if(session.id.equals(u.owner) && u.name.equals(name) && u.size==size && sha.equals(u.sha256) && u.status.equals("uploading")) {
                     response.json(200,uploadJson(u,true).toString());return;
                 }
             }
             long pending=0;int count=0;
-            for(Upload u:uploads.values()) synchronized(u) {
+            for(Upload u:uploads.values()) {
+                // Streaming tasks publish a volatile progress snapshot. Never hold the global
+                // creation guard while waiting for their monitor and an entire request body.
+                if(u.restartOnly) {
+                    if(!isComplete(u)&&!"cancelled".equals(u.status)) {
+                        count++;long remaining=u.size-u.offset;
+                        if(remaining>Long.MAX_VALUE-pending)throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+                    }
+                    continue;
+                }
+                synchronized(u) {
                 if(!isComplete(u) && !u.status.equals("cancelled")) {
                     count++;long remaining=u.size-u.offset;
                     if(remaining>Long.MAX_VALUE-pending) throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+                }
                 }
             }
             if(count>=128) throw error(429,"upload_limit","未完成任务过多，请先取消部分任务");
@@ -438,10 +480,10 @@ public final class TransferServer implements AutoCloseable {
                 throw error(507,"storage_full","剩余存储空间不足");
             Upload upload=new Upload();upload.id=randomToken(18);upload.resumeKey=randomToken(24);upload.owner=session.id;
             upload.name=name;upload.size=size;upload.mime=mime;upload.sha256=sha;upload.status="uploading";
-            upload.temporaryReceived=true;
+            upload.temporaryReceived=true;upload.restartOnly=restartOnly;
             upload.createdAt=now();upload.updatedAt=upload.createdAt;
-            try(RandomAccessFile data=new RandomAccessFile(partFile(upload),"rw")) {data.getFD().sync();}
-            persist(upload);uploads.put(upload.id,upload);
+            try(RandomAccessFile data=new RandomAccessFile(partFile(upload),"rw")) {if(!restartOnly)data.getFD().sync();}
+            persist(upload,request.trace);uploads.put(upload.id,upload);
             response.json(201,uploadJson(upload,true).toString());
         }
     }
@@ -464,8 +506,17 @@ public final class TransferServer implements AutoCloseable {
             upload.activeRequests++;
         }
         try {
+        request.trace.mark("upload-lock-wait");long lockStarted=System.nanoTime();
         synchronized(upload) {
+            request.trace.duration("uploadLockWait",lockStarted);request.trace.mark("upload-lock-acquired");
             if(parts.length==5) {
+                if(parts[4].equals("stream")) {
+                    requireMethod(request,"POST");streamUpload(request,response,upload,session);return;
+                }
+                if(upload.restartOnly)throw error(409,"restart_only","该任务失败后需重新上传");
+                if(parts[4].equals("chunk")) {
+                    requireMethod(request,"POST");appendChunk(request,response,upload,session);return;
+                }
                 if(parts[4].equals("prefix")) {
                     requireMethod(request,"GET");uploadPrefix(response,upload,session);return;
                 }
@@ -473,7 +524,14 @@ public final class TransferServer implements AutoCloseable {
                 requireMethod(request,"POST");completeUpload(request,response,upload,session);return;
             }
             if(request.method.equals("GET")) {response.json(200,uploadJson(upload,true).toString());return;}
-            if(request.method.equals("DELETE")) {cancel(upload);response.json(200,uploadJson(upload,false).toString());return;}
+            if(request.method.equals("DELETE")) {
+                if(upload.restartOnly&&isTemporaryReceived(upload)) {
+                    synchronized(upload.lifecycle) {if(upload.activeRequests!=1)throw error(409,"file_busy","文件正在使用，请稍后清理");upload.maintenance=true;}
+                    try {deleteTemporaryReceived(upload);upload.status="cancelled";}finally{synchronized(upload.lifecycle){upload.maintenance=false;}}
+                } else cancel(upload);
+                response.json(200,uploadJson(upload,false).toString());return;
+            }
+            if(upload.restartOnly)throw error(409,"restart_only","该任务失败后需重新上传");
             requireMethod(request,"PUT"); appendChunk(request,response,upload,session);
         }
         } finally {synchronized(upload.lifecycle){upload.activeRequests--;}if(heavy)uploadSlots.release();}
@@ -510,21 +568,97 @@ public final class TransferServer implements AutoCloseable {
         byte[] chunk;
         upload.activeSocket=request.socket;
         try {chunk=request.readBody(CHUNK_SIZE);} finally {upload.activeSocket=null;}
-        if(!sha.equals(hex(digest().digest(chunk)))) throw error(422,"chunk_checksum","分块校验失败，请重试");
+        request.trace.mark("chunk-hashing");long hashStarted=System.nanoTime();
+        String actual=hex(digest().digest(chunk));request.trace.duration("chunkHash",hashStarted);
+        if(!sha.equals(actual)) throw error(422,"chunk_checksum","分块校验失败，请重试");
         if(!valid(session) || !running) throw error(401,"session_expired","连接已失效");
         if(upload.cancelRequested) throw error(409,"upload_cancelled","任务已取消");
         if(!duplicate) {
             if(root.getUsableSpace()<chunk.length+1024L*1024) throw error(507,"storage_full","剩余存储空间不足");
             try(RandomAccessFile file=new RandomAccessFile(partFile(upload),"rw")) {
-                file.setLength(upload.offset);file.seek(upload.offset);file.write(chunk);file.getFD().sync();
+                request.trace.mark("file-writing");long writeStarted=System.nanoTime();
+                file.setLength(upload.offset);file.seek(upload.offset);file.write(chunk);request.trace.duration("fileWrite",writeStarted);
+                request.trace.mark("data-syncing");long syncStarted=System.nanoTime();
+                try {file.getFD().sync();}finally{request.trace.duration("dataSync",syncStarted);}
             } catch(IOException e) {upload.status="failed";upload.error="文件写入失败，请检查剩余空间后重试";persist(upload);throw error(507,"write_failed",upload.error);}
             // Save committed offset only after the data has reached stable storage.
             long previous=upload.offset;
             upload.lastOffset=offset;upload.lastLength=chunk.length;upload.lastSha=sha;upload.offset+=chunk.length;
             upload.updatedAt=now();upload.status="uploading";upload.error=null;
-            try {persist(upload);} catch(IOException e) {upload.offset=previous;throw e;}
+            try {persist(upload,request.trace);} catch(IOException e) {upload.offset=previous;throw e;}
         }
+        request.trace.mark(duplicate?"duplicate-confirmed":"chunk-committed");
         response.json(200,uploadJson(upload,false).toString());
+    }
+
+    /** A browser can opt out of checkpoints: one bounded-buffer request, one final data sync. */
+    private void streamUpload(HttpServer.Request request,HttpServer.Response response,Upload upload,Session session) throws IOException {
+        if(!upload.restartOnly)throw error(409,"stream_mode_required","请创建连续上传任务");
+        if(!isIncomplete(upload)||upload.offset!=0)throw error(409,"upload_closed","任务已结束，请重新上传");
+        boolean succeeded=false;
+        upload.activeSocket=request.socket;
+        try {
+            if(request.header("content-length")==null)throw error(400,"length_required","连续上传需要 Content-Length");
+            if(request.length!=upload.size)throw error(409,"size_mismatch","上传长度与文件大小不符");
+            checkStreamActive(upload,session);
+            MessageDigest hash=digest();byte[] buffer=new byte[128*1024];
+            request.trace.mark("stream-receiving");
+            try(FileOutputStream output=new FileOutputStream(partFile(upload),false)) {
+                request.beginStreamBody();
+                while(request.consumed<request.length) {
+                    checkStreamActive(upload,session);
+                    int count=request.readStreamBody(buffer);if(count==0)continue;
+                    checkStreamActive(upload,session);
+                    long started=System.nanoTime();output.write(buffer,0,count);request.trace.addDuration("streamWrite",started);
+                    started=System.nanoTime();hash.update(buffer,0,count);request.trace.addDuration("streamHash",started);
+                    // This progress is intentionally not a resumable or durable checkpoint.
+                    upload.offset=request.consumed;upload.updatedAt=now();
+                }
+                checkStreamActive(upload,session);request.trace.mark("stream-received");
+                request.trace.mark("data-syncing");long started=System.nanoTime();
+                try {output.getFD().sync();}finally{request.trace.duration("dataSync",started);}
+            }
+            checkStreamActive(upload,session);
+            synchronized(received) {
+                checkStreamActive(upload,session);request.trace.mark("stream-promoting");
+                upload.sha256=hex(hash.digest());upload.finalName=uniqueName(upload.name);upload.status="promoting";
+                persist(upload,request.trace);move(partFile(upload),new File(received,upload.finalName));
+                checkStreamActive(upload,session);
+                upload.status="complete";upload.name=upload.finalName;upload.updatedAt=now();persist(upload,request.trace);addReceived(upload);
+            }
+            response.json(200,uploadJson(upload,false).toString());succeeded=true;
+        } finally {
+            upload.activeSocket=null;
+            if(!succeeded) {
+                try {discardRestartOnly(upload);}catch(IOException cleanup) {
+                    // Keep restartOnly metadata so recovery can retry removal after an I/O failure.
+                    request.trace.error(cleanup);
+                }
+            }
+        }
+    }
+
+    private void checkStreamActive(Upload upload,Session session) throws HttpError {
+        if(!running||!valid(session))throw error(401,"session_expired","连接已失效，请重新上传");
+        if(upload.cancelRequested||Thread.currentThread().isInterrupted())throw error(409,"upload_cancelled","上传已取消");
+    }
+
+    /** Caller holds the task monitor; only this task's private bytes may be removed. */
+    private void discardRestartOnly(Upload upload) throws IOException {
+        if(!upload.restartOnly)return;
+        if(upload.saveRequested||"released".equals(upload.status)||"releasing".equals(upload.status))
+            throw error(409,"already_saved","文件已经保存");
+        if(isComplete(upload))synchronized(upload.lifecycle) {
+            if(upload.activeRequests>1)throw error(409,"file_busy","文件正在使用，请稍后清理");
+        }
+        upload.cancelRequested=true;
+        Files.deleteIfExists(partFile(upload).toPath());
+        if(upload.finalName!=null)Files.deleteIfExists(ownedFile(received,upload.finalName).toPath());
+        upload.status="cancelled";upload.error=null;
+        files.remove(upload.id);tickets.entrySet().removeIf(entry->upload.id.equals(entry.getValue().fileId));
+        Files.deleteIfExists(metaFile(upload).toPath());Files.deleteIfExists(new File(incoming,upload.id+".json.tmp").toPath());
+        uploads.remove(upload.id,upload);
+        upload.offset=0;
     }
 
     private void completeUpload(HttpServer.Request request,HttpServer.Response response,Upload upload,Session session) throws IOException {
@@ -535,10 +669,12 @@ public final class TransferServer implements AutoCloseable {
         if(expected==null) throw error(400,"checksum_required","完成文件需要完整 SHA-256 校验值");
         if(upload.sha256!=null && !constantEquals(upload.sha256,expected)) throw error(422,"checksum_changed","完整文件校验值与任务声明不一致");
         if(upload.offset!=upload.size) throw error(409,"upload_incomplete","文件尚未传输完整");
-        upload.status="verifying";upload.error=null;upload.updatedAt=now();persist(upload);
+        upload.status="verifying";upload.error=null;upload.updatedAt=now();persist(upload,request.trace);
         String actual;
+        request.trace.mark("file-hashing");long hashStarted=System.nanoTime();
         try {actual=hashFile(partFile(upload),()->running && valid(session) && !upload.cancelRequested);}
         catch(IOException e) {upload.status="uploading";upload.error="校验中断，请重试";persist(upload);throw error(409,"verification_interrupted",upload.error);}
+        finally {request.trace.duration("fileHash",hashStarted);}
         if(!actual.equals(expected)) {
             // Corrupted completed uploads cannot be appended to. Start the same task from zero.
             try(RandomAccessFile file=new RandomAccessFile(partFile(upload),"rw")) {file.setLength(0);file.getFD().sync();}
@@ -547,15 +683,16 @@ public final class TransferServer implements AutoCloseable {
             throw error(422,"file_checksum",upload.error);
         }
         synchronized(received) {
-            upload.sha256=actual;upload.finalName=uniqueName(upload.name);upload.status="promoting";persist(upload);
+            upload.sha256=actual;upload.finalName=uniqueName(upload.name);upload.status="promoting";persist(upload,request.trace);
             move(partFile(upload),new File(received,upload.finalName));
-            upload.status="complete";upload.name=upload.finalName;upload.updatedAt=now();persist(upload);addReceived(upload);
+            upload.status="complete";upload.name=upload.finalName;upload.updatedAt=now();persist(upload,request.trace);addReceived(upload);
         }
         response.json(200,uploadJson(upload,false).toString());
     }
 
     private void cancel(Upload upload) throws IOException {
         if(isComplete(upload)) throw error(409,"already_complete","文件已接收，无法取消");
+        if(upload.restartOnly) {discardRestartOnly(upload);return;}
         upload.status="cancelled";upload.error=null;upload.updatedAt=now();persist(upload);
         Files.deleteIfExists(partFile(upload).toPath());
         Files.deleteIfExists(metaFile(upload).toPath());
@@ -755,6 +892,11 @@ public final class TransferServer implements AutoCloseable {
         move(temp,target);
     }
 
+    private void persist(Upload upload,TransportDiagnostics.Trace trace) throws IOException {
+        trace.mark("metadata-syncing");long started=System.nanoTime();
+        try {persist(upload);}finally{trace.addDuration("metadataSync",started);}
+    }
+
     private void recover() throws IOException {
         File[] records=incoming.listFiles((dir,name)->name.endsWith(".json"));
         if(records==null)throw new IOException("无法读取接收缓存目录");
@@ -769,6 +911,11 @@ public final class TransferServer implements AutoCloseable {
                 if(!Arrays.asList("uploading","failed","verifying","promoting","complete","cancelled","deleting","releasing","released").contains(upload.status))throw new JsonParseException("Invalid upload status");
                 if(Files.isSymbolicLink(partFile(upload).toPath()))throw new JsonParseException("Invalid upload path");
                 if(upload.finalName!=null)try {ownedFile(received,upload.finalName);}catch(IOException e){throw new JsonParseException("Invalid received path",e);}
+                if(upload.restartOnly&&!isComplete(upload)&&!"releasing".equals(upload.status)) {
+                    if(upload.finalName!=null)Files.deleteIfExists(ownedFile(received,upload.finalName).toPath());
+                    Files.deleteIfExists(partFile(upload).toPath());Files.deleteIfExists(record.toPath());
+                    Files.deleteIfExists(new File(incoming,upload.id+".json.tmp").toPath());continue;
+                }
                 if("deleting".equals(upload.status)||"releasing".equals(upload.status)) {
                     if(upload.finalName!=null)Files.deleteIfExists(ownedFile(received,upload.finalName).toPath());
                     Files.deleteIfExists(partFile(upload).toPath());
@@ -919,6 +1066,11 @@ public final class TransferServer implements AutoCloseable {
     }
     private static boolean isSha(String sha) {return sha!=null&&sha.matches("[0-9a-fA-F]{64}");}
     private static String optionalSha(JsonObject json,String key) throws HttpError {String value=string(json,key,false);if(value==null||value.isEmpty())return null;if(!isSha(value))throw error(400,"invalid_checksum","SHA-256 格式无效");return value.toLowerCase(Locale.ROOT);}
+    private static boolean optionalBoolean(JsonObject json,String key) throws HttpError {
+        JsonElement value=json.get(key);if(value==null)return false;
+        if(!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isBoolean())throw error(400,"invalid_field","参数格式无效："+key);
+        return value.getAsBoolean();
+    }
     static String safeName(String original) {
         if(original==null)original="未命名文件";
         String normalized=Normalizer.normalize(original,Normalizer.Form.NFC).replaceAll("[\\p{Cntrl}/\\\\:*?\"<>|]","_").trim();
@@ -941,6 +1093,7 @@ public final class TransferServer implements AutoCloseable {
         JsonObject json=new JsonObject();json.addProperty("id",upload.id);json.addProperty("name",upload.name);json.addProperty("size",upload.size);json.addProperty("mime",upload.mime);
         json.addProperty("offset",upload.offset);json.addProperty("status","released".equals(upload.status)?"complete":upload.status);json.addProperty("sha256",upload.sha256);json.addProperty("error",upload.error);
         json.addProperty("temporary",isTemporaryReceived(upload));
+        json.addProperty("restartOnly",upload.restartOnly);
         json.addProperty("createdAt",upload.createdAt);json.addProperty("updatedAt",upload.updatedAt);if(key)json.addProperty("resumeKey",upload.resumeKey);return json;
     }
     private static final class Session {
@@ -955,11 +1108,12 @@ public final class TransferServer implements AutoCloseable {
         long size,createdAt,lastOffset=-1;volatile long offset,updatedAt;int lastLength;
         // Missing fields in legacy metadata deliberately keep its old completed private files safe.
         volatile boolean temporaryReceived,saveRequested;
+        boolean restartOnly;
         transient volatile boolean cancelRequested;
         transient volatile Socket activeSocket;
         transient final Object lifecycle=new Object();
-        transient int activeRequests;
-        transient boolean maintenance;
+        transient volatile int activeRequests;
+        transient volatile boolean maintenance;
     }
     private static final class TextMessage {String id,text,sender;long createdAt;}
     private static final class Download {

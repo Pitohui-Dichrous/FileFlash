@@ -1,0 +1,261 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.1",
+  "engine": "chromium",
+  "browserVersion": "155.0.8059.84",
+  "scope": "Desktop browser protocol fixture, not a physical iPhone or Android Wi-Fi test.",
+  "recordedAt": "2026-10-20T12:58:29.057Z",
+  "fileBytes": 4194321,
+  "wire": [
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-1",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-2",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 13,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-3",
+      "declaredBytes": 13,
+      "receivedBytes": 13
+    },
+    {
+      "method": "DELETE",
+      "route": "cleanup",
+      "id": "upload-3"
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 13,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-4",
+      "declaredBytes": 13,
+      "receivedBytes": 13
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-5",
+      "declaredBytes": 4194321,
+      "receivedBytes": 65536
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-6",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "DELETE",
+      "route": "cleanup",
+      "id": "upload-6"
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-7",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "DELETE",
+      "route": "cleanup",
+      "id": "upload-7"
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-8",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "DELETE",
+      "route": "cleanup",
+      "id": "upload-8"
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 0,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-9",
+      "declaredBytes": 0,
+      "receivedBytes": 0
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 15,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-10",
+      "declaredBytes": 15,
+      "receivedBytes": 15
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 4194321,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-11",
+      "declaredBytes": 4194321,
+      "receivedBytes": 4194321
+    },
+    {
+      "method": "DELETE",
+      "route": "cleanup",
+      "id": "legacy-old"
+    },
+    {
+      "method": "POST",
+      "route": "create",
+      "size": 25,
+      "restartOnly": true,
+      "hasClientSha": false
+    },
+    {
+      "method": "POST",
+      "route": "stream",
+      "id": "upload-12",
+      "declaredBytes": 25,
+      "receivedBytes": 25
+    }
+  ],
+  "probes": [
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "PUT",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "PUT",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "PUT",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    },
+    {
+      "method": "POST",
+      "bytes": 524288
+    }
+  ],
+  "checks": [
+    "one native File POST for 4 MiB+17 bytes; no Blob.arrayBuffer, client SHA, per-block ACK, resume or pause; exact bytes; zero overall XHR timeout; file input and cleanup secret released",
+    "temporary file is downloadable before Android save; downloaded bytes match",
+    "sent progress is distinct from completed receiver ACK",
+    "lost final ACK fails once, removes completed unsaved temporary file, and explicit retry creates a fresh ID from zero",
+    "partial connection failure, storage error and malformed JSON preserve useful errors; remove temporary files; sanitized local diagnostics include File type and expected bytes",
+    "cancel aborts request and deletes temporary file",
+    "zero-byte File with Content-Length 0 and sequential multi-file queue",
+    "Unicode text, XSS as text and copy fallback preserved",
+    "connection diagnostics without a selected file run four bounded 512 KiB memory probes and create no upload or file records",
+    "XHR memory probe network failure plus successful fetch POST probe selects a fetch File attempt for this page session; no full-file read",
+    "HTTP 429 probe does not select another upload channel",
+    "legacy paused checkpoints load as failed, delete old temporary ID, allow any reselected file and restart from zero"
+  ],
+  "pageErrors": []
+}
