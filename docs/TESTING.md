@@ -1,6 +1,18 @@
 # 复现测试
 
-本文对应 0.1.5-test.1 诊断预发布版；0.1.3 及以前的脚本保留作历史基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。实体 iPhone 的一次诊断操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)，本版不宣称已解决真实 iOS 上传问题。
+本文对应 0.1.5-test.2 选取诊断预发布版；旧脚本及证据保留作历史基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。照片库问题、原生选取对照及备用方式见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)，本版不宣称已修复 iOS 照片库。
+
+## 照片库选取诊断
+
+```powershell
+node scripts/photo-picker-smoke.cjs
+$env:FILEFLASH_BROWSER_ENGINE='webkit'
+node scripts/photo-picker-smoke.cjs
+```
+
+独立夹具验证真实 DOM 点击、原生控件直接点击、无选取结果时不发上传、同文件再次选择、多选与重试切换、32 条内存记录和隐私。可追加私有 ready JSON 路径，对实际 Java 或 Android 服务重复测试；报告另存 `photo-picker-browser-*-real-server.json`，不覆盖旧版传输证据。ready 文件含配对凭据，不应公开。
+
+这些自动测试注入 FileList，使用合成 HEIC/MOV 名称及类型检查字节保持，没有调用 iOS 照片库或解码真实相机媒体，不能证明白圈问题已经修复。真实设备只需在“连接详情 → 选取测试”选一张此前失败的相机照片；卡住时退出选取界面，再“诊断 → 复制诊断”。
 
 ## 工程检查
 

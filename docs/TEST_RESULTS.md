@@ -1,6 +1,20 @@
 # 验证结果与兼容性
 
-验证日期：2026-10-21。交付版本：0.1.5-test.1 预发布版。下文保留旧版基线，并单独标明本次重跑范围。
+验证日期：2026-10-21。交付版本：0.1.5-test.2 预发布版。下文保留旧版基线，并单独标明本次重跑范围。
+
+## 0.1.5-test.2 照片库选取诊断
+
+用户真机反馈已确认 0.1.5-test.1 的 Safari 大型 APK、截图、下载图片和直接拍照上传正常；照片库里的本地相机照片或录像仍卡住，单张也会复现。尚未取得该设备的选择事件记录，不能将故障归因于 iCloud，也不能宣称照片库已修复。
+
+本版只增加选取开始、input/change/cancel 的有界内存诊断，以及 iOS 连接详情中的原生单选控件对照。任意文件入口、Android 多选、相机、单次 File POST、失败清理和原生传输均保留。报告最多 32 条选取事件，仅记录数量、字节数、粗略媒体类别和耗时，不含文件名、地址、凭据、原始 MIME 或内容。
+
+- Release 构建及 Android lint 无错误，最低 Android 10、版本代码 8，签名与已发布版本一致。**最终 APK 的全部两个 DEX 文件与 0.1.5-test.1 逐字节一致**，证明 Android 与传输引擎代码未改变。见 `test-evidence/photo-picker-binary.json`。
+- Chrome、WebKit 各通过 8 组独立夹具检查，又分别对最终 APK 的 API 29 服务通过同样 8 组、各 7 次连续上传。覆盖真实 DOM 点击、无结果不上传、原生控件直接点击、文件复制后清空输入、多选与重试切换、32 条日志及隐私。各报告绑定网页资源摘要；实服报告另绑定最终 APK 摘要。见 `test-evidence/photo-picker-browser-*.json`。
+- 自动化使用合成 HEIC/MOV 名称与 MIME 验证字节保持，不是可播放的相机媒体；注入 FileList 会绕过 iOS PHPicker，**这些结果不能证明白圈已解决**。
+- API 29 模拟器覆盖升级，无卸载，6 个已有保存文件及内容保留，服务启动和独立会话配对通过。见 `test-evidence/transport-upgrade-emulator-5556-photo-picker.json`。
+- 当前源码 ZIP 在独立目录、不含签名文件和本地工程配置时离线构建 Debug APK，并通过同一套 49 项核心测试。见 `test-evidence/photo-picker-clean-build.txt`。0.1.5-test.1 的性能及 4 GiB 证据保持为历史基线，没有在本次改选取诊断后重复测量。
+
+依据、一次原生控件对照和保留当前格式的文件导出备用方式见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)。
 
 ## 0.1.5-test.1 网页连续上传
 

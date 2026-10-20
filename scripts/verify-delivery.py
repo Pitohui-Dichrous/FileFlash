@@ -26,6 +26,44 @@ with zipfile.ZipFile(source) as archive:
         assert not any(part in {'.signing', '.tools', '.test-data', 'node_modules', 'build'} for part in relative.parts), relative
         assert relative.as_posix() != 'local.properties'
         assert archive.read(name) == (root / relative).read_bytes(), 'Source ZIP differs: ' + str(relative)
+if version == '0.1.5-test.2':
+    apk_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
+    binary = json.loads((root / 'docs/test-evidence/photo-picker-binary.json').read_text(encoding='utf-8'))
+    assert binary['passed'] and binary['version'] == version and binary['serverApkSha256'] == apk_sha
+    assert binary['allDexByteIdentical'] and binary['baselineApkSha256'] == 'a612b1a915c8ff18f400a845aa69baa2dde241148d4ee63449afc7a1a3c2d5dd'
+    with zipfile.ZipFile(apk) as archive:
+        for entry in binary['dex']:
+            assert hashlib.sha256(archive.read(entry['name'])).hexdigest() == entry['sha256']
+    current_checks = {}
+    for engine in ['chromium', 'webkit']:
+        for suffix in ['', '-real-server']:
+            name = f'photo-picker-browser-{engine}{suffix}.json'
+            evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
+            assert evidence['passed'] and evidence['version'] == version
+            for filename, digest in evidence['assetSha256'].items():
+                assert hashlib.sha256((root / 'app/src/main/assets/web' / filename).read_bytes()).hexdigest() == digest
+            if suffix:
+                assert evidence['serverApkSha256'] == apk_sha and evidence['serverVersion'] == version
+            current_checks[name] = len(evidence['checks'])
+    upgrade = json.loads((root / 'docs/test-evidence/transport-upgrade-emulator-5556-photo-picker.json').read_text(encoding='utf-8'))
+    assert upgrade['passed'] and upgrade['serverApkSha256'] == apk_sha and upgrade['version'] == version
+    assert upgrade['savedBytesUnchanged'] and not upgrade['uninstalled']
+    clean = (root / 'docs/test-evidence/photo-picker-clean-build.txt').read_text(encoding='utf-8')
+    assert version in clean and 'BUILD SUCCESSFUL' in clean and 'Core tests: 49 passed' in clean
+    report = {
+        'version': version, 'apkZipCrc': True, 'bundledAssetsMatchSource': len(assets),
+        'sourceZipCrc': True, 'sourceFilesMatchWorkingTree': len(sources),
+        'privateKeysSdkAndCredentialsExcluded': True, 'minimumAndroidApi': 29,
+        'allAndroidAndTransportDexByteIdenticalTo': binary['baselineVersion'],
+        'currentPickerChecks': current_checks, 'androidApi29UpgradeSavedBytesUnchanged': True,
+        'cleanSourceBuildCoreTestsPassed': 49,
+        'physicalIPhonePickerVerified': False, 'photosLibraryFixed': False,
+        'artifacts': [{'name': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in [apk, source]],
+    }
+    (root / 'dist/verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / 'dist/SHA256SUMS.txt').write_text(''.join(item['sha256'] + '  ' + item['name'] + '\n' for item in report['artifacts']), encoding='utf-8')
+    print(json.dumps(report, indent=2))
+    raise SystemExit(0)
 core = ET.parse(root / 'docs/test-evidence/core-tests.xml').getroot()
 assert int(core.attrib['failures']) == 0 and int(core.attrib['errors']) == 0
 cache = json.loads((root / 'docs/test-evidence/cache-android.json').read_text(encoding='utf-8'))

@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "version": "0.1.5-test.2",
+  "environment": "Dedicated emulator, not a personal phone",
+  "api": 29,
+  "previousVersion": {
+    "name": "0.1.5-test.1",
+    "code": 7
+  },
+  "installedVersion": {
+    "name": "0.1.5-test.2",
+    "code": 8
+  },
+  "serverApkSha256": "93cd0404a9df6edd1867c4492b1d3f120780310f3dae65d1e2dead9f1e31958e",
+  "savedFilesRetained": 6,
+  "savedBytesUnchanged": true,
+  "uninstalled": false,
+  "tests": [
+    {
+      "name": "dedicated rooted emulator guard",
+      "passed": true
+    },
+    {
+      "name": "signed in-place upgrade without uninstall",
+      "passed": true
+    },
+    {
+      "name": "expected version installed",
+      "passed": true
+    },
+    {
+      "name": "existing saved ledger and Download bytes unchanged",
+      "passed": true
+    },
+    {
+      "name": "server starts and independent sessions pair",
+      "passed": true
+    }
+  ]
+}

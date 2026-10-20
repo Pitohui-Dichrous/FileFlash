@@ -23,6 +23,38 @@
   let filesSignature = '', textsSignature = '', storageWarned = false, renderPending = false;
   let toastTimer, seenTexts = new Set();
   const taskRows = new Map(), textRows = new Map();
+  const pickerEvents = [], pickerAttempts = new Map(), pickerStartedAt = performance.now();
+  function pickerFiles(files) {
+    let total = 0;
+    const media = new Set(), types = {'image/heic':'heic','image/heic-sequence':'heic','image/heif':'heif','image/heif-sequence':'heif','image/jpeg':'jpeg','image/png':'png','video/quicktime':'quicktime','video/mp4':'mp4'};
+    files.forEach(file => {
+      total = total !== null && Number.isSafeInteger(file.size) && file.size >= 0 && Number.isSafeInteger(total + file.size) ? total + file.size : null;
+      media.add(Object.prototype.hasOwnProperty.call(types,file.type) ? types[file.type] : 'other');
+    });
+    return {count:files.length,bytes:total,media:Array.from(media).sort()};
+  }
+  function pickerEvent(input, event, files) {
+    const now = performance.now();
+    let attempt = pickerAttempts.get(input);
+    if (event === 'open') {
+      attempt = {source:input.id === 'native-file-input' ? 'native' : targetSelection ? 'retry' : 'normal',multiple:input.multiple,accept:input.hasAttribute('accept') ? 'filtered' : 'unrestricted',status:'pending',startedAt:now,count:0,bytes:0,media:[]};
+      pickerAttempts.set(input, attempt);
+    }
+    if (!attempt) {
+      attempt = {source:input.id === 'native-file-input' ? 'native' : targetSelection ? 'retry' : 'normal',multiple:input.multiple,accept:input.hasAttribute('accept') ? 'filtered' : 'unrestricted',status:'pending',startedAt:now,count:0,bytes:0,media:[]};
+      pickerAttempts.set(input, attempt);
+    }
+    const selected = pickerFiles(files || []), elapsedMs = Math.max(0,Math.round(now - attempt.startedAt));
+    Object.assign(attempt,selected,{elapsedMs});
+    if (event === 'change') attempt.status = selected.count ? 'selected' : 'empty';
+    // The browser does not distinguish an explicit cancel from a picker failure.
+    if (event === 'cancel') attempt.status = 'no-files';
+    pickerEvents.push(Object.assign({atMs:Math.round(now - pickerStartedAt),event,source:attempt.source,multiple:attempt.multiple,accept:attempt.accept,elapsedMs},selected));
+    if (pickerEvents.length > 32) pickerEvents.shift();
+  }
+  function pickerDiagnostic() {
+    return {capacity:32,events:pickerEvents.slice(),attempts:Array.from(pickerAttempts.values(),attempt => ({source:attempt.source,multiple:attempt.multiple,accept:attempt.accept,status:attempt.status,elapsedMs:attempt.status === 'pending' ? Math.max(0,Math.round(performance.now() - attempt.startedAt)) : attempt.elapsedMs,count:attempt.count,bytes:attempt.bytes,media:attempt.media.slice()}))};
+  }
   function readStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (_) { return fallback; } }
   function store(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {
     if (!storageWarned) { storageWarned = true; toast('浏览器无法保存连接与进度；关闭页面后需要重新配对。', 7000); }
@@ -63,7 +95,7 @@
     if(!task.trace)task.trace=[];task.trace.push(entry);if(task.trace.length>96)task.trace.shift();
   }
   function diagnosticText(task){
-    return JSON.stringify({schemaVersion:1,client:{platform:IOS?'iOS':/Android/i.test(navigator.userAgent)?'Android':'desktop',engine:/Firefox/i.test(navigator.userAgent)?'Firefox':/AppleWebKit/i.test(navigator.userAgent)&&!/(Chrome|Chromium|Edg)/i.test(navigator.userAgent)?'WebKit':'Chromium',uploadChannel},task:{size:task.size,sentBytes:task.loaded||0,restartOnly:true},events:task.trace||[],probes:task.probes||[],server:task.serverDiagnostic||null},null,2);
+    return JSON.stringify({schemaVersion:1,client:{platform:IOS?'iOS':/Android/i.test(navigator.userAgent)?'Android':'desktop',engine:/Firefox/i.test(navigator.userAgent)?'Firefox':/AppleWebKit/i.test(navigator.userAgent)&&!/(Chrome|Chromium|Edg)/i.test(navigator.userAgent)?'WebKit':'Chromium',uploadChannel},picker:pickerDiagnostic(),task:{size:task.size,sentBytes:task.loaded||0,restartOnly:true},events:task.trace||[],probes:task.probes||[],server:task.serverDiagnostic||null},null,2);
   }
   function captureDiagnostics(task,error){
     trace(task,'failed',{status:error.status||0,code:error.code||'',name:error.name||'Error'});task.serverDiagnostic=null;
@@ -145,6 +177,10 @@
     $('pair-panel').hidden = !!session;
     $('disconnect-button').hidden = !session;
     $('diagnostic-button').hidden = !session;
+    $('picker-test-button').hidden = !IOS || !session;
+    $('picker-test-button').disabled = next !== 'connected';
+    $('native-file-input').disabled = next !== 'connected';
+    if (!session) { $('picker-test-panel').hidden = true; $('picker-test-button').setAttribute('aria-expanded','false'); }
     $('server-address').textContent = location.origin;
     $('server-name').textContent = server.serverName || '连接详情';
     message($('connection-error'), reason || (next === 'disconnected' && session ? '连接已中断。请确认 Android 服务已启动，两台设备连接同一 Wi-Fi；恢复后会自动重连。' : ''));
@@ -388,7 +424,19 @@
   });
   document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>switchTab(el.dataset.tab)));
   $('choose-files').addEventListener('click',()=>chooseFile(null));
-  $('file-input').addEventListener('change',event=>{addFiles(event.target.files);event.target.value='';});
+  $('picker-test-button').addEventListener('click',()=>{const panel=$('picker-test-panel');panel.hidden=!panel.hidden;$('picker-test-button').setAttribute('aria-expanded',String(!panel.hidden));});
+  ['file-input','native-file-input'].forEach(id=>{
+    const input=$(id);
+    input.addEventListener('click',()=>{if(id==='native-file-input')targetSelection=null;input.value='';pickerEvent(input,'open');});
+    input.addEventListener('input',()=>pickerEvent(input,'input',Array.from(input.files||[])));
+    input.addEventListener('change',()=>{
+      // Snapshot the FileList before resetting the control; queued Files stay alive.
+      const files=Array.from(input.files||[]);pickerEvent(input,'change',files);
+      if(id==='native-file-input')targetSelection=null;
+      try{if(files.length)addFiles(files);else targetSelection=null;}finally{input.value='';}
+    });
+    input.addEventListener('cancel',()=>{pickerEvent(input,'cancel');targetSelection=null;});
+  });
   $('clear-tasks').addEventListener('click',()=>{tasks=tasks.filter(t=>!['complete','cancelled'].includes(t.status));persistTasks();renderTasks();});
   $('text-input').addEventListener('input',()=>{$('text-count').textContent=$('text-input').value.length+' 字符';$('send-text').disabled=connection!=='connected'||!$('text-input').value.length||textSending;});
   $('text-form').addEventListener('submit',async event=>{
