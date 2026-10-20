@@ -32,6 +32,19 @@ cache = json.loads((root / 'docs/test-evidence/cache-android.json').read_text(en
 assert cache['tests'] and all(item['passed'] for item in cache['tests'])
 large = json.loads((root / 'docs/test-evidence/large.json').read_text(encoding='utf-8'))
 assert large['passed'] and large['bytes'] > 4 * 1024 ** 3
+upload_checks = {}
+apk_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
+for name in ['upload-android.json', 'upload-android-api29.json']:
+    evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
+    assert evidence['tests'] and all(item['passed'] for item in evidence['tests']), name
+    assert any(item.get('apkSha256') == apk_sha for item in evidence['tests']), name
+    upload_checks[name] = len(evidence['tests'])
+for name in ['ios-upload-browser-chromium.json', 'ios-upload-browser-webkit.json', 'ios-upload-live-webkit.json', 'upload-webkit-android.json']:
+    evidence = json.loads((root / 'docs/test-evidence' / name).read_text(encoding='utf-8'))
+    assert evidence['passed'], name
+    upload_checks[name] = True
+actual_web = json.loads((root / 'docs/test-evidence/upload-webkit-android.json').read_text(encoding='utf-8'))
+assert actual_web['serverApkSha256'] == apk_sha
 report = {
     'version': version,
     'apkZipCrc': True,
@@ -41,6 +54,9 @@ report = {
     'privateKeysSdkAndCredentialsExcluded': True,
     'coreTestsPassed': int(core.attrib['tests']),
     'androidCacheChecksPassed': len(cache['tests']),
+    'androidCacheChecksVersion': '0.1.1 historical baseline',
+    'currentUploadChecks': upload_checks,
+    'minimumAndroidApi': 29,
     'realHttpLargeFileBytes': large['bytes'],
     'artifacts': [{'name': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in [apk, source]],
 }

@@ -2,6 +2,8 @@ package app.fileflash.core;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -10,9 +12,14 @@ import java.util.concurrent.*;
 final class HttpServer {
     interface Handler { void handle(Request request, Response response) throws Exception; }
     static final int MAX_HEADER_BYTES = 16 * 1024;
+    static final int MAX_PENDING_HEADERS = 48;
+    static final int MAX_OPEN_CONNECTIONS = MAX_PENDING_HEADERS + 6 + 18;
+    static final long HEADER_TIMEOUT_MS = 5_000;
+    static final int BODY_TIMEOUT_MS = 120_000;
     private final Handler handler;
     private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
-    private ServerSocket listener;
+    private ServerSocketChannel listener;
+    private Selector readiness;
     private Thread acceptor;
     private ThreadPoolExecutor workers;
     volatile boolean running;
@@ -21,41 +28,148 @@ final class HttpServer {
 
     synchronized void start(int port) throws IOException {
         if (running) return;
-        listener = new ServerSocket();
-        listener.setReuseAddress(true);
-        listener.bind(new InetSocketAddress(port), 32);
+        listener = ServerSocketChannel.open();
+        try {
+            listener.socket().setReuseAddress(true);
+            listener.socket().bind(new InetSocketAddress(port), 32);
+            listener.configureBlocking(false);
+            readiness = Selector.open();
+            listener.register(readiness, SelectionKey.OP_ACCEPT);
+        } catch(IOException|RuntimeException e) {
+            try {listener.close();}catch(IOException ignored){ }
+            try {if(readiness!=null)readiness.close();}catch(IOException ignored){ }
+            throw e;
+        }
         workers = new ThreadPoolExecutor(6, 6, 0, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(18), r -> { Thread t = new Thread(r, "fileflash-http"); t.setDaemon(true); return t; });
         running = true;
-        acceptor = new Thread(this::accept, "fileflash-listen");
+        ServerSocketChannel listening=listener;Selector selector=readiness;ThreadPoolExecutor pool=workers;
+        acceptor = new Thread(() -> accept(listening,selector,pool), "fileflash-listen");
         acceptor.setDaemon(true);
         acceptor.start();
     }
 
-    int port() { return listener == null ? 0 : listener.getLocalPort(); }
+    int port() { return listener == null ? 0 : listener.socket().getLocalPort(); }
 
-    private void accept() {
-        while (running) {
-            try {
-                Socket socket = listener.accept();
-                socket.setSoTimeout(30_000);
-                socket.setTcpNoDelay(true);
-                sockets.add(socket);
-                try { workers.execute(() -> serve(socket)); }
-                catch (RejectedExecutionException e) {
-                    sockets.remove(socket);
-                    // Do not block the acceptor on an overloaded peer.
-                    socket.close();
+    private void accept(ServerSocketChannel listening,Selector selector,ThreadPoolExecutor pool) {
+        Map<SocketChannel,PendingHeader> pending=new LinkedHashMap<>();
+        try {
+            while (running && listener==listening) {
+                long wait=0,now=System.nanoTime();
+                for(PendingHeader header:pending.values()) {
+                    long left=HEADER_TIMEOUT_MS-TimeUnit.NANOSECONDS.toMillis(now-header.startedAt);
+                    wait=wait==0?Math.max(1,left):Math.min(wait,Math.max(1,left));
                 }
-            } catch (IOException ignored) { if (!running) break; }
+                if(selector.selectedKeys().isEmpty()) {
+                    if(wait==0)selector.select();else selector.select(wait);
+                }
+                List<PendingHeader> ready=new ArrayList<>();
+                Iterator<SelectionKey> selected=selector.selectedKeys().iterator();
+                while(selected.hasNext()) {
+                    SelectionKey key=selected.next();selected.remove();
+                    if(!key.isValid())continue;
+                    if(key.isAcceptable()) {
+                        SocketChannel channel;
+                        while((channel=listening.accept())!=null) {
+                            try {
+                                if(!running||pending.size()>=MAX_PENDING_HEADERS||sockets.size()>=MAX_OPEN_CONNECTIONS) {channel.close();continue;}
+                                Socket socket=channel.socket();socket.setTcpNoDelay(true);sockets.add(socket);
+                                channel.configureBlocking(false);
+                                PendingHeader header=new PendingHeader(channel);pending.put(channel,header);
+                                channel.register(selector,SelectionKey.OP_READ,header);
+                            } catch(IOException|ClosedSelectorException e) {pending.remove(channel);close(channel);}
+                        }
+                    } else if(key.isReadable()) {
+                        PendingHeader header=(PendingHeader)key.attachment();
+                        try {
+                            int count=header.channel.read(header.bytes);
+                            if(count<0) {
+                                if(header.bytes.position()==0) {key.cancel();pending.remove(header.channel);close(header.channel);continue;}
+                                header.error=new HttpError(400,"unexpected_eof","请求不完整");
+                            } else if(count==0)continue;
+                            if(header.error!=null||header.scan()) {
+                                key.cancel();pending.remove(header.channel);ready.add(header);
+                            }
+                        } catch(IOException e) {key.cancel();pending.remove(header.channel);close(header.channel);}
+                    }
+                }
+                now=System.nanoTime();
+                Iterator<PendingHeader> waiting=pending.values().iterator();
+                while(waiting.hasNext()) {
+                    PendingHeader header=waiting.next();
+                    if(TimeUnit.NANOSECONDS.toMillis(now-header.startedAt)>=HEADER_TIMEOUT_MS) {
+                        SelectionKey key=header.channel.keyFor(selector);if(key!=null)key.cancel();waiting.remove();close(header.channel);
+                    }
+                }
+                if(!ready.isEmpty()) {
+                    // Cancellation must reach the selector before a channel can use blocking streams.
+                    selector.selectNow();
+                    for(PendingHeader header:ready) {
+                        try {
+                            header.channel.configureBlocking(true);
+                            Socket socket=header.channel.socket();socket.setSoTimeout(BODY_TIMEOUT_MS);
+                            byte[] prefix=Arrays.copyOf(header.bytes.array(),header.bytes.position());
+                            HttpError error=header.error;
+                            pool.execute(() -> serve(socket,prefix,error));
+                        } catch(IOException|RejectedExecutionException e) {close(header.channel);}
+                    }
+                }
+            }
+        } catch(IOException|ClosedSelectorException ignored) {
+            // Stopping the host closes both listener and selector to wake this thread.
+        } finally {
+            for(PendingHeader header:pending.values())close(header.channel);
         }
     }
 
-    private void serve(Socket socket) {
+    private void close(SocketChannel channel) {
+        sockets.remove(channel.socket());try {channel.close();}catch(IOException ignored){ }
+    }
+
+    /** Idle/preconnecting and fragmented-header sockets never occupy a transfer worker. */
+    private static final class PendingHeader {
+        final SocketChannel channel;
+        final ByteBuffer bytes=ByteBuffer.allocate(MAX_HEADER_BYTES);
+        final long startedAt=System.nanoTime();
+        int scanned,previous=-1,ending;
+        HttpError error;
+        PendingHeader(SocketChannel channel) {this.channel=channel;}
+        boolean scan() {
+            while(scanned<bytes.position()) {
+                int next=bytes.get(scanned++)&255;
+                if(next==0||(next=='\n'&&previous!='\r')||(previous=='\r'&&next!='\n')) {
+                    error=new HttpError(400,"bad_line_ending","请求头须使用 CRLF");return true;
+                }
+                int expected=(ending==0||ending==2)?'\r':'\n';
+                ending=next==expected?ending+1:next=='\r'?1:0;
+                previous=next;
+                if(ending==4)return true; // Remaining prefetched bytes belong to the body, not headers.
+            }
+            if(!bytes.hasRemaining()) {error=new HttpError(431,"headers_too_large","请求头过长");return true;}
+            return false;
+        }
+    }
+
+    private void serve(Socket socket,byte[] prefix,HttpError headerError) {
         Response response = null;
+        Request request = null;
         try {
             response = new Response(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024));
-            Request request = parse(new BufferedInputStream(socket.getInputStream(), 32 * 1024), socket);
+            if(headerError!=null)throw headerError;
+            // Never close the socket on input EOF, or combine a short prefetched header read with
+            // a blocking network read before the parser has seen those already available bytes.
+            InputStream network=socket.getInputStream();
+            InputStream input=new InputStream() {
+                int position;
+                @Override public int read() throws IOException {return position<prefix.length?prefix[position++]&255:network.read();}
+                @Override public int read(byte[] bytes,int offset,int length) throws IOException {
+                    if(length==0)return 0;
+                    if(position<prefix.length) {int count=Math.min(length,prefix.length-position);System.arraycopy(prefix,position,bytes,offset,count);position+=count;return count;}
+                    return network.read(bytes,offset,length);
+                }
+                @Override public int available() throws IOException {return prefix.length-position+network.available();}
+            };
+            request = parse(new BufferedInputStream(input, 32 * 1024), socket);
             handler.handle(request, response);
         } catch (HttpError e) {
             if (response != null && !response.started) try { response.error(e.status, e.code, e.getMessage()); } catch (IOException ignored) { }
@@ -65,14 +179,32 @@ final class HttpServer {
             if (response != null && !response.started) try { response.error(500, "internal_error", "操作失败，请重试或检查剩余存储空间"); } catch (IOException ignored) { }
         } finally {
             if (response != null) try { response.flush(); } catch (IOException ignored) { }
+            // Send FIN after the response before closing an early-rejected request. Closing with
+            // unread body bytes immediately can reset TCP and hide an otherwise valid 409/4xx.
+            try {socket.shutdownOutput();}catch(IOException ignored){ }
+            drainRejectedBody(request,socket);
             try { socket.close(); } catch (IOException ignored) { }
             sockets.remove(socket);
         }
     }
 
+    private static void drainRejectedBody(Request request,Socket socket) {
+        if(request==null||request.consumed>=request.length||request.length>2*1024*1024)return;
+        long remaining=request.length-request.consumed,deadline=System.nanoTime()+TimeUnit.MILLISECONDS.toNanos(500);
+        byte[] buffer=new byte[16*1024];
+        try {
+            socket.setSoTimeout(250);
+            while(remaining>0&&System.nanoTime()<deadline) {
+                int count=request.body.read(buffer,0,(int)Math.min(buffer.length,remaining));
+                if(count<0)break;remaining-=count;
+            }
+        }catch(IOException ignored){ }
+    }
+
     synchronized void stop() {
         running = false;
         try { if (listener != null) listener.close(); } catch (IOException ignored) { }
+        try { if (readiness != null) readiness.close(); } catch (IOException ignored) { }
         for (Socket socket : sockets) try { socket.close(); } catch (IOException ignored) { }
         sockets.clear();
         if (workers != null) workers.shutdownNow();
@@ -141,6 +273,7 @@ final class HttpServer {
         final long length;
         final InputStream body;
         final Socket socket;
+        long consumed;
         Request(String method, String path, Map<String,String> headers, long length, InputStream body, Socket socket) {
             this.method=method; this.path=path; this.headers=headers; this.length=length; this.body=body; this.socket=socket;
         }
@@ -152,7 +285,7 @@ final class HttpServer {
             while (offset < data.length) {
                 int count = body.read(data, offset, data.length-offset);
                 if (count < 0) throw new HttpError(400, "incomplete_body", "传输中断，请重试");
-                offset += count;
+                offset += count;consumed+=count;
             }
             return data;
         }

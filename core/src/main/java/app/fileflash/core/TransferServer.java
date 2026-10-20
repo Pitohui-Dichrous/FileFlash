@@ -398,7 +398,8 @@ public final class TransferServer implements AutoCloseable {
         String key=request.header("x-upload-key");
         if(!session.id.equals(upload.owner) && !constantEquals(key,upload.resumeKey)) throw error(403,"upload_key_required","需要原任务的恢复凭据，请重新选择原文件");
         if(parts.length==4 && request.method.equals("DELETE")) requestCancel(upload);
-        boolean heavy=request.method.equals("PUT")||(parts.length==5&&request.method.equals("POST"));
+        boolean prefix=parts.length==5&&parts[4].equals("prefix")&&request.method.equals("GET");
+        boolean heavy=request.method.equals("PUT")||(parts.length==5&&request.method.equals("POST"))||prefix;
         if(heavy&&!uploadSlots.tryAcquire())throw error(429,"transfer_limit","传输任务繁忙，请稍后重试");
         synchronized(upload.lifecycle) {
             if(upload.maintenance||uploads.get(upload.id)!=upload) {
@@ -409,6 +410,9 @@ public final class TransferServer implements AutoCloseable {
         try {
         synchronized(upload) {
             if(parts.length==5) {
+                if(parts[4].equals("prefix")) {
+                    requireMethod(request,"GET");uploadPrefix(response,upload,session);return;
+                }
                 if(!parts[4].equals("complete")) throw error(404,"not_found","接口不存在");
                 requireMethod(request,"POST");completeUpload(request,response,upload,session);return;
             }
@@ -417,6 +421,25 @@ public final class TransferServer implements AutoCloseable {
             requireMethod(request,"PUT"); appendChunk(request,response,upload,session);
         }
         } finally {synchronized(upload.lifecycle){upload.activeRequests--;}if(heavy)uploadSlots.release();}
+    }
+
+    /** Hashes only durably acknowledged bytes so a browser can validate a reselected resume file. */
+    private void uploadPrefix(HttpServer.Response response,Upload upload,Session session) throws IOException {
+        if(!isIncomplete(upload))throw error(409,"upload_closed","任务已结束，请刷新传输进度");
+        long offset=upload.offset,remaining=offset;
+        MessageDigest digest=digest();byte[] buffer=new byte[128*1024];
+        try(InputStream input=new FileInputStream(partFile(upload))) {
+            while(remaining>0) {
+                if(!running||!valid(session)||upload.cancelRequested||Thread.currentThread().isInterrupted())
+                    throw error(409,"verification_interrupted","断点校验已中断，请重试");
+                int count=input.read(buffer,0,(int)Math.min(buffer.length,remaining));
+                if(count<0)throw error(409,"resume_data_missing","断点文件不完整，请清理该任务后重新发送");
+                if(count==0)continue;
+                digest.update(buffer,0,count);remaining-=count;
+            }
+        }
+        JsonObject result=new JsonObject();result.addProperty("id",upload.id);result.addProperty("size",upload.size);
+        result.addProperty("offset",offset);result.addProperty("prefixSha256",hex(digest.digest()));response.json(200,result.toString());
     }
 
     private void appendChunk(HttpServer.Request request,HttpServer.Response response,Upload upload,Session session) throws IOException {

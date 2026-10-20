@@ -8,10 +8,10 @@ android {
     buildToolsVersion = "37.0.0"
     defaultConfig {
         applicationId = "app.fileflash"
-        minSdk = 34
+        minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 4
+        versionName = "0.1.2"
     }
     buildFeatures { compose = true }
     val releaseKey = rootProject.file(".signing/fileflash.p12")

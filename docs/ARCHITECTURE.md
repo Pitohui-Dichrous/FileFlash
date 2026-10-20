@@ -1,10 +1,10 @@
 # FileFlash 架构
 
-本文对应 0.1.1，HTTP 协议版本仍为 v1。
+本文对应 0.1.2，HTTP 协议版本仍为 v1。
 
 ## 模块
 
-- `app`：Kotlin / Jetpack Compose Android 应用。最低 Android 14，目标 Android 17；同一 APK 包含主机和客户端。
+- `app`：Kotlin / Jetpack Compose Android 应用。最低 Android 10（API 29），目标 Android 17；同一 APK 包含主机和客户端。最低版本受当前 MediaStore Downloads 保存流程约束。
 - `core`：不依赖 Android 的 Java 传输内核；Android 和本机集成测试使用相同实现。
 - `app/src/main/assets/web`：原生 HTML、CSS、JavaScript。由 Android 本地服务提供，资源全部随 APK 打包。
 

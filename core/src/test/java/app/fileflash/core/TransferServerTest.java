@@ -286,6 +286,102 @@ class TransferServerTest {
         Path path=directory.resolve("uploads").resolve(id+".json");JsonObject metadata=JsonParser.parseString(Files.readString(path)).getAsJsonObject();metadata.addProperty("updatedAt",time);Files.writeString(path,metadata.toString());
     }
 
+    @Test void sixIdlePreconnectionsCannotStarveStateOrUploadWorkers() throws Exception {
+        assertHeaderWaitersDoNotStarve(false);
+    }
+
+    @Test void sixFragmentedHeadersCannotStarveStateOrUploadWorkers() throws Exception {
+        assertHeaderWaitersDoNotStarve(true);
+    }
+
+    void assertHeaderWaitersDoNotStarve(boolean partial) throws Exception {
+        byte[] block=new byte[TransferServer.CHUNK_SIZE];new Random(341).nextBytes(block);
+        JsonObject upload=create("ios-stall.apk",2L*block.length,null);List<Socket> waiting=new ArrayList<>();
+        try {
+            for(int i=0;i<6;i++) {
+                Socket socket=new Socket("127.0.0.1",server.getPort());waiting.add(socket);
+                if(partial) {socket.getOutputStream().write("GET /api/state HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Unfinished: ".getBytes(StandardCharsets.US_ASCII));socket.getOutputStream().flush();}
+            }
+            Thread.sleep(50); // Ensure the earlier sockets reach the listener before the real request.
+            HttpRequest state=HttpRequest.newBuilder(URI.create(base+"/api/state")).timeout(java.time.Duration.ofSeconds(2)).header("Authorization","Bearer "+session).GET().build();
+            assertEquals(200,client.send(state,HttpResponse.BodyHandlers.ofByteArray()).statusCode());
+            long started=System.nanoTime();
+            assertEquals(200,chunk(upload,0,block,sha(block)).statusCode());
+            assertEquals(200,chunk(upload,block.length,block,sha(block)).statusCode());
+            assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started)<2000,"Idle headers must not delay acknowledged chunks");
+            assertEquals(2L*block.length,object(json("GET","/api/uploads/"+upload.get("id").getAsString(),null,true)).get("offset").getAsLong());
+        } finally {for(Socket socket:waiting)socket.close();}
+    }
+
+    @Test void headerGateLimitsPendingMemoryAndRecoversAfterIdlePeersLeave() throws Exception {
+        List<Socket> waiting=new ArrayList<>();
+        try {
+            for(int i=0;i<HttpServer.MAX_PENDING_HEADERS;i++)waiting.add(new Socket("127.0.0.1",server.getPort()));
+            Thread.sleep(100);
+            try(Socket excess=new Socket("127.0.0.1",server.getPort())) {
+                excess.setSoTimeout(2000);assertEquals(-1,excess.getInputStream().read(),"Pending header capacity must be bounded");
+            }
+        } finally {for(Socket socket:waiting)socket.close();}
+        assertEquals(200,json("GET","/api/state",null,true).statusCode());
+    }
+
+    @Test void partialHeaderHasAnAbsoluteDeadlineAndPrefetchedBinaryBodyIsUnchanged() throws Exception {
+        try(Socket partial=new Socket("127.0.0.1",server.getPort())) {
+            partial.setSoTimeout(7000);partial.getOutputStream().write('G');partial.getOutputStream().flush();
+            long started=System.nanoTime();assertEquals(-1,partial.getInputStream().read());
+            assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started)<6500,"An unfinished header must expire");
+        }
+        byte[] data={0,'\r','\n','\r','\n',0,(byte)255,3};JsonObject upload=create("binary.bin",data.length,null);
+        try(Socket socket=new Socket("127.0.0.1",server.getPort())) {
+            socket.setSoTimeout(2000);
+            ByteArrayOutputStream request=new ByteArrayOutputStream();request.write(rawChunkHeader(upload,0,data).getBytes(StandardCharsets.US_ASCII));request.write(data);
+            socket.getOutputStream().write(request.toByteArray());socket.getOutputStream().flush();
+            String status=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.US_ASCII)).readLine();assertTrue(status.startsWith("HTTP/1.1 200"));
+        }
+        assertArrayEquals(data,Files.readAllBytes(directory.resolve("uploads").resolve(upload.get("id").getAsString()+".part")));
+    }
+
+    String rawChunkHeader(JsonObject upload,long offset,byte[] data) throws Exception {
+        return "PUT /api/uploads/"+upload.get("id").getAsString()+" HTTP/1.1\r\nHost: 127.0.0.1:"+server.getPort()+"\r\nAuthorization: Bearer "+session+
+                "\r\nX-Upload-Key: "+upload.get("resumeKey").getAsString()+"\r\nContent-Length: "+data.length+"\r\nX-Offset: "+offset+"\r\nX-Chunk-SHA256: "+sha(data)+"\r\n\r\n";
+    }
+
+    HttpResponse<byte[]> prefix(JsonObject upload,boolean key) throws Exception {
+        HttpRequest.Builder request=HttpRequest.newBuilder(URI.create(base+"/api/uploads/"+upload.get("id").getAsString()+"/prefix")).timeout(java.time.Duration.ofSeconds(5)).header("Authorization","Bearer "+session);
+        if(key)request.header("X-Upload-Key",upload.get("resumeKey").getAsString());
+        return client.send(request.GET().build(),HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    @Test void prefixChecksOnlyCommittedBytesAndSurvivesLostAcknowledgementAndRestart() throws Exception {
+        byte[] first=new byte[TransferServer.CHUNK_SIZE],tail={8,9,10};new Random(76).nextBytes(first);
+        ByteArrayOutputStream complete=new ByteArrayOutputStream();complete.write(first);complete.write(tail);
+        JsonObject upload=create("resume-prefix.apk",first.length+tail.length,null);String id=upload.get("id").getAsString();
+        JsonObject empty=object(prefix(upload,true));assertEquals(sha(new byte[0]),empty.get("prefixSha256").getAsString());assertEquals(0,empty.get("offset").getAsLong());
+        assertEquals(id,empty.get("id").getAsString());assertEquals(first.length+tail.length,empty.get("size").getAsLong());
+        // The client drops the response instead of accepting its JSON acknowledgement.
+        try(Socket socket=new Socket("127.0.0.1",server.getPort())) {
+            socket.setSoTimeout(2000);socket.getOutputStream().write(rawChunkHeader(upload,0,first).getBytes(StandardCharsets.US_ASCII));socket.getOutputStream().write(first);socket.getOutputStream().flush();
+            assertEquals('H',socket.getInputStream().read());
+        }
+        Files.write(directory.resolve("uploads").resolve(id+".part"),new byte[]{99,98},StandardOpenOption.APPEND);
+        JsonObject checkpoint=object(prefix(upload,true));assertEquals(first.length,checkpoint.get("offset").getAsLong());assertEquals(sha(first),checkpoint.get("prefixSha256").getAsString());
+        server.stop();open();pair();
+        assertEquals(403,prefix(upload,false).statusCode());assertEquals(sha(first),object(prefix(upload,true)).get("prefixSha256").getAsString());
+        assertEquals(401,json("GET","/api/uploads/"+id+"/prefix",null,false).statusCode());
+        assertEquals(200,chunk(upload,first.length,tail,sha(tail)).statusCode());
+        HttpRequest finish=HttpRequest.newBuilder(URI.create(base+"/api/uploads/"+id+"/complete")).header("Authorization","Bearer "+session).header("X-Upload-Key",upload.get("resumeKey").getAsString()).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString("{\"sha256\":\""+sha(complete.toByteArray())+"\"}")).build();
+        assertEquals(200,client.send(finish,HttpResponse.BodyHandlers.ofByteArray()).statusCode());assertEquals(409,prefix(upload,true).statusCode());
+        assertArrayEquals(complete.toByteArray(),Files.readAllBytes(server.receivedFile(id).toPath()));
+    }
+
+    @Test void prefixCannotReadCancelledOrExpiredDataAndDoesNotExposeSecrets() throws Exception {
+        JsonObject cancelled=create("cancel-prefix.bin",3,null);String id=cancelled.get("id").getAsString();
+        assertEquals(405,json("POST","/api/uploads/"+id+"/prefix","{}",true).statusCode());
+        assertFalse(object(prefix(cancelled,true)).has("resumeKey"));
+        assertEquals(200,json("DELETE","/api/uploads/"+id,null,true).statusCode());assertEquals(409,prefix(cancelled,true).statusCode());
+        JsonObject stale=create("expired-prefix.bin",3,null);assertEquals(0,server.cleanupStaleUploads(0,0,System.currentTimeMillis()));assertEquals(404,prefix(stale,true).statusCode());
+    }
+
     @Test void parserRejectsAmbiguousLengthsAndUnsafeHost() throws Exception {
         assertEquals(400,raw("POST /api/pair HTTP/1.1\r\nHost: 127.0.0.1:"+server.getPort()+"\r\nContent-Length: 0\r\nContent-Length: 0\r\n\r\n"));
         assertEquals(400,raw("POST /api/pair HTTP/1.1\r\nHost: 127.0.0.1:"+server.getPort()+"\r\nTransfer-Encoding: chunked\r\n\r\n"));

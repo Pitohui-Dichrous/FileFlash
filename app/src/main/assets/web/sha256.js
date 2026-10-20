@@ -40,6 +40,11 @@
     if(pos<n){this.block.set(data.subarray(pos),0);this.used=n-pos;}
     return this;
   };
+  SHA256.prototype.clone = function () {
+    var copy = new SHA256();
+    copy.h.set(this.h);copy.block.set(this.block);copy.used=this.used;copy.bytes=this.bytes;copy.finished=this.finished;
+    return copy;
+  };
   SHA256.prototype.hex = function () {
     if(!this.finished){
       var b=this.block,u=this.used;b[u++]=0x80;

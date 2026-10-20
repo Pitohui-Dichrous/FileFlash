@@ -12,10 +12,10 @@ const longText='浏览器 → Android\n中文 English 😀 特殊符号 <script>
   const browser=await engines[engine].launch(engine==='chromium'?{headless:true,channel:process.env.FILEFLASH_BROWSER_CHANNEL||'chromium'}:{headless:true});
   const context=await browser.newContext({viewport:{width:375,height:812},reducedMotion:'reduce',acceptDownloads:true});
   const page=await context.newPage(),pageErrors=[];page.on('pageerror',e=>pageErrors.push(e.message));
-  let injected=false,confirmedFirst=false;
+  let injected=false,confirmedFirst=false,blockNetwork=true;
   await page.route('**/api/uploads/*',async route=>{
     const request=route.request();
-    if(request.method()==='PUT'&&Number(request.headers()['x-offset'])>0&&!injected){injected=true;await route.abort('connectionfailed');return;}
+    if(request.method()==='PUT'&&Number(request.headers()['x-offset'])>0&&blockNetwork){injected=true;await route.abort('connectionfailed');return;}
     if(request.method()==='PUT'&&request.headers()['x-offset']==='0')confirmedFirst=true;
     await route.continue();
   });
@@ -24,8 +24,8 @@ const longText='浏览器 → Android\n中文 English 😀 特殊符号 <script>
     await page.locator('#file-input').setInputFiles({name,mimeType:'application/octet-stream',buffer:source});
     await page.locator('.task-error').filter({hasText:'连接中断。恢复网络后可重试'}).waitFor({timeout:30000});assert.ok(injected&&confirmedFirst);
     let task=await page.evaluate(()=>JSON.parse(localStorage.getItem('fileflash.tasks.v1')).find(t=>t.name.startsWith('网页实测')));assert.equal(task.offset,2097152);const uploadId=task.id;
-    await page.reload();await page.locator('#connection-label').filter({hasText:'已连接'}).waitFor();await page.locator('[data-tab="tasks"]').click();
-    await page.getByRole('button',{name:'选择原文件',exact:true}).click();await page.locator('#file-input').setInputFiles({name,mimeType:'application/octet-stream',buffer:Buffer.from('wrong file')});
+    blockNetwork=false;await page.reload();await page.locator('#connection-label').filter({hasText:'已连接'}).waitFor();await page.locator('[data-tab="tasks"]').click();
+    const wrong=Buffer.from(source);wrong[0]^=1;await page.getByRole('button',{name:'选择原文件',exact:true}).click();await page.locator('#file-input').setInputFiles({name,mimeType:'application/octet-stream',buffer:wrong});
     await page.getByText('所选文件与原文件内容不同。请重新选择原文件。',{exact:true}).waitFor();
     await page.getByRole('button',{name:'选择原文件',exact:true}).click();await page.locator('#file-input').setInputFiles({name,mimeType:'application/octet-stream',buffer:source});
     await page.locator('.task-state').filter({hasText:'已完成'}).waitFor({timeout:30000});

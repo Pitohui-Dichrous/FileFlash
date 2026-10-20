@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
         } else action()
     }
     private fun withNotification(action: () -> Unit) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) action()
+        if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) action()
         else { pendingNotification = action; notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
     }
     private fun openScanner() { scanner.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt("扫描 FileFlash 二维码").setBeepEnabled(false).setOrientationLocked(false).addExtra(Intents.Scan.SCAN_TYPE, Intents.Scan.MIXED_SCAN)) }

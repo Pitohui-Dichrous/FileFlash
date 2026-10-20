@@ -1,0 +1,306 @@
+{
+  "passed": true,
+  "engine": "chromium",
+  "browserVersion": "155.0.8059.84",
+  "hostPlatform": "win32",
+  "recordedAt": "2026-10-20T11:39:26.967Z",
+  "scope": "Desktop browser engine against a local Node HTTP protocol fixture. Not physical iOS Safari or Android device evidence.",
+  "firstSendReadBytes": 2097152,
+  "fileBytes": 4194321,
+  "bodyShapes": [
+    {
+      "type": "[object ArrayBuffer]",
+      "nativeArrayBuffer": true,
+      "byteLength": 2097152
+    },
+    {
+      "type": "[object ArrayBuffer]",
+      "nativeArrayBuffer": true,
+      "byteLength": 2097152
+    },
+    {
+      "type": "[object ArrayBuffer]",
+      "nativeArrayBuffer": true,
+      "byteLength": 2097152
+    },
+    {
+      "type": "[object ArrayBuffer]",
+      "nativeArrayBuffer": true,
+      "byteLength": 2097152
+    },
+    {
+      "type": "[object ArrayBuffer]",
+      "nativeArrayBuffer": true,
+      "byteLength": 2097152
+    }
+  ],
+  "wirePuts": [
+    {
+      "offset": 0,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 4194304,
+      "bodyBytes": 17,
+      "headers": {
+        "content-length": "17",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524295,
+      "headers": {
+        "content-length": "524295",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524288,
+      "headers": {
+        "content-length": "524288",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524288,
+      "headers": {
+        "content-length": "524288",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 524288,
+      "bodyBytes": 7,
+      "headers": {
+        "content-length": "7",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524288,
+      "headers": {
+        "content-length": "524288",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 0,
+      "bodyBytes": 524288,
+      "headers": {
+        "content-length": "524288",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 524288,
+      "bodyBytes": 7,
+      "headers": {
+        "content-length": "7",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      }
+    },
+    {
+      "offset": 2097152,
+      "bodyBytes": 2097152,
+      "headers": {
+        "content-length": "2097152",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    },
+    {
+      "offset": 4194304,
+      "bodyBytes": 17,
+      "headers": {
+        "content-length": "17",
+        "content-type": "application/octet-stream",
+        "connection": "keep-alive",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      }
+    }
+  ],
+  "checks": [
+    "SHA vectors + non-mutating clone",
+    "first PUT after only 2 MiB read, before complete 4 MiB + 17 byte file",
+    "initial create without full SHA",
+    "native ArrayBuffer request bodies and wire Content-Length/body equality",
+    "2 MiB chunk SHA checks",
+    "bounded automatic retry exhaustion",
+    "reload and same-size wrong-prefix rejection",
+    "same-ID prefix resume + final SHA/byte equality",
+    "lost ACK after commit: duplicate retransmission without duplicate bytes",
+    "connection dropped before commit: automatic retry",
+    "simulated iPhone 512 KiB+7 bytes: lost ACK and drop-before-commit both finish in 3 PUTs, no duplicate bytes",
+    "ACK-only progress while server response deliberately held",
+    "422 chunk checksum error not automatically retried",
+    "final file checksum corruption rejected",
+    "pause and cancel interrupt automatic recovery",
+    "legacy declared full SHA: matching prefix/altered tail rejected, server reset, correct original retry succeeds",
+    "native download",
+    "Unicode text + clipboard fallback + XSS-as-text",
+    "4 responsive widths + 44 px touch targets",
+    "expired credentials",
+    "100-row/7-day terminal history retention, paused work preserved",
+    "completion secret/file-input cleanup",
+    "expired breakpoint restarts at zero",
+    "confirmed/failed cancellation cleanup"
+  ],
+  "pageErrors": []
+}

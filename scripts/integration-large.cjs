@@ -97,6 +97,9 @@ async function main() {
     await send();
     if (offset % (256 * 1024 ** 2) === 0) console.log('Transferred ' + (offset / 1024 ** 2) + ' MiB');
   }
+  const prefix = await api('GET', '/api/uploads/' + id + '/prefix', undefined, headers);
+  assert.equal(prefix.offset, size); assert.equal(prefix.size, size); assert.equal(prefix.prefixSha256, sha256);
+  checks.push('committed-prefix recovery SHA-256 beyond 4GiB matches streamed source');
   upload = await api('POST', '/api/uploads/' + id + '/complete', { sha256 }, headers);
   assert.equal(upload.status, 'complete'); assert.equal(upload.sha256, sha256);
   checks.push('complete upload SHA-256 verified by server');

@@ -6,9 +6,9 @@
 
 Android / iPhone 局域网文件与文字互传。
 
-[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.1/FileFlash-0.1.1.apk)
+[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.2/FileFlash-0.1.2.apk)
 
-Android 14 及以上安装 APK，iPhone 用 Safari 扫码使用，两台设备连接同一个 Wi-Fi。
+Android 10 及以上安装 APK，iPhone 用 Safari 扫码使用，两台设备连接同一个 Wi-Fi。
 
 支持文件和文字互传、断点续传、自动与手动清理缓存。无账号、无广告，传输不需要互联网。
 

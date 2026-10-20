@@ -2,7 +2,10 @@
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  const CHUNK = 2 * 1024 * 1024;
+  // Keep iOS requests smaller; the protocol still accepts the original 2 MiB
+  // maximum, so older checkpoints remain valid at any confirmed offset.
+  const IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const CHUNK = (IOS ? 512 : 2048) * 1024;
   const HISTORY_LIMIT = 100, HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
   const SESSION_KEY = 'fileflash.session.v1', TASKS_KEY = 'fileflash.tasks.v1';
   const pendingHashToken = new URLSearchParams(location.hash.slice(1)).get('pair');
@@ -27,7 +30,8 @@
   } }
   function validStoredTask(t) { return t && typeof t.name === 'string' && Number.isSafeInteger(t.size) && t.size >= 0 && (!t.id || /^[A-Za-z0-9_-]+$/.test(t.id)); }
   function terminalTask(task) { return ['complete', 'cancelled'].includes(task.status); }
-  function finishTask(task, status) { task.status = status; task.file = null; delete task.resumeKey; task.finishedAt = Date.now(); }
+  function clearHash(task) { delete task.hashStream;delete task.hashFile;delete task.hashOffset; }
+  function finishTask(task, status) { task.status = status; task.file = null; task.phase=''; clearHash(task); delete task.resumeKey; task.finishedAt = Date.now(); }
   function trimHistory() {
     // History is metadata only. Keep every resumable task, while completed rows and their secrets are disposable.
     const cutoff = Date.now() - HISTORY_TTL;
@@ -180,7 +184,7 @@
     textRows.forEach((card,id)=>{if(!alive.has(id)){card.remove();textRows.delete(id);}});
     ordered.forEach((card,index)=>{if(list.children[index]!==card)list.insertBefore(card,list.children[index]||null);});
   }
-  const statusLabels = {queued:'排队中',hashing:'校验原文件',uploading:'发送中',verifying:'最终校验',cancelling:'取消中',complete:'已完成',failed:'失败',paused:'已暂停',cancelled:'已取消'};
+  const statusLabels = {queued:'排队中',hashing:'核对已收断点',uploading:'发送中',verifying:'最终校验',cancelling:'取消中',complete:'已完成',failed:'失败',paused:'已暂停',cancelled:'已取消'};
   function renderTaskRow(task, remote) {
     const key = remote ? 'download-'+task.id : task.key;
     let item=taskRows.get(key);
@@ -195,11 +199,11 @@
     item.name.textContent=task.name;item.meta.textContent=(remote?'接收 · ':'发送 · ')+bytes(task.size);
     item.state.textContent=remote?(status==='complete'?'传输完成':status==='failed'?'下载中断':status==='cancelled'?'已取消':'浏览器下载中'):(statusLabels[status]||status);
     item.state.className='task-state '+status;
-    const loaded=remote?(task.transferred||0):hashing?(task.hashBytes||0):status==='complete'?task.size:Math.max(task.offset||0,task.loaded||0);
-    item.progress.value=task.size?Math.min(1,loaded/task.size):(status==='complete'?1:0);
-    item.progress.setAttribute('aria-valuetext',bytes(loaded)+' / '+bytes(task.size));
-    item.amount.textContent=(hashing?'已校验 ':'')+bytes(loaded)+' / '+bytes(task.size);
-    item.speed.textContent=!remote&&status==='uploading'&&task.speed>0?bytes(task.speed)+'/s':'';
+    const loaded=remote?(task.transferred||0):hashing?(task.hashBytes||0):status==='complete'?task.size:(task.offset||0),total=hashing?task.hashTotal:task.size;
+    item.progress.value=total?Math.min(1,loaded/total):(status==='complete'?1:0);
+    item.progress.setAttribute('aria-valuetext',bytes(loaded)+' / '+bytes(total));
+    item.amount.textContent=(hashing?'已核对 ':!remote&&status!=='complete'?'接收端已确认 ':'')+bytes(loaded)+' / '+bytes(total);
+    item.speed.textContent=!remote&&status==='uploading'?(task.phase|| (task.speed>0?bytes(task.speed)+'/s':'')):'';
     const error=remote?(status==='complete'?'保存结果请查看 Safari 下载管理器。':task.error||''):task.error||'';
     item.error.textContent=error;item.error.hidden=!error;item.error.className=remote&&status==='complete'?'task-note':'task-error';
     const actionKey=status+':'+!!task.file+':'+remote;
@@ -238,65 +242,114 @@
     persistTasks();renderTasks();switchTab('tasks');pump();
   }
   function stopCheck(task) { if(task.cancelRequested||task.pauseRequested||!session) { const err=new Error('paused');err.name='AbortError';throw err; } }
-  async function digestFile(task) {
-    const hash=new FileFlashSHA256();task.status='hashing';task.hashBytes=0;task.error='';renderTasks();
-    // 512 KiB keeps main-thread work interruptible even on a slower phone.
-    for(let offset=0;offset<task.file.size;offset+=512*1024){
-      stopCheck(task);const data=await task.file.slice(offset,Math.min(offset+512*1024,task.file.size)).arrayBuffer();stopCheck(task);hash.update(data);task.hashBytes=Math.min(offset+data.byteLength,task.file.size);scheduleRender();await new Promise(resolve=>setTimeout(resolve,0));
+  async function taskApi(task,path,options) {
+    const controller=new AbortController(),abort=()=>controller.abort();task.abort=abort;
+    try{return await api(path,Object.assign({},options||{},{signal:controller.signal}));}
+    finally{if(task.abort===abort)task.abort=null;}
+  }
+  async function hashPrefix(task,offset) {
+    const hash=new FileFlashSHA256();task.status='hashing';task.hashBytes=0;task.hashTotal=offset;task.error='';renderTasks();
+    // Only a reselected file's already-received prefix is read before resuming.
+    for(let start=0;start<offset;start+=512*1024){
+      stopCheck(task);const end=Math.min(start+512*1024,offset),data=await task.file.slice(start,end).arrayBuffer();stopCheck(task);
+      if(data.byteLength!==end-start)throw new Error('无法读取完整分块，请重新选择原文件。');
+      hash.update(data);task.hashBytes=end;scheduleRender();await retryDelay(task,0);
     }
-    stopCheck(task);return hash.hex();
+    stopCheck(task);return hash;
+  }
+  function retryDelay(task,millis) {
+    return new Promise((resolve,reject)=>{
+      const abort=()=>{clearTimeout(timer);const err=new Error('paused');err.name='AbortError';reject(err);};
+      const timer=setTimeout(()=>{if(task.abort===abort)task.abort=null;resolve();},millis);task.abort=abort;
+      if(task.cancelRequested||task.pauseRequested||!session)abort();
+    });
+  }
+  function transportError(message) { const err=new Error(message);err.retryable=true;return err; }
+  function canRetry(err) { return !!err.retryable||[408,429,503].includes(err.status); }
+  async function recoverHash(task,remote) {
+    const offset=validateOffset(remote.offset,task.size);
+    if(task.hashStream&&task.hashFile===task.file&&task.hashOffset===offset)return task.hashStream;
+    if(!offset)return new FileFlashSHA256();
+    const prefix=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/prefix',{headers:uploadHeaders(task),timeout:600000});stopCheck(task);
+    if(prefix.id!==task.id||prefix.size!==task.size||validateOffset(prefix.offset,task.size)!==offset||!/^[a-f0-9]{64}$/i.test(prefix.prefixSha256||''))throw new Error('接收端断点已变化，请重试。');
+    const hash=await hashPrefix(task,offset);
+    if(hash.clone().hex()!==prefix.prefixSha256.toLowerCase()){task.file=null;clearHash(task);throw new Error('所选文件与原文件内容不同。请重新选择原文件。');}
+    return hash;
   }
   function sendChunk(task, data, chunkHash) {
     return new Promise((resolve,reject)=>{
-      const xhr=new XMLHttpRequest(),start=performance.now(),base=task.offset;let settled=false;
-      const done=(fn,value)=>{if(settled)return;settled=true;task.abort=null;fn(value);};
+      const xhr=new XMLHttpRequest(),start=performance.now(),base=task.offset;let settled=false,ackTimer=null,ackTimeout=false;
+      const done=(fn,value)=>{if(settled)return;settled=true;clearTimeout(ackTimer);task.abort=null;fn(value);};
       xhr.open('PUT','/api/uploads/'+encodeURIComponent(task.id));xhr.timeout=120000;
       xhr.setRequestHeader('Authorization','Bearer '+session);xhr.setRequestHeader('Content-Type','application/octet-stream');xhr.setRequestHeader('X-Offset',String(base));xhr.setRequestHeader('X-Chunk-SHA256',chunkHash);
       if(task.resumeKey)xhr.setRequestHeader('X-Upload-Key',task.resumeKey);
-      xhr.upload.onprogress=e=>{task.loaded=base+e.loaded;task.speed=e.loaded/Math.max(.001,(performance.now()-start)/1000);scheduleRender();};
+      task.phase='正在发送本块';
+      xhr.upload.onprogress=e=>{task.loaded=base+e.loaded;task.speed=e.loaded/Math.max(.001,(performance.now()-start)/1000);task.phase='本块 '+bytes(e.loaded)+' / '+bytes(data.byteLength);scheduleRender();};
+      xhr.upload.onload=()=>{task.phase='本块已发送，等待确认';scheduleRender();ackTimer=setTimeout(()=>{ackTimeout=true;xhr.abort();},20000);};
       xhr.onload=()=>{let result;try{result=JSON.parse(xhr.responseText);}catch(_){return done(reject,new Error('设备返回了无效的分块结果。'));}if(xhr.status>=200&&xhr.status<300)done(resolve,result);else{if(xhr.status===401)expired();done(reject,new ApiError(result.error||'分块发送失败（'+xhr.status+'）',xhr.status,result.code));}};
-      xhr.onerror=()=>done(reject,new Error('连接中断。恢复网络后可重试，已接收的分块会保留。'));
-      xhr.ontimeout=()=>done(reject,new Error('发送超时。请保持页面在前台，恢复连接后重试。'));
-      xhr.onabort=()=>{const err=new Error('paused');err.name='AbortError';done(reject,err);};
+      xhr.onerror=()=>done(reject,transportError('连接中断。恢复网络后可重试，已接收的分块会保留。'));
+      xhr.ontimeout=()=>done(reject,transportError('发送超时。请保持页面在前台，恢复连接后重试。'));
+      xhr.onabort=()=>{if(ackTimeout)return done(reject,transportError('等待接收端确认超时，正在检查已接收进度。'));const err=new Error('paused');err.name='AbortError';done(reject,err);};
       task.abort=()=>xhr.abort();xhr.send(data);
     });
   }
+  async function sendReliable(task,data,chunkHash) {
+    const base=task.offset,end=base+data.byteLength;let lastError;
+    for(let attempt=0;attempt<4;attempt++){
+      stopCheck(task);
+      try{return await sendChunk(task,data,chunkHash);}
+      catch(err){
+        stopCheck(task);if(!canRetry(err))throw err;lastError=err;if(attempt===3)break;
+        task.phase='连接中断，正在恢复（'+(attempt+1)+'/3）';task.speed=0;scheduleRender();await retryDelay(task,400*Math.pow(2,attempt)+Math.random()*150);stopCheck(task);
+        try{
+          const remote=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id),{headers:uploadHeaders(task),timeout:12000});stopCheck(task);
+          const offset=validateOffset(remote.offset,task.size);
+          if(remote.size!==task.size||(offset!==base&&offset!==end))throw new Error('接收端断点已变化，请重试。');
+          // Resend the exact block even if its response was lost: the server verifies
+          // duplicate offset + length + checksum before acknowledging it again.
+        }catch(queryError){stopCheck(task);if(queryError instanceof ApiError&&!canRetry(queryError))throw queryError;if(!canRetry(queryError)&&queryError.message!=='连接中断或请求超时。请保持页面在前台，并检查 Android 服务与 Wi-Fi。')throw queryError;}
+      }
+    }
+    task.phase='';throw lastError;
+  }
   function validateOffset(value,size) { if(!Number.isSafeInteger(value)||value<0||value>size)throw new Error('设备返回了无效的文件偏移，已停止传输。');return value; }
   async function processTask(task) {
-    task.pauseRequested=false;task.cancelRequested=false;task.speed=0;
-    const digest=await digestFile(task);
-    if(task.sha256&&task.sha256!==digest){task.file=null;throw new Error('所选文件与原文件内容不同。请重新选择原文件。');}
-    if(task.size!==task.file.size){task.file=null;throw new Error('所选文件大小与原文件不同。请重新选择原文件。');}
-    task.sha256=digest;
-    // Content identity, never the filename alone, permits recovery after a reload.
-    if(!task.id){
-      const previous=tasks.find(t=>t!==task&&t.id&&t.resumeKey&&t.sha256===digest&&t.size===task.size&&!['complete','cancelled'].includes(t.status));
-      if(previous){task.id=previous.id;task.resumeKey=previous.resumeKey;task.name=previous.name;task.offset=previous.offset;tasks=tasks.filter(t=>t!==previous);}
-    }
+    task.pauseRequested=false;task.cancelRequested=false;task.speed=0;task.phase='';
+    if(task.size!==task.file.size){task.file=null;clearHash(task);throw new Error('所选文件大小与原文件不同。请重新选择原文件。');}
     stopCheck(task);let remote;
     if(task.id){
-      try{remote=await api('/api/uploads/'+encodeURIComponent(task.id),{headers:uploadHeaders(task)});}
-      catch(err){if(err.status===404||err.status===410){task.id=null;task.resumeKey=null;task.offset=0;task.loaded=0;toast('断点已清理，将重新发送。',6000);}else throw err;}
+      try{remote=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id),{headers:uploadHeaders(task)});}
+      catch(err){if(err.status===404||err.status===410){task.id=null;task.resumeKey=null;task.offset=0;task.loaded=0;clearHash(task);toast('断点已清理，将重新发送。',6000);}else throw err;}
     }
-    if(remote&&remote.status==='complete'){if(remote.sha256&&remote.sha256!==digest)throw new Error('接收端校验值不一致。');task.name=remote.name||task.name;task.offset=task.size;task.loaded=task.size;task.error='';finishTask(task,'complete');persistTasks();return;}
-    if(remote&&remote.status==='cancelled'){task.id=null;task.resumeKey=null;remote=null;}
-    if(!task.id){remote=await api('/api/uploads',{method:'POST',json:{name:task.name,size:task.size,mime:task.mime,sha256:digest}});task.id=remote.id;task.resumeKey=remote.resumeKey;}
+    if(remote&&remote.status==='complete'){if(task.sha256&&remote.sha256&&remote.sha256!==task.sha256)throw new Error('接收端校验值不一致。');task.sha256=remote.sha256||task.sha256;task.name=remote.name||task.name;task.offset=task.size;task.loaded=task.size;task.error='';finishTask(task,'complete');persistTasks();return;}
+    if(remote&&remote.status==='cancelled'){task.id=null;task.resumeKey=null;remote=null;clearHash(task);}
+    if(!task.id){task.status='uploading';task.phase='准备发送';renderTasks();remote=await taskApi(task,'/api/uploads',{method:'POST',json:{name:task.name,size:task.size,mime:task.mime,sha256:task.sha256}});task.id=remote.id;task.resumeKey=remote.resumeKey;}
     if(!task.id||!remote)throw new Error('设备未创建传输任务。');
-    if(remote.size!==task.size||(remote.sha256&&remote.sha256!==digest))throw new Error('接收端任务与原文件不一致，已停止传输。');
-    task.resumeKey=remote.resumeKey||task.resumeKey;task.offset=validateOffset(remote.offset,task.size);task.loaded=task.offset;task.status='uploading';task.error='';persistTasks();renderTasks();
+    if(remote.size!==task.size||(task.sha256&&remote.sha256&&remote.sha256!==task.sha256))throw new Error('接收端任务与原文件不一致，已停止传输。');
+    task.resumeKey=remote.resumeKey||task.resumeKey;task.offset=validateOffset(remote.offset,task.size);task.loaded=task.offset;persistTasks();
+    const hash=await recoverHash(task,remote);stopCheck(task);task.hashStream=hash;task.hashFile=task.file;task.hashOffset=task.offset;
+    task.status='uploading';task.phase='';task.error='';renderTasks();
     while(task.offset<task.size){
       stopCheck(task);const start=task.offset,end=Math.min(start+CHUNK,task.size),data=await task.file.slice(start,end).arrayBuffer();stopCheck(task);
       if(data.byteLength!==end-start)throw new Error('无法读取完整分块，请重新选择原文件。');
       const chunkHash=new FileFlashSHA256().update(data).hex();stopCheck(task);
-      const result=await sendChunk(task,data,chunkHash);stopCheck(task);
+      const result=await sendReliable(task,data,chunkHash);stopCheck(task);
       const confirmed=validateOffset(result.offset,task.size);
       if(confirmed!==end)throw new Error('接收端确认的分块长度不一致，请重试。');
-      task.offset=confirmed;task.loaded=confirmed;persistTasks();scheduleRender();
+      hash.update(data);task.hashOffset=confirmed;task.offset=confirmed;task.loaded=confirmed;task.phase='';persistTasks();scheduleRender();
     }
-    stopCheck(task);task.status='verifying';task.speed=0;renderTasks();
-    const controller=new AbortController();task.abort=()=>controller.abort();
-    const result=await api('/api/uploads/'+encodeURIComponent(task.id)+'/complete',{method:'POST',json:{sha256:digest},headers:uploadHeaders(task),signal:controller.signal,timeout:600000});
-    task.abort=null;stopCheck(task);
+    stopCheck(task);const digest=hash.clone().hex();
+    if(task.sha256&&task.sha256!==digest){
+      // A legacy task may already know the original whole-file hash. If a
+      // reselected file only diverged after the accepted prefix, let the server
+      // check that original value and reset the invalid bytes before reselection.
+      try{await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/complete',{method:'POST',json:{sha256:task.sha256},headers:uploadHeaders(task),timeout:600000});}
+      catch(err){if(err.code==='file_checksum'){task.offset=0;task.loaded=0;clearHash(task);}else{stopCheck(task);throw err;}}
+      task.file=null;clearHash(task);throw new Error('所选文件与原文件内容不同。请重新选择原文件。');
+    }
+    task.sha256=digest;task.status='verifying';task.speed=0;persistTasks();renderTasks();
+    const result=await taskApi(task,'/api/uploads/'+encodeURIComponent(task.id)+'/complete',{method:'POST',json:{sha256:digest},headers:uploadHeaders(task),timeout:600000});
+    stopCheck(task);
     if(result.status!=='complete')throw new Error(result.error||'接收端尚未完成文件校验，请重试。');
     if(result.sha256&&result.sha256!==digest)throw new Error('接收端校验值不一致。');
     task.name=result.name||task.name;task.offset=task.size;task.loaded=task.size;task.speed=0;task.error='';finishTask(task,'complete');persistTasks();refresh(false);

@@ -1,0 +1,86 @@
+{
+  "environment": "Dedicated rooted Android API34 emulator; adb forwarding, not physical Wi-Fi, Huawei hardware, or iOS",
+  "run": "1792496308265768000",
+  "tests": [
+    {
+      "name": "guarded dedicated rooted Android emulator selected",
+      "passed": true,
+      "api": 34
+    },
+    {
+      "name": "nonempty saved-file baseline recorded before signed upgrade",
+      "passed": true,
+      "previousVersion": {
+        "name": "0.1.1",
+        "code": 2
+      },
+      "savedFiles": 1
+    },
+    {
+      "name": "new signed release installs as in-place upgrade",
+      "passed": true,
+      "apkSha256": "1f01ee702dccc410bb0f382866173189287b42063da3a0006d35da26858b9181"
+    },
+    {
+      "name": "expected release version is installed",
+      "passed": true,
+      "installed": {
+        "name": "0.1.2",
+        "code": 4
+      }
+    },
+    {
+      "name": "upgrade preserves saved ledger and existing Downloads bytes",
+      "passed": true,
+      "checkedFiles": 1,
+      "previousVersion": {
+        "name": "0.1.1",
+        "code": 2
+      },
+      "installedVersion": {
+        "name": "0.1.2",
+        "code": 4
+      },
+      "upgradePath": "Android mainline in-place upgrade"
+    },
+    {
+      "name": "desktop pairs with actual Android APK host",
+      "passed": true
+    },
+    {
+      "name": "actual Android host hashes only acknowledged resume prefix",
+      "passed": true,
+      "prefixBytes": 2097152
+    },
+    {
+      "name": "multichunk upload publishes identical MediaStore Downloads bytes",
+      "passed": true,
+      "bytes": 4194477,
+      "sha256": "98e9e4880390b1f8e909ec47f73f255c6f38eb696a3e053c36c8a9522c1cd4d8"
+    },
+    {
+      "name": "successful upload automatically releases private duplicate",
+      "passed": true
+    },
+    {
+      "name": "released file downloads under original share id",
+      "passed": true
+    },
+    {
+      "name": "new-session lost-ACK recovery receipt survives process restart",
+      "passed": true
+    },
+    {
+      "name": "completion retry is idempotent after restart",
+      "passed": true
+    },
+    {
+      "name": "same-id saved-file download survives restart",
+      "passed": true
+    },
+    {
+      "name": "host retains dataSync foreground service",
+      "passed": true
+    }
+  ]
+}

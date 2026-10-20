@@ -1,0 +1,187 @@
+{
+  "passed": true,
+  "engine": "webkit",
+  "browserVersion": "26.5",
+  "hostPlatform": "win32",
+  "recordedAt": "2026-10-20T11:36:59.840Z",
+  "scope": "Desktop WebKit with simulated iPhone and iPad browser identification, against the real Java core. Not a physical iPhone/iPad or actual iOS file-picker/network test.",
+  "results": [
+    {
+      "identification": "iPhone Safari UA",
+      "fileBytes": 4194477,
+      "firstSendReadBytes": 524288,
+      "puts": [
+        {
+          "offset": 0,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 524288,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 1048576,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 1572864,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 2097152,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 2621440,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 3145728,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 3670016,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 4194304,
+          "bodyBytes": 173
+        }
+      ],
+      "nativeArrayBufferBodies": [
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 173
+        }
+      ],
+      "passed": true,
+      "checks": [
+        "first request is 512 KiB before whole file is read",
+        "multiple small PUTs accepted by real Java core",
+        "final SHA equals selected source",
+        "download bytes equal selected source",
+        "File input and resume secret released after success"
+      ]
+    },
+    {
+      "identification": "iPad desktop UA + MacIntel + 5 touch points",
+      "fileBytes": 1048749,
+      "firstSendReadBytes": 524288,
+      "puts": [
+        {
+          "offset": 0,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 524288,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 1048576,
+          "bodyBytes": 173
+        }
+      ],
+      "nativeArrayBufferBodies": [
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 524288
+        },
+        {
+          "nativeArrayBuffer": true,
+          "type": "[object ArrayBuffer]",
+          "byteLength": 173
+        }
+      ],
+      "passed": true,
+      "checks": [
+        "first request is 512 KiB before whole file is read",
+        "multiple small PUTs accepted by real Java core",
+        "final SHA equals selected source",
+        "download bytes equal selected source",
+        "File input and resume secret released after success"
+      ]
+    },
+    {
+      "identification": "iPhone Safari UA resuming old 2 MiB checkpoint",
+      "fileBytes": 4194477,
+      "seededOffset": 2097152,
+      "prefixRequests": 1,
+      "puts": [
+        {
+          "offset": 2097152,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 2621440,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 3145728,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 3670016,
+          "bodyBytes": 524288
+        },
+        {
+          "offset": 4194304,
+          "bodyBytes": 173
+        }
+      ],
+      "passed": true,
+      "checks": [
+        "original task ID retained",
+        "original 2 MiB prefix verified",
+        "all resumed PUTs use at most 512 KiB",
+        "completed file hash and actual downloaded bytes equal selected source"
+      ]
+    }
+  ]
+}

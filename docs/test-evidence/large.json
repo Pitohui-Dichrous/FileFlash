@@ -1,20 +1,21 @@
 {
   "passed": true,
   "bytes": 4295032835,
-  "sha256": "bb4cc536bdc3d8f96e2b500babbc6bd28323ed695f86ce6b23a4eb4e782e1067",
+  "sha256": "e91c006fa854557f285d2a185654101ad3d33aa3ec8d21ff40291347879b1579",
   "checks": [
     "unauthenticated state rejected",
     "lost-response duplicate chunk idempotent",
     "damaged chunk and premature completion rejected",
     "hard process restart: stale auth rejected, recovery key required, uncommitted tail truncated",
+    "committed-prefix recovery SHA-256 beyond 4GiB matches streamed source",
     "complete upload SHA-256 verified by server",
     "HTTP Range offset 4295032771 verified byte-for-byte",
     "full streamed download exact length and SHA-256",
     "Unicode multiline long text roundtrip"
   ],
-  "networkRetries": 0,
+  "networkRetries": 1,
   "javaMaxHeapMiB": 128,
-  "nodePeakRssMiB": 135,
-  "elapsedSeconds": 126,
+  "nodePeakRssMiB": 201,
+  "elapsedSeconds": 73,
   "environment": "Windows JVM real HTTP; not Android/iOS device validation"
 }
