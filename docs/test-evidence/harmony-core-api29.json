@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-21",
+  "branch": "harmonyos-4.2",
+  "scope": "All production Java sources in core/src/main/java; no production changes required.",
+  "compile": {
+    "status": "passed",
+    "exitCode": 0,
+    "sourceFiles": 7,
+    "generatedClassFiles": 18,
+    "compiler": "OpenJDK javac 19",
+    "sourceLevel": 8,
+    "targetLevel": 8,
+    "bootClasspath": "Official Android SDK Platform 29 android.jar plus a compile-only LambdaMetafactory signature stub; no host JDK runtime classes.",
+    "compileOnlyBootstrap": "LambdaMetafactory signatures allow javac lambda generation. The stub is not packaged; Android D8 desugars lambdas.",
+    "dependencies": [
+      "com.google.code.gson:gson:2.13.1"
+    ],
+    "diagnostics": []
+  },
+  "platform": {
+    "description": "Official Android SDK Platform 10",
+    "apiLevel": 29,
+    "revision": 5,
+    "androidJarSha256": "d4ce0daae1695abc7497009c61237f774f52c6ffdc222784e03f60effb917532"
+  },
+  "runtimeMemberAudit": {
+    "database": "Official Android SDK Platform 29 data/api-versions.xml",
+    "javaMemberReferences": 227,
+    "resolvedMemberReferences": 226,
+    "maximumAddedApi": 26,
+    "aboveApi29": [],
+    "unresolvedRuntimeMembers": [],
+    "desugaredBootstrapMembers": [
+      {
+        "owner": "java/lang/invoke/LambdaMetafactory",
+        "kind": "method",
+        "name": "metafactory",
+        "descriptor": "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+        "since": null
+      }
+    ]
+  },
+  "result": "passed",
+  "limitations": [
+    "Compile and symbol checks establish core Java API compatibility, not HarmonyOS device certification. Native Android UI, permissions, MediaStore, foreground service and the signed APK need separate emulator/device checks.",
+    "Gson internals are not covered by this application member-reference audit. Its pinned official release README states minimum Android API 21; packaged runtime behavior requires smoke tests."
+  ],
+  "sources": [
+    "https://raw.githubusercontent.com/google/gson/gson-parent-2.13.1/README.md",
+    "https://developer.android.com/reference/java/nio/file/Files",
+    "https://developer.android.com/reference/java/util/Base64"
+  ]
+}

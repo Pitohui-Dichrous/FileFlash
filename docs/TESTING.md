@@ -1,6 +1,12 @@
 # 复现测试
 
-本文对应 0.1.1。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 `harmonyos-4.2` 兼容分支，继承 Android 0.1.1 的测试入口。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+
+## 鸿蒙分支的旧版 API 检查
+
+`scripts/harmony-smoke.py` 只用于专用、可 root 的官方 AOSP API 29 或 API 31 模拟器。准备签名兼容 APK 于 `app/build/outputs/apk/release/app-release.apk`，并保留原版 `dist/FileFlash-0.1.1.apk` 作为最低 API 拒绝安装的对照；设置 `JAVA_HOME`、`ANDROID_HOME`、`ANDROID_SERIAL` 和空闲的 `FILEFLASH_QA_PORT` 后执行脚本。
+
+脚本会卸载该专用模拟器上的 FileFlash、安装测试包、创建合成文件，验证服务器、传输、恢复、系统下载保存、缓存保护和不同窗口尺寸，并写入 `docs/test-evidence/harmony-api29.json` 或 `harmony-api31.json`。不要对个人手机运行此脚本。它不能证明 HarmonyOS 真机兼容性；真机仅需安装兼容包，在“共享 → 开启”后用 iPhone 扫码确认基本收发，后台限制按需要另行检查。
 
 ## 工程检查
 

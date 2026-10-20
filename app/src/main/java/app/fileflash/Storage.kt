@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
@@ -114,13 +115,23 @@ object Storage {
         // Covers the tiny crash window between insert() and the first journal commit.
         if (cleanupPending) runCatching {
             val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-            val query = android.os.Bundle().apply {
-                // A collection query excludes pending rows by default, even with IS_PENDING in SQL.
-                putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
-                putString(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.Downloads.IS_PENDING}=1 AND ${MediaStore.Downloads.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.OWNER_PACKAGE_NAME}=?")
-                putStringArray(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf("Download/FileFlash/", context.packageName))
+            val selection = "${MediaStore.Downloads.IS_PENDING}=1 AND ${MediaStore.Downloads.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.OWNER_PACKAGE_NAME}=?"
+            val arguments = arrayOf("Download/FileFlash/", context.packageName)
+            val projection = arrayOf(MediaStore.Downloads._ID)
+            // Android 10 needs the URI flag; its provider does not understand the API 30 query argument.
+            val pendingRows = if (Build.VERSION.SDK_INT >= 30) {
+                val query = android.os.Bundle().apply {
+                    putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
+                    putString(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                    putStringArray(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arguments)
+                }
+                resolver.query(collection, projection, query, null)
+            } else {
+                @Suppress("DEPRECATION")
+                val includingPending = MediaStore.setIncludePending(collection)
+                resolver.query(includingPending, projection, selection, arguments, null)
             }
-            resolver.query(collection, arrayOf(MediaStore.Downloads._ID), query, null)?.use { cursor ->
+            pendingRows?.use { cursor ->
                 while (cursor.moveToNext()) resolver.delete(android.content.ContentUris.withAppendedId(collection, cursor.getLong(0)), null, null)
             }
         }

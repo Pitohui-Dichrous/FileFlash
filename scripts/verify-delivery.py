@@ -44,6 +44,16 @@ report = {
     'realHttpLargeFileBytes': large['bytes'],
     'artifacts': [{'name': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in [apk, source]],
 }
+if '-harmony' in version:
+    compatibility = {}
+    for api in (29, 31):
+        evidence = json.loads((root / f'docs/test-evidence/harmony-api{api}.json').read_text(encoding='utf-8'))
+        assert evidence['environment']['api'] == api
+        assert evidence['environment']['apkSha256'] == report['artifacts'][0]['sha256']
+        assert evidence['tests'] and all(item['passed'] for item in evidence['tests'])
+        compatibility[str(api)] = len(evidence['tests'])
+    report['androidCompatibilityChecksPassed'] = compatibility
+    report['harmonyHardwareVerified'] = False
 (root / 'dist/verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
 (root / 'dist/SHA256SUMS.txt').write_text(''.join(item['sha256'] + '  ' + item['name'] + '\n' for item in report['artifacts']), encoding='utf-8')
 print(json.dumps(report, indent=2))

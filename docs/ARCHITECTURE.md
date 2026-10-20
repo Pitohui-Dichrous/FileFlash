@@ -1,10 +1,10 @@
 # FileFlash 架构
 
-本文对应 0.1.1，HTTP 协议版本仍为 v1。
+本文对应 `harmonyos-4.2` 分支的 `0.1.1-harmony4.2.1`，HTTP 协议版本仍为 v1。
 
 ## 模块
 
-- `app`：Kotlin / Jetpack Compose Android 应用。最低 Android 14，目标 Android 17；同一 APK 包含主机和客户端。
+- `app`：Kotlin / Jetpack Compose APK，最低 Android 兼容 API 29，目标 API 37；同一 APK 包含主机和客户端。本分支验证 HarmonyOS 4.2 的 APK 兼容路线，设备支持范围见 [兼容说明](HARMONYOS_4_2.md)。
 - `core`：不依赖 Android 的 Java 传输内核；Android 和本机集成测试使用相同实现。
 - `app/src/main/assets/web`：原生 HTML、CSS、JavaScript。由 Android 本地服务提供，资源全部随 APK 打包。
 

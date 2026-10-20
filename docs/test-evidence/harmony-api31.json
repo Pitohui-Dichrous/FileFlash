@@ -1,0 +1,205 @@
+{
+  "environment": {
+    "description": "Dedicated rooted AOSP emulator; APK compatibility verification only, not Huawei HarmonyOS hardware or physical Wi-Fi/iOS",
+    "api": 31,
+    "serial": "emulator-5562",
+    "fingerprint": "Android/sdk_phone64_x86_64/emulator64_x86_64:12/SE1A.220826.006.A1/10064458:userdebug/test-keys",
+    "apkSha256": "3bbe4017979ab90c75ecf87c8e7a2629e576ac5adcab1d4aa618e6ae6eaa722e",
+    "minSdk": 29,
+    "targetSdk": 37,
+    "harnessNote": "Initial2208px requested viewport was clamped to2160px by the emulator. Layout was retested at2160px; production APK unchanged."
+  },
+  "run": "1792494642",
+  "tests": [
+    {
+      "name": "original Android14-minimum APK is rejected on this older API",
+      "passed": true,
+      "installerResult": "Performing Streamed Install\r\nadb.exe: failed to install E:\\FileFlash\\dist\\FileFlash-0.1.1.apk: Failure [INSTALL_FAILED_OLDER_SDK: Requires newer sdk version #34 (current version is #31)]"
+    },
+    {
+      "name": "signed compatibility release installs normally",
+      "passed": true
+    },
+    {
+      "name": "host starts without a notification runtime permission on this pre33 system",
+      "passed": true
+    },
+    {
+      "name": "QR encodes a live local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "host service posts an actual foreground notification",
+      "passed": true
+    },
+    {
+      "name": "first 2MiB chunk is durably acknowledged",
+      "passed": true
+    },
+    {
+      "name": "host starts without a notification runtime permission on this pre33 system",
+      "passed": true
+    },
+    {
+      "name": "QR encodes a live local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "hard process restart retains the exact upload id offset and private resume credential",
+      "passed": true
+    },
+    {
+      "name": "resumed multi-chunk upload completes with whole-file SHA256",
+      "passed": true,
+      "bytes": 6291483,
+      "sha256": "8947124ea96ed2f0975d53d4199b3ce48a7003eccb281ec4ee681fe6e628a93b"
+    },
+    {
+      "name": "MediaStore Downloads contains the exact received bytes",
+      "passed": true,
+      "location": "Download/FileFlash"
+    },
+    {
+      "name": "successful system save releases the private duplicate automatically",
+      "passed": true
+    },
+    {
+      "name": "same share id downloads after private-copy release",
+      "passed": true
+    },
+    {
+      "name": "saved-URI Range download reopens at the requested byte offset",
+      "passed": true
+    },
+    {
+      "name": "host starts without a notification runtime permission on this pre33 system",
+      "passed": true
+    },
+    {
+      "name": "QR encodes a live local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "lost-completion-ACK receipt survives process restart and private-copy release",
+      "passed": true
+    },
+    {
+      "name": "same-id published download survives process restart",
+      "passed": true
+    },
+    {
+      "name": "host receives Unicode multiline text unchanged",
+      "passed": true
+    },
+    {
+      "name": "native text UI renders the received message",
+      "passed": true
+    },
+    {
+      "name": "crash fixture belongs to FileFlash before changing its pending flag",
+      "passed": true
+    },
+    {
+      "name": "crash fixture belongs to FileFlash before changing its pending flag",
+      "passed": true
+    },
+    {
+      "name": "startup removes its journaled pending MediaStore copy",
+      "passed": true
+    },
+    {
+      "name": "startup removes its untracked pending copy through the API-specific collection query",
+      "passed": true,
+      "pendingQuery": "QUERY_ARG_MATCH_PENDING"
+    },
+    {
+      "name": "startup recovers a completed publication once without duplicate or byte loss",
+      "passed": true
+    },
+    {
+      "name": "startup removes orphan and expired incomplete native parts",
+      "passed": true
+    },
+    {
+      "name": "startup protects verified-unsaved and recent resumable data",
+      "passed": true
+    },
+    {
+      "name": "manual discard removes only the selected paused part",
+      "passed": true
+    },
+    {
+      "name": "host starts without a notification runtime permission on this pre33 system",
+      "passed": true
+    },
+    {
+      "name": "QR encodes a live local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "manual clear preserves an active host chunk and verified-unsaved bytes",
+      "passed": true
+    },
+    {
+      "name": "manual clear removes idle incomplete native data and retains saved Downloads",
+      "passed": true
+    },
+    {
+      "name": "active upload continues successfully after manual cache cleanup",
+      "passed": true,
+      "response": {
+        "status": 200,
+        "body": "{\"id\":\"vcenWw7eaPqQ8Fn1e2_ChyZ3\",\"name\":\"harmony-1792494642-active-during-clear.bin\",\"size\":262144,\"mime\":\"application/octet-stream\",\"offset\":262144,\"status\":\"uploading\",\"sha256\":\"2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9\",\"error\":null,\"createdAt\":1792494718335,\"updatedAt\":1792494727785}"
+      }
+    },
+    {
+      "name": "active transfer publishes its original bytes after cleanup",
+      "passed": true
+    },
+    {
+      "name": "host starts without a notification runtime permission on this pre33 system",
+      "passed": true
+    },
+    {
+      "name": "QR encodes a live local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "simulated folded360dp keeps host actions navigation and server alive",
+      "passed": true,
+      "screenshot": ".test-data\\harmony-emulator-5562\\folded360dp.png",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "density": 480,
+      "simulation": "Viewport only, not actual fold posture or Huawei hardware"
+    },
+    {
+      "name": "simulated unfolded1080dp keeps host actions navigation and server alive",
+      "passed": true,
+      "screenshot": ".test-data\\harmony-emulator-5562\\unfolded1080dp.png",
+      "pixels": [
+        2160,
+        1840
+      ],
+      "density": 320,
+      "simulation": "Viewport only, not actual fold posture or Huawei hardware"
+    },
+    {
+      "name": "simulated unfolded-rotated keeps host actions navigation and server alive",
+      "passed": true,
+      "screenshot": ".test-data\\harmony-emulator-5562\\unfolded-rotated.png",
+      "pixels": [
+        1840,
+        2160
+      ],
+      "density": 320,
+      "simulation": "Viewport only, not actual fold posture or Huawei hardware"
+    },
+    {
+      "name": "no FileFlash fatal runtime exception recorded during the full run",
+      "passed": true
+    }
+  ]
+}
