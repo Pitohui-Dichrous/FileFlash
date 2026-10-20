@@ -1,6 +1,6 @@
 # 复现测试
 
-本文对应 0.1.5-test.1 诊断预发布版；0.1.3 及以前的脚本保留作历史基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。实体 iPhone 的一次诊断操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)，本版不宣称已解决真实 iOS 上传问题。
+本文对应 0.1.5-test.2 预发布版；网页与传输内核沿用 0.1.5-test.1，旧版脚本和证据保留作基线。实际通过项目、运行环境和设备边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。实体 iPhone 的一次诊断操作见 [BROWSER_DIAGNOSTICS.md](BROWSER_DIAGNOSTICS.md)，本版不宣称已解决真实 iOS 上传问题。
 
 ## 工程检查
 
@@ -64,6 +64,15 @@ node scripts/integration-large.cjs
 新版浏览器接口另用 `node scripts/integration-browser-stream.cjs`：默认经一次 HTTP POST 发送 4 GiB + 65539 字节，服务 Java 堆上限 128 MiB，源数据按 128 KiB 生成，不缓存整文件。验证接收端完整摘要、独立会话下载及 Range、断线/取消/强制终止后的临时数据删除；不恢复断点。结果写入 `docs/test-evidence/browser-stream-large.json`，小文件运行仍不能替代 4 GiB 验证。旧 `integration-large.cjs` 保留验证原生分块和续传协议。
 
 ## Android 模拟器
+
+接收反馈专项在已安装应用的专用 API 29 / 34 模拟器运行，不卸载或清空数据：
+
+```powershell
+$env:FILEFLASH_DEDICATED_EMULATOR='1'
+python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.5-test.2.apk --version 0.1.5-test.2
+```
+
+脚本启动真实传输内核与限速合成文件，通过实际点击验证连接页进度、完成、失败重试、暂停、防重复和大字号布局，并校验系统下载文件。API 29 使用对应模拟器序号重跑。截图留在私有 `.test-data`，脱敏报告为 `test-evidence/receive-ui-api{29,34}.json`。
 
 `scripts/android-smoke.py` 是最初 Android 14 基线脚本，使用 Python 3 标准库、JDK、ADB 和专用模拟器。可通过 `ANDROID_SERIAL` 选择设备。构建调试 APK 后执行；测试安装应用、实际启动本机服务、解码二维码、收发文件及文字，并读取 MediaStore 导出文件进行校验。0.1.2 最低 Android 10 使用下面的上传专项脚本单独验证。
 

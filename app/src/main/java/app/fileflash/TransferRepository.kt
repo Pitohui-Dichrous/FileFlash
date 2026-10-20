@@ -394,10 +394,22 @@ class TransferRepository(private val context: Context) {
 
     fun download(file: RemoteFile) {
         val client = remote ?: return notice("请先连接设备")
-        val task = NativeTask(name = file.name, size = file.size, direction = "接收", remote = file, endpoint = client.endpoint)
-        addTask(task)
-        persistTasks()
-        runTask(task, client.taskClient())
+        val (task, retrying) = synchronized(lock) {
+            val unfinished = _state.value.tasks.filter {
+                it.direction == "接收" && it.endpoint == client.endpoint && it.remote?.id == file.id && it.status !in listOf("完成", "已取消")
+            }
+            val existing = unfinished.firstOrNull { it.status !in listOf("失败", "已暂停") } ?: unfinished.firstOrNull()
+            if (existing != null) {
+                if (existing.status !in listOf("失败", "已暂停")) return
+                existing to true
+            } else {
+                val created = NativeTask(name = file.name, size = file.size, direction = "接收", remote = file, endpoint = client.endpoint)
+                addTask(created)
+                persistTasks()
+                created to false
+            }
+        }
+        if (retrying) retry(task) else runTask(task, client.taskClient())
     }
 
     fun retry(task: NativeTask) {
@@ -410,16 +422,24 @@ class TransferRepository(private val context: Context) {
         val client = remote ?: return notice("请先重新连接原设备")
         if (task.endpoint != null && task.endpoint != client.endpoint) return notice("此任务属于 ${task.endpoint}，请重新连接原设备")
         if (clients.containsKey(task.id)) return notice("正在暂停，请稍后重试")
-        updateTask(task.id) { it.copy(status = "等待", error = null, speed = 0) }
-        persistTasks()
-        runTask(task, client.taskClient())
+        runTask(task, client.taskClient(), retrying = true)
     }
 
-    private fun runTask(task: NativeTask, client: NativeClient) {
-        synchronized(maintenanceLock) { clients[task.id] = client; hostWake.trySend(Unit) }
+    private fun runTask(task: NativeTask, client: NativeClient, retrying: Boolean = false) {
+        synchronized(maintenanceLock) {
+            if (clients.putIfAbsent(task.id, client) != null) return
+            hostWake.trySend(Unit)
+        }
+        if (retrying) {
+            updateTask(task.id) { it.copy(status = "等待", error = null, speed = 0) }
+            persistTasks()
+        }
+        val receiving = task.direction == "接收" && task.remote != null
+        if (receiving) notice("开始下载")
         try { TransferService.ensure(context) } catch (e: Exception) {
-            clients.remove(task.id)
+            clients.remove(task.id, client)
             updateTask(task.id) { it.copy(status = "失败", error = "无法在后台启动传输，请回到应用重试：${e.message}") }
+            if (receiving) notice("下载失败")
             persistTasks(); return
         }
         scope.launch {
@@ -428,6 +448,7 @@ class TransferRepository(private val context: Context) {
                 var lastBytes = task.transferred
                 var speed = 0L
                 fun progress(done: Long, status: String) {
+                    if (status == "完成") return
                     val now = System.nanoTime(); val elapsed = now - lastTime
                     if (elapsed > 300_000_000) { speed = ((done - lastBytes).coerceAtLeast(0) * 1_000_000_000 / elapsed); lastTime = now; lastBytes = done }
                     updateTask(task.id) { it.copy(transferred = done, status = status, speed = if (status == "传输中") speed else 0, error = null) }
@@ -444,10 +465,12 @@ class TransferRepository(private val context: Context) {
                         updateTask(task.id) { it.copy(savedUri = saved.uri) }
                     } else throw IOException("源文件不可用")
                     updateTask(task.id) { it.copy(transferred = task.size, status = "完成", speed = 0) }
+                    if (receiving) notice("已保存")
                 } catch (e: Exception) {
                     updateTask(task.id) { it.copy(status = if (e is TransferCancelled) "已暂停" else "失败", error = networkError(e), speed = 0) }
+                    if (receiving && e !is TransferCancelled) notice("下载失败")
                 } finally {
-                    clients.remove(task.id)
+                    clients.remove(task.id, client)
                     persistTasks()
                     runCatching { maintainStorage(force = true) }
                     stopServiceIfIdle()

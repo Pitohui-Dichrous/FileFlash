@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,11 +66,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -149,9 +155,11 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     var token by rememberSaveable { mutableStateOf("") }
     var qr by remember { mutableStateOf<String?>(null) }
     var showInfo by remember { mutableStateOf(false) }
+    var lastReceiveEndpoint by rememberSaveable { mutableStateOf("") }
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.notice) { state.notice?.let { snackbar.showSnackbar(it); repository.notice(null) } }
     LaunchedEffect(scanned) { if (scanned != null) { address = scanned; page = 1; onConnect(scanned, ""); onScanned() } }
+    LaunchedEffect(state.remoteAddress) { if (state.remoteAddress.isNotBlank()) lastReceiveEndpoint = state.remoteAddress }
     val tabs = listOf("共享", "连接", "文字", "记录")
     Scaffold(containerColor = Background,
         topBar = { TopAppBar(title = { Text("FileFlash", fontSize = 21.sp, fontWeight = FontWeight.SemiBold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Background), actions = { TextButton(onClick = { showInfo = true }) { Text("帮助") } }) },
@@ -161,7 +169,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             when (page) {
                 0 -> HostPage(state, repository, onStart, onPickFiles, onQr = { qr = it }, onCopy)
-                1 -> RemotePage(state, repository, address, { address = it }, token, { token = it }, onScan, onConnect, onUpload)
+                1 -> RemotePage(state, repository, address, { address = it }, token, { token = it }, onScan, onConnect, onUpload, state.remoteAddress.ifBlank { lastReceiveEndpoint })
                 2 -> TextPage(state, repository, onCopy)
                 3 -> HistoryPage(state, repository)
             }
@@ -228,8 +236,33 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
 }
 
-@Composable private fun RemotePage(state: AppState, repository: TransferRepository, address: String, setAddress: (String) -> Unit, token: String, setToken: (String) -> Unit, scan: () -> Unit, connect: (String, String) -> Unit, upload: () -> Unit) {
-    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize().imePadding(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+@Composable private fun RemotePage(state: AppState, repository: TransferRepository, address: String, setAddress: (String) -> Unit, token: String, setToken: (String) -> Unit, scan: () -> Unit, connect: (String, String) -> Unit, upload: () -> Unit, endpoint: String) {
+    val listState = rememberLazyListState()
+    val openedAt = rememberSaveable { System.currentTimeMillis() }
+    var focusedFile by remember { mutableStateOf<String?>(null) }
+    val receives = state.tasks.filter { it.direction == "接收" && it.endpoint == endpoint && it.remote != null }.distinctBy { it.remote!!.id }
+    val byFile = receives.associateBy { it.remote!!.id }
+    val sharedIds = state.remoteState.files.map { it.id }.toSet()
+    val detached = receives.filter { it.remote!!.id !in sharedIds && (it.status != "完成" || it.updatedAt >= openedAt) }
+    fun focus(file: RemoteFile, action: () -> Unit) { focusedFile = file.id; action() }
+    LaunchedEffect(focusedFile, byFile[focusedFile]?.id) {
+        val index = state.remoteState.files.indexOfFirst { it.id == focusedFile }
+        if (index >= 0 && byFile[focusedFile] != null) {
+            // Reveal after the receive card has expanded and the list has measured it.
+            withFrameNanos { }
+            withFrameNanos { }
+            listState.scrollToItem(2 + (if (detached.isEmpty()) 0 else 1 + detached.size) + index)
+        }
+    }
+    @Composable fun receive(file: RemoteFile, task: NativeTask?) {
+        val saved = task?.let { current -> state.saved.firstOrNull { it.id == current.id } ?: current.savedUri?.let { SavedFile(current.id, current.name, current.size, file.mime, it) } }
+        ReceiveFileRow(file, task, saved, state.remoteConnected && state.remoteAddress == task?.endpoint.orEmpty().ifBlank { endpoint },
+            onReceive = { focus(file) { repository.download(file) } },
+            onRetry = { task?.let { focus(file) { repository.retry(it) } } },
+            onPause = { task?.let { repository.cancelTask(it.id) } },
+            onOpen = { saved?.let { repository.openSaved(it) } })
+    }
+    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize().imePadding(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { SurfaceBlock {
             if (!state.remoteConnected) {
                 Button(onClick = scan, shape = Corner, modifier = Modifier.fillMaxWidth()) { Text("扫码连接") }
@@ -246,10 +279,46 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
             }
             state.remoteError?.let { Spacer(Modifier.height(12.dp)); Text(it, color = Error, fontSize = 14.sp) }
         } }
+        if (detached.isNotEmpty()) {
+            item { SectionTitle("接收", detached.size.toString()) }
+            items(detached, key = { "receive-${it.id}" }) { task -> receive(task.remote!!, task) }
+        }
         if (state.remoteConnected) {
             item { SectionTitle("对方共享", state.remoteState.files.size.toString()) }
             if (state.remoteState.files.isEmpty()) item { EmptyRow("对方尚未添加文件") }
-            items(state.remoteState.files, key = { it.id }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.temporary) " · 临时中转" else ""}") { Button(onClick = { repository.download(file) }, shape = Corner) { Text("接收") } } }
+            items(state.remoteState.files, key = { it.id }) { file -> receive(file, byFile[file.id]) }
+        }
+    }
+}
+
+@Composable private fun ReceiveFileRow(file: RemoteFile, task: NativeTask?, saved: SavedFile?, connected: Boolean, onReceive: () -> Unit, onRetry: () -> Unit, onPause: () -> Unit, onOpen: () -> Unit) {
+    SurfaceBlock {
+        Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text("${bytes(file.size)}${if (file.temporary) " · 临时中转" else ""}", fontSize = 13.sp, color = Muted, modifier = Modifier.padding(top = 4.dp))
+        if (task != null) {
+            val label = when (task.status) { "等待" -> "排队中"; "传输中" -> "下载中"; "完成" -> "已保存"; "失败" -> "下载失败"; else -> task.status }
+            Text(label, fontSize = 14.sp, color = if (task.status == "失败") Error else if (task.status == "完成") Blue else Ink,
+                modifier = Modifier.padding(top = 12.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            if (task.status != "完成") {
+                Spacer(Modifier.height(8.dp))
+                val progressModifier = Modifier.fillMaxWidth().semantics { contentDescription = "接收进度" }
+                if (task.status in listOf("等待", "连接中", "校验中", "保存中")) LinearProgressIndicator(modifier = progressModifier)
+                else LinearProgressIndicator(progress = { if (task.size > 0) (task.transferred.toDouble() / task.size).toFloat().coerceIn(0f, 1f) else 0f }, modifier = progressModifier)
+                val percent = if (task.size > 0) (task.transferred.toDouble() / task.size * 100).toInt().coerceIn(0, 100) else 0
+                Text("${bytes(task.transferred)} / ${bytes(task.size)} · $percent%${if (task.speed > 0 && task.status == "传输中") " · ${bytes(task.speed)}/s" else ""}", fontSize = 12.sp, color = Muted, modifier = Modifier.padding(top = 6.dp))
+            }
+            task.error?.takeIf { it.isNotBlank() && task.status == "失败" }?.let { Text(it, fontSize = 13.sp, color = Error, modifier = Modifier.padding(top = 6.dp)) }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            when (task?.status) {
+                null -> Button(onClick = onReceive, enabled = connected, shape = Corner) { Text("接收") }
+                "完成" -> {
+                    TextButton(onClick = onReceive, enabled = connected) { Text("重新接收") }
+                    if (saved != null) Button(onClick = onOpen, shape = Corner) { Text("打开") }
+                }
+                "失败", "已暂停", "已取消" -> Button(onClick = onRetry, enabled = connected, shape = Corner) { Text("重试") }
+                else -> TextButton(onClick = onPause) { Text("暂停") }
+            }
         }
     }
 }

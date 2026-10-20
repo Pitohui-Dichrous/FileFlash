@@ -1,0 +1,171 @@
+{
+  "environment": "Dedicated rooted API29 Android emulator; real native APK client and Java TransferServer via adb reverse; throttled synthetic Source; not physical Wi-Fi or iOS",
+  "version": "0.1.5-test.2",
+  "apkVersion": "0.1.5-test.2",
+  "apkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42",
+  "installedApkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42",
+  "passed": true,
+  "tests": [
+    {
+      "name": "signed APK upgrades without clearing saved records",
+      "passed": true,
+      "apiLevel": 29,
+      "installedApkSha256": "5da137e1bf1182b7c2a6941e2fa8616654c44a163c80d427c59b74f09d34bc42"
+    },
+    {
+      "name": "native connection page pairs with actual TransferServer",
+      "passed": true
+    },
+    {
+      "name": "visible start Snackbar does not overlap the pause action",
+      "passed": true,
+      "snackbarVisible": true,
+      "snackbarBounds": [
+        32,
+        1846,
+        1048,
+        1972
+      ],
+      "pauseBounds": [
+        844,
+        1585,
+        996,
+        1711
+      ]
+    },
+    {
+      "name": "click receive exposes progress on the same connection page",
+      "passed": true,
+      "uiState": "下载中"
+    },
+    {
+      "name": "active receive has an inline progress bar and byte progress",
+      "passed": true
+    },
+    {
+      "name": "completed receive stays visible on connection page",
+      "passed": true,
+      "uiState": "已保存"
+    },
+    {
+      "name": "saved receive exposes open and receive-again actions",
+      "passed": true
+    },
+    {
+      "name": "double receive-again click creates only one new task",
+      "passed": true
+    },
+    {
+      "name": "completed receive has a durable saved URI",
+      "passed": true
+    },
+    {
+      "name": "received Downloads bytes match synthetic source",
+      "passed": true,
+      "bytes": 12582912,
+      "sha256": "8b54debaa89f78212f6afb00c7ebb2780f3604c4caa8c97c395576a50d5d6a6a"
+    },
+    {
+      "name": "read failure is visible on the originating connection card",
+      "passed": true,
+      "uiState": "下载失败"
+    },
+    {
+      "name": "failed receive exposes retry and preserves an error detail",
+      "passed": true
+    },
+    {
+      "name": "completed receive has a durable saved URI",
+      "passed": true
+    },
+    {
+      "name": "received Downloads bytes match synthetic source",
+      "passed": true,
+      "bytes": 2097152,
+      "sha256": "91d3beb88a9b2f778a6c44a1c53b63d3c79931845a9aef84b3fb414610bd1938"
+    },
+    {
+      "name": "inline failure retry reuses the original task",
+      "passed": true
+    },
+    {
+      "name": "failure retry completes visibly on the connection page",
+      "passed": true,
+      "uiState": "已保存"
+    },
+    {
+      "name": "pause stays visible on the same receive card",
+      "passed": true,
+      "uiState": "已暂停"
+    },
+    {
+      "name": "paused receive exposes retry",
+      "passed": true
+    },
+    {
+      "name": "disconnect then history and connection preserve the inline paused task",
+      "passed": true,
+      "uiState": "已暂停"
+    },
+    {
+      "name": "completed receive has a durable saved URI",
+      "passed": true
+    },
+    {
+      "name": "received Downloads bytes match synthetic source",
+      "passed": true,
+      "bytes": 12582912,
+      "sha256": "8b54debaa89f78212f6afb00c7ebb2780f3604c4caa8c97c395576a50d5d6a6a"
+    },
+    {
+      "name": "pause retry resumes one original task",
+      "passed": true
+    },
+    {
+      "name": "large text keeps completion actions inside the viewport",
+      "passed": true,
+      "fontScale": 1.3
+    },
+    {
+      "name": "previously saved records remain intact",
+      "passed": true,
+      "records": 16
+    },
+    {
+      "name": "readable pre-existing Downloads remain byte-identical",
+      "passed": true,
+      "readableRecords": 5,
+      "unreadableBefore": 11
+    }
+  ],
+  "screenshots": [
+    {
+      "stage": "receive-started",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-started.png"
+    },
+    {
+      "stage": "receive-progress",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-progress.png"
+    },
+    {
+      "stage": "receive-complete",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-complete.png"
+    },
+    {
+      "stage": "receive-failed",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-failed.png"
+    },
+    {
+      "stage": "receive-paused",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-paused.png"
+    },
+    {
+      "stage": "receive-paused-after-disconnect-tab-return",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-paused-after-disconnect-tab-return.png"
+    },
+    {
+      "stage": "receive-complete-font-1_3",
+      "path": ".test-data/receive-ui/receive-ui-5556-1792508908426496900/receive-complete-font-1_3.png"
+    }
+  ]
+}
