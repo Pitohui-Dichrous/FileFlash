@@ -1,0 +1,14 @@
+{
+  "name": "fileflash-acceptance",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Optional desktop browser acceptance tests; not used by the APK",
+  "scripts": {
+    "test:web": "node web-smoke.cjs",
+    "test:live": "node web-live.cjs",
+    "test:large": "node integration-large.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

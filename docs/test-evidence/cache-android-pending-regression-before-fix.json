@@ -1,0 +1,67 @@
+{
+  "environment": "Dedicated rooted Android API34 AOSP emulator; adb forwarding, not physical Wi-Fi/iOS",
+  "run": "1792492279",
+  "tests": [
+    {
+      "name": "dedicated emulator exposes root only for controlled synthetic state setup",
+      "passed": true
+    },
+    {
+      "name": "baseline0.1.0 synthetic upgrade path recorded",
+      "passed": true,
+      "saved_files": 7,
+      "prior_upgrade_evidence": "docs/test-evidence/cache-android-upgrade.json"
+    },
+    {
+      "name": "signed0.1.1 upgrade succeeds",
+      "passed": true
+    },
+    {
+      "name": "upgrade retains saved-file ledger and all existing Downloads bytes",
+      "passed": true
+    },
+    {
+      "name": "successful upload publishes byte-identical MediaStore file",
+      "passed": true,
+      "bytes": 2097433,
+      "sha256": "0f28f42f2959d39494cb6f1c3ca3d4899c497e4f72c147352de1eca5a57d711b"
+    },
+    {
+      "name": "host received duplicate is automatically removed",
+      "passed": true
+    },
+    {
+      "name": "released file remains downloadable under original share id",
+      "passed": true
+    },
+    {
+      "name": "complete receipt survives process restart for lost-ACK retry",
+      "passed": true
+    },
+    {
+      "name": "same-id download survives restart after private copy removal",
+      "passed": true
+    },
+    {
+      "name": "startup removes orphan and expired incomplete native parts",
+      "passed": true
+    },
+    {
+      "name": "startup protects verified unsaved and recent resumable native data",
+      "passed": true
+    },
+    {
+      "name": "startup removes journaled pending MediaStore copy only",
+      "passed": true
+    },
+    {
+      "name": "startup removes own pending row in insert-before-journal crash window",
+      "passed": false
+    },
+    {
+      "name": "smoke execution",
+      "passed": false,
+      "error": "startup removes own pending row in insert-before-journal crash window"
+    }
+  ]
+}

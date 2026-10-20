@@ -1,0 +1,17 @@
+FileFlash includes these open-source runtime libraries:
+
+Kotlin standard library — JetBrains s.r.o. and Kotlin Programming Language contributors
+AndroidX Activity, Core, Lifecycle and Compose — The Android Open Source Project
+Gson 2.13.1 — Google Inc.
+ZXing core 3.5.3 — ZXing authors
+ZXing Android Embedded 4.3.0 — ZXing Android Embedded authors
+
+These libraries are licensed under Apache License, Version 2.0.
+The full license is included in this directory as Apache-2.0.txt.
+Source and fixed versions: docs/SOURCES.md in the source distribution.
+
+https://github.com/JetBrains/kotlin
+https://android.googlesource.com/platform/frameworks/support/
+https://github.com/google/gson
+https://github.com/zxing/zxing
+https://github.com/journeyapps/zxing-android-embedded

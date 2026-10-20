@@ -1,0 +1,140 @@
+{
+  "environment": "Android 14 API34 emulators; app host and native client tested using adb forwarding/reverse. Final signed release also tested between two emulators. Physical Wi-Fi and iOS Safari not claimed.",
+  "tests": [
+    {
+      "name": "foreground host starts",
+      "passed": true
+    },
+    {
+      "name": "QR encodes active local endpoint and random pairing token",
+      "passed": true
+    },
+    {
+      "name": "desktop pairs with actual Android-hosted service",
+      "passed": true
+    },
+    {
+      "name": "actual Android host accepts hash-verified file",
+      "passed": true,
+      "bytes": 1048855,
+      "sha256": "7fc1d448e8ccbe7ac68a3c20f20d3c22745de4286989032e4819835b09a10c83"
+    },
+    {
+      "name": "Android-hosted download bytes match upload",
+      "passed": true
+    },
+    {
+      "name": "Android-hosted Range download",
+      "passed": true
+    },
+    {
+      "name": "Unicode multiline text reaches Android host unchanged",
+      "passed": true
+    },
+    {
+      "name": "MediaStore Downloads export exists and SHA256 matches",
+      "passed": true,
+      "location": "Download/FileFlash"
+    },
+    {
+      "name": "dataSync service has foreground notification",
+      "passed": true
+    },
+    {
+      "name": "native text UI shows incoming Unicode",
+      "passed": true
+    },
+    {
+      "name": "host restart reuses port and rotates pairing credentials",
+      "passed": true
+    },
+    {
+      "name": "host stop invalidates old client session",
+      "passed": true
+    },
+    {
+      "name": "native client manually pairs to DesktopServer",
+      "passed": true
+    },
+    {
+      "name": "native remote download publishes hash-identical file",
+      "passed": true,
+      "bytes": 786705
+    },
+    {
+      "name": "native SAF selection uploads hash-identical bytes",
+      "passed": true,
+      "bytes": 786705,
+      "sha256": "5a1f1c5a03f9b54edba6f3d3c4994b482f65dd035e4ea72376a0ae2dbd439e29"
+    },
+    {
+      "name": "native text send reaches peer as direct text",
+      "passed": true
+    },
+    {
+      "name": "camera denial retains manual connection fallback",
+      "passed": true
+    },
+    {
+      "name": "375dp large-font UI retains primary actions and navigation",
+      "passed": true
+    },
+    {
+      "name": "landscape large-font UI renders",
+      "passed": true
+    },
+    {
+      "name": "host SAF source is hashed before sharing",
+      "passed": true
+    },
+    {
+      "name": "host SAF source Range reopens at exact offset",
+      "passed": true
+    },
+    {
+      "name": "cache cleanup preserves shared SAF sources and external Downloads",
+      "passed": true
+    },
+    {
+      "name": "final signed release installs and launches on two API34 emulators",
+      "passed": true,
+      "apkSha256": "6739e050678c8efb4dfe2e3c50610d16868c472033e3c8f7b656a9952f1d8b4a"
+    },
+    {
+      "name": "final release hosts embedded website and authenticated file service",
+      "passed": true
+    },
+    {
+      "name": "Android B native client pairs to Android A native host",
+      "passed": true
+    },
+    {
+      "name": "final APK Android A to Android B file is byte-identical",
+      "passed": true,
+      "bytes": 262410,
+      "sha256": "fa28630f651cb3a5b82f59120ba7bfde45ec32fc3e19718172a3aa851459b713"
+    },
+    {
+      "name": "final APK Android B to Android A file is byte-identical",
+      "passed": true,
+      "bytes": 65802,
+      "sha256": "e19296f01097a09652fb5881f0379d513267fbd95e76fb02be2b886a3f07405a"
+    },
+    {
+      "name": "final APK native text works in both directions",
+      "passed": true
+    },
+    {
+      "name": "stopping Android A invalidates native Android B connection",
+      "passed": true
+    },
+    {
+      "name": "updated signed release upgrades, preserves same-name files and displays actual MediaStore name",
+      "passed": true,
+      "apkSha256": "04a47f3782e7433914c83f2833129f9e181af3e00aaa9a7dc9c46dbe4a4c7f15",
+      "firstName": "FileFlash conflict receipt.txt",
+      "secondName": "FileFlash conflict receipt (1).txt",
+      "displayName": "FileFlash conflict receipt (1).txt"
+    }
+  ]
+}

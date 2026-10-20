@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "bytes": 4295032835,
+  "sha256": "afa23f2c4ebc7f52939759d28f438fbb883170212de18d615d87947ea905133d",
+  "elapsedSeconds": 20,
+  "implementation": "APK bundled browser sha256.js compared with Node crypto, bounded 2MiB input"
+}

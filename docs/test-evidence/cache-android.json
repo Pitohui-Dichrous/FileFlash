@@ -1,0 +1,149 @@
+{
+  "environment": "Dedicated rooted Android API34 AOSP emulator; adb forwarding, not physical Wi-Fi/iOS",
+  "run": "1792492279",
+  "tests": [
+    {
+      "name": "dedicated emulator exposes root only for controlled synthetic state setup",
+      "passed": true
+    },
+    {
+      "name": "baseline0.1.0 synthetic upgrade path recorded",
+      "passed": true,
+      "saved_files": 7,
+      "prior_upgrade_evidence": "docs/test-evidence/cache-android-upgrade.json"
+    },
+    {
+      "name": "signed0.1.1 upgrade succeeds",
+      "passed": true
+    },
+    {
+      "name": "upgrade retains saved-file ledger and all existing Downloads bytes",
+      "passed": true
+    },
+    {
+      "name": "successful upload publishes byte-identical MediaStore file",
+      "passed": true,
+      "bytes": 2097433,
+      "sha256": "0f28f42f2959d39494cb6f1c3ca3d4899c497e4f72c147352de1eca5a57d711b"
+    },
+    {
+      "name": "host received duplicate is automatically removed",
+      "passed": true
+    },
+    {
+      "name": "released file remains downloadable under original share id",
+      "passed": true
+    },
+    {
+      "name": "complete receipt survives process restart for lost-ACK retry",
+      "passed": true
+    },
+    {
+      "name": "same-id download survives restart after private copy removal",
+      "passed": true
+    },
+    {
+      "name": "startup removes orphan and expired incomplete native parts",
+      "passed": true
+    },
+    {
+      "name": "startup protects verified unsaved and recent resumable native data",
+      "passed": true
+    },
+    {
+      "name": "startup removes journaled pending MediaStore copy only",
+      "passed": true
+    },
+    {
+      "name": "pending-match query fix APK upgrade succeeds",
+      "passed": true
+    },
+    {
+      "name": "startup removes own pending row in insert-before-journal crash window",
+      "passed": true,
+      "regression_fixed": "Explicit public QUERY_ARG_MATCH_PENDING=MATCH_INCLUDE plus owner/path SQL restrictions"
+    },
+    {
+      "name": "startup recovers completed journal without duplicate or byte loss",
+      "passed": true
+    },
+    {
+      "name": "durable ledger recovery acknowledges completed journal",
+      "passed": true
+    },
+    {
+      "name": "explicit discard removes only selected paused task part",
+      "passed": true
+    },
+    {
+      "name": "clear preserves an in-flight host chunk and verified unsaved native data",
+      "passed": true
+    },
+    {
+      "name": "clear removes inactive unverified native part",
+      "passed": true
+    },
+    {
+      "name": "in-flight transfer completes after idle-cache clear",
+      "passed": true,
+      "response": {
+        "status": 200,
+        "body": "{\"id\":\"i4I7BbTGD6hezOlZyKKd9m05\",\"name\":\"cache-1792492279-active.bin\",\"size\":262144,\"mime\":\"application/octet-stream\",\"offset\":262144,\"status\":\"uploading\",\"sha256\":null,\"error\":null,\"createdAt\":1792492487282,\"updatedAt\":1792492496324}"
+      }
+    },
+    {
+      "name": "active transfer final saved bytes remain intact",
+      "passed": true
+    },
+    {
+      "name": "cache controls render on375dp large-text and landscape configurations",
+      "passed": true,
+      "screenshots": [
+        ".test-data/cache-android/cache-controls-portrait.png",
+        ".test-data/cache-android/cache-controls-small-large-text.png",
+        ".test-data/cache-android/cache-controls-landscape.png"
+      ]
+    },
+    {
+      "name": "uninstall succeeds",
+      "passed": true
+    },
+    {
+      "name": "uninstall removes app-private files cache and preferences",
+      "passed": true
+    },
+    {
+      "name": "uninstall preserves intentional Downloads and unrelated prior files",
+      "passed": true,
+      "files": 10
+    },
+    {
+      "name": "uninstall pending-publication platform behavior measured",
+      "passed": true,
+      "before": "Row: 0 _id=1000000040, _data=/storage/emulated/0/Download/FileFlash/.pending-1793097304-cache-1792492279-uninstall-pending.bin, is_pending=1, owner_package_name=app.fileflash",
+      "after": "Row: 0 _id=1000000040, _data=/storage/emulated/0/Download/FileFlash/.pending-1793097304-cache-1792492279-uninstall-pending.bin, is_pending=1, owner_package_name=NULL",
+      "limitation": "Android may orphan an unfinished shared MediaStore row until system expiry/maintenance; no uninstall callback can guarantee immediate external cleanup."
+    },
+    {
+      "name": "only unique synthetic pending-uninstall row cleaned after measurement",
+      "passed": true,
+      "test_cleanup": "Use associated Android shell UID2000 and includePending, since root UID0 lacks an attributed package for orphan-row deletion"
+    },
+    {
+      "name": "clean reinstall succeeds",
+      "passed": true
+    },
+    {
+      "name": "clean reinstall has no restored tasks or saved-file metadata",
+      "passed": true
+    },
+    {
+      "name": "clean reinstall host remains functional",
+      "passed": true
+    }
+  ],
+  "post_test_cleanup": {
+    "unique_uninstall_pending_row_and_file_removed": true,
+    "unrelated_shared_downloads_preserved": true
+  }
+}

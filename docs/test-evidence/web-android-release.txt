@@ -1,0 +1,2 @@
+PASS (webkit) against real Java core: pairing, secret removal, 4MiB+173 bytes, network interruption after 2MiB, reload, wrong reselect rejected, same-ID recovery, final SHA, native browser download byte equality, long Unicode text, copy fallback, 0-byte and batch uploads, 4 viewport widths, session revoke.
+Desktop browser engine only; this is not a physical iOS Safari/Android device test.

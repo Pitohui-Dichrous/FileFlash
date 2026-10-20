@@ -1,0 +1,37 @@
+{
+  "environment": "Dedicated rooted Android API34 AOSP emulator; adb forwarding, not physical Wi-Fi/iOS",
+  "run": "1792492166",
+  "tests": [
+    {
+      "name": "dedicated emulator exposes root only for controlled synthetic state setup",
+      "passed": true
+    },
+    {
+      "name": "baseline0.1.0 synthetic installation available",
+      "passed": true,
+      "saved_files": 6
+    },
+    {
+      "name": "signed0.1.1 upgrade succeeds",
+      "passed": true
+    },
+    {
+      "name": "upgrade retains saved-file ledger and all existing Downloads bytes",
+      "passed": true
+    },
+    {
+      "name": "successful upload publishes byte-identical MediaStore file",
+      "passed": true,
+      "bytes": 2097433,
+      "sha256": "0f28f42f2959d39494cb6f1c3ca3d4899c497e4f72c147352de1eca5a57d711b"
+    },
+    {
+      "name": "host received duplicate is automatically removed",
+      "passed": true
+    },
+    {
+      "name": "released file remains downloadable under original share id",
+      "passed": true
+    }
+  ]
+}

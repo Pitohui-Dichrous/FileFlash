@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7fa">
+  <meta name="referrer" content="no-referrer">
+  <meta name="apple-mobile-web-app-title" content="FileFlash">
+  <title>FileFlash · 闪传</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/sha256.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13.5 2 5 13h6l-.5 9L19 11h-6l.5-9Z"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8l-5-5Zm0 0v5h5M8 13h8m-8 4h5"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 5h16M12 5v15m-4 0h8M4 9V5m16 4V5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a9 9 0 1 0 1 7M20 3v5h-5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path d="M8 8h13v13H8zM16 8V3H3v13h5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 3 18 9-18 9 4-9-4-9Zm4 9h14"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 14 4-4M8 16l-2 2a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0M16 8l2-2a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></symbol>
+  </defs></svg>
+  <header class="header">
+    <a class="brand" href="/" aria-label="FileFlash 首页"><span class="brand-mark"><svg aria-hidden="true"><use href="#i-flash"/></svg></span><span>FileFlash</span></a>
+    <button id="connection-button" class="connection" type="button" aria-expanded="false" aria-controls="connection-details"><span id="connection-dot" class="dot"></span><span id="connection-label">未连接</span><svg aria-hidden="true"><use href="#i-link"/></svg></button>
+  </header>
+  <main class="shell">
+    <section id="connection-details" class="connection-details" hidden>
+      <div class="details-top"><strong id="server-name">连接详情</strong><button id="refresh-button" class="button quiet small" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg>重新连接</button></div>
+      <p id="server-address" class="mono"></p>
+      <p class="help">局域网 HTTP 未加密，请仅在可信网络使用。</p>
+      <button id="disconnect-button" class="button quiet danger" type="button" hidden>断开连接</button>
+    </section>
+    <div id="connection-error" class="notice warning" role="status" hidden></div>
+    <section id="pair-panel" class="pair-panel" aria-labelledby="pair-title">
+      <h1 id="pair-title">连接设备</h1>
+      <p class="pair-help">在 Android 上启动闪传，扫描二维码，或填写配对码。</p>
+      <form id="pair-form">
+        <label for="pair-token">配对码</label>
+        <input id="pair-token" name="token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+        <label for="device-name">本机名称</label>
+        <input id="device-name" name="name" type="text" autocomplete="off" maxlength="80" required>
+        <p id="pair-error" class="field-error" role="alert" hidden></p>
+        <button id="pair-button" class="button primary full" type="submit">连接</button>
+      </form>
+    </section>
+    <div id="workspace" hidden>
+      <nav class="tabs" aria-label="传输内容">
+        <button class="tab active" data-tab="files" type="button" aria-current="page"><svg aria-hidden="true"><use href="#i-file"/></svg>文件</button>
+        <button class="tab" data-tab="texts" type="button"><svg aria-hidden="true"><use href="#i-text"/></svg>文字<span id="text-badge" class="badge" hidden></span></button>
+        <button class="tab" data-tab="tasks" type="button"><svg aria-hidden="true"><use href="#i-activity"/></svg>任务<span id="task-badge" class="badge" hidden></span></button>
+      </nav>
+      <section id="panel-files" class="panel" aria-label="文件">
+        <div class="send-bar"><div><strong>发送到 Android</strong><span id="queue-summary" class="help">支持多选</span></div><button id="choose-files" class="button primary" type="button"><svg aria-hidden="true"><use href="#i-upload"/></svg>选择文件</button></div>
+        <div class="section-heading"><h1>可接收文件</h1><span id="file-count" class="count"></span></div>
+        <div id="file-list" class="list"></div>
+        <p id="download-note" class="help download-note" hidden>下载进度请查看 Safari 下载管理器。保存位置由 Safari 决定；页面无法确认文件已保存，也无法保证下载自动恢复。</p>
+      </section>
+      <section id="panel-texts" class="panel" aria-label="文字" hidden>
+        <form id="text-form" class="composer">
+          <label for="text-input">发送文字</label>
+          <textarea id="text-input" rows="6" placeholder="输入或粘贴文字" spellcheck="false"></textarea>
+          <div class="composer-footer"><span id="text-count" class="help">0 字符</span><button id="send-text" class="button primary" type="submit"><svg aria-hidden="true"><use href="#i-send"/></svg>发送</button></div>
+          <p id="text-error" class="field-error" role="alert" hidden></p>
+        </form>
+        <div class="section-heading"><h1>文字记录</h1><span id="text-total" class="count"></span></div>
+        <div id="text-list" class="text-list"></div>
+      </section>
+      <section id="panel-tasks" class="panel" aria-label="任务" hidden>
+        <div class="section-heading task-heading"><h1>传输任务</h1><button id="clear-tasks" class="button quiet small" type="button">清除已结束</button></div>
+        <p id="foreground-note" class="notice" hidden>大文件传输时请保持此页面在前台。锁屏或切换应用可能中断上传；重新打开后可选择原文件继续。</p>
+        <div id="task-list" class="list"></div>
+      </section>
+    </div>
+    <input id="file-input" type="file" multiple hidden>
+  </main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <noscript><p class="notice">请在 Safari 设置中启用 JavaScript，再重新打开此页面。</p></noscript>
+</body>
+</html>

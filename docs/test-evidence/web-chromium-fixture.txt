@@ -1,0 +1,2 @@
+PASS (chromium): SHA vectors, pairing secret removal, exact 2MiB chunk checks, injected failure, reload/reselect + wrong-file rejection, content-identity resume, file byte equality, native download, Unicode text, clipboard API absent fallback, XSS-as-text, 4 responsive widths, touch targets, expired credentials.
+Browser fixture checks do not claim Android or iOS device compatibility. Screenshots: E:\FileFlash\scripts\web-artifacts\chromium

@@ -1,0 +1,88 @@
+# FileFlash 局域网协议 v1
+
+本文对应 FileFlash 0.1.1；缓存维护未改变 HTTP 接口版本。
+
+服务由 Android 提供。网页与原生客户端使用同一套 HTTP 接口，资源全部随 APK 打包。默认使用可信局域网内的明文 HTTP，令牌用于访问控制；文件内容和令牌均未加密。二维码中的配对令牌放在 URL 的 `#pair=...` 片段，网页读取后清除地址片段。服务端不记录令牌、请求正文或文件内容。
+
+## 连接与认证
+
+`POST /api/pair`，JSON `{ "token": "二维码令牌", "name": "设备名" }`。
+
+成功返回 HTTP 201：
+
+```json
+{"session":"随机会话凭据","clientId":"设备标识","chunkSize":2097152,"name":"FileFlash"}
+```
+
+其余 `/api/` 接口要求 `Authorization: Bearer <session>`，下载凭据接口除外。会话在 24 小时无活动、主动断开、主机断开该设备或停止服务后失效。停止服务会轮换配对令牌；重建服务对象同样产生新令牌。原生主机可通过 `connectedClients()` 和 `revokeClient(id)` 查看和断开设备。
+
+`DELETE /api/session` 撤销当前会话。撤销会话将中断其活动下载；正在收取的分块会在写入前重新检查会话。客户端不能使用已撤销会话继续下载或提交分块。
+
+所有请求必须提供正确的 `Host`。接口拒绝不同来源的 `Origin` 和 `Sec-Fetch-Site: cross-site`，不提供跨域授权。仅接受应用实际监听地址和端口，防止 DNS 重绑定。浏览器页面无需跨域请求。原生客户端可不发送 `Origin`。
+
+## 状态
+
+`GET /api/state`：
+
+```json
+{
+  "serverName":"FileFlash",
+  "files":[{"id":"文件标识","name":"文件名","size":123,"mime":"application/octet-stream","sha256":"64位十六进制","createdAt":0,"received":true}],
+  "texts":[{"id":"文字标识","text":"中文\n😀","sender":"设备名","createdAt":0}],
+  "uploads":[{"id":"任务标识","name":"文件名","size":123,"mime":"application/octet-stream","offset":0,"status":"uploading","sha256":null,"error":null,"createdAt":0,"updatedAt":0}],
+  "clients":[{"id":"设备标识","name":"设备名","connectedAt":0,"lastSeen":0}],
+  "downloads":[{"id":"下载任务标识","fileId":"文件标识","name":"文件名","size":123,"transferred":0,"status":"downloading","error":null,"clientId":"设备标识","startedAt":0}]
+}
+```
+
+时间均为 Unix 毫秒。字节数、长度和偏移使用非负 64 位整数。浏览器应限制自己可精确表示的文件大小，不将 JavaScript 浮点数越界伪装成成功。上传状态包括 `uploading`、`verifying`、`complete`、`failed`、`cancelled`，完成提升的极短过程可能显示 `promoting`。下载状态包括 `downloading`、`complete`、`failed`、`cancelled`。下载完成表示数据已写入连接，不能据此断言 Safari 已将文件保存到指定目录。
+
+状态中不包含会话和恢复密钥。文字为当前服务进程内的最近记录，最多 100 条、UTF-8 内容合计约 512 KiB；完成/取消的上传记录只展示最近 256 项，活动任务全部展示。已接收文件保存后以下载目录中的系统文件为共享源，清理私有副本不移除该共享。Android 会恢复仍有持久读取权限的 SAF 共享源和已保存接收文件；读取权限失效时需重新选择。
+
+## 分块上传
+
+1. `POST /api/uploads`，JSON `{ "name": "文件名", "size": 123, "mime": "类型", "sha256": "完整文件校验，可在完成时再提交" }`。`size` 必须为非负整数，不接受科学计数形式、字符串或小数。未知 MIME 使用 `application/octet-stream`，不按扩展名限制文件。
+2. 返回 HTTP 201 和上传对象，额外包含随机 `resumeKey`。同一会话以相同文件名、长度和完整校验值重复创建未完成任务时，返回 HTTP 200 的现有任务。恢复依靠任务标识和密钥，不能只比较文件名。
+3. `PUT /api/uploads/{id}`，请求体为原始分块。必须带 `Content-Length`、`X-Offset` 和 `X-Chunk-SHA256`。每块 1 至 2097152 字节，顺序发送；空文件直接完成。服务端先对有限分块缓冲校验，再按偏移写入并同步到磁盘，然后原子替换持久化偏移。响应直接返回最新上传对象。
+4. `GET /api/uploads/{id}` 查询持久化进度。上传创建者的有效会话可以直接操作；其他新会话，包括服务重启后重新配对，必须额外提供 `X-Upload-Key: <resumeKey>`。客户端应始终发送并妥善保存该密钥。
+5. 重试最后一个已提交分块时，只有偏移、长度、校验值及实际内容全部匹配才返回成功，进度不会重复增加。其他偏移冲突返回 HTTP 409。连接在完整分块接收前中断时，不改变已提交偏移。
+6. `POST /api/uploads/{id}/complete`，JSON `{ "sha256": "完整文件SHA-256" }`；若创建时已提交完整校验，可发送 `{}`。长度全部收齐后，服务端流式计算整个文件 SHA-256。校验成功后才将临时文件提升到接收目录并标记完成。同名文件生成 `名称 (2).扩展名`。完整校验失败返回 HTTP 422，清空该任务数据并将偏移重置为零；客户端可重新创建并发送任务。
+7. `DELETE /api/uploads/{id}` 取消未完成任务并删除临时数据。已完成文件不能通过取消接口删除。
+
+SHA-256 是内容完整性检查，不代替连接加密和身份认证。客户端可以使用增量实现，不依赖普通 HTTP 页面上不可保证可用的 Web Crypto。
+
+原生主机确认导出文件已完成保存、保存位置已持久化且可重新读取后，调用 `releaseReceivedCache(id, replacement)` 自动释放私有接收副本，并将共享源切换为 Downloads 中的系统文件。活动下载期间暂缓释放，稍后维护时重试。引擎保留有界的完成回执以处理响应丢失后的查询；对外仍返回 `complete`。释放不删除已导出的用户文件。
+
+`removeReceivedFile(id)` 用于明确丢弃已完成接收数据或移除接收记录，活动下载期间拒绝操作；不删除 SAF 选择的源文件或 Downloads 中的外部副本。已经写入释放/删除标记的操作在引擎重建时恢复。
+
+Android 存储维护通过 `cleanupStaleUploads(maxIdleMs, budgetBytes, now)` 清理闲置、未完成的私有分块；原生客户端下载断点与主机上传共用 256 MiB 清理目标。默认 24 小时无活动过期；预算回收只处理闲置超过 30 分钟的任务。活动请求、完整校验和已完成待保存文件受保护，最近使用的任务也可暂时超过目标。显式清理可清除闲置部分数据，但不删除用户源文件或已保存文件；已收全、等待保存的唯一副本不会被自动或批量清理。
+
+断点清理后 `GET /api/uploads/{id}` 返回 HTTP 404，错误码 `upload_expired` 或任务不存在。客户端应清除旧偏移和恢复凭据，从零创建新任务，向用户说明需要重新发送；不得沿用旧进度。网页只保存任务元数据，不保存文件字节；完成/确认取消后立即释放文件引用和恢复密钥，历史保留最近 100 条且不超过 7 天。暂停或失败任务不按完成历史条数裁剪。
+
+每份上传元数据与随机任务 ID 对应。数据文件在分块后 `fsync`，元数据通过同目录临时文件同步后重命名。重启时以持久化偏移截断多余尾部；若磁盘文件短于已提交偏移，则重置为零。完整文件提升前写入恢复标记，重启可检查目标长度和完整校验值后收敛到完成状态。断电和文件系统硬件故障仍可能损坏或丢失数据，不能据此宣称绝对的数据持久性。
+
+服务启动、上传创建和分块写入检查可用空间。总文件数据不进入内存：每个工作线程最多缓存一个 2 MiB 分块，下载和完整校验使用 128 KiB 缓冲。偏移和长度不依赖 32 位整数。
+
+## 下载
+
+`GET /api/files/{id}` 或 `HEAD /api/files/{id}`，使用会话请求。支持单段 `Range: bytes=start-end`、`bytes=start-`、`bytes=-suffix`；多段和无效范围返回 HTTP 416，并附 `Content-Range: bytes */总长度`。有效范围返回 206。响应包含 `Accept-Ranges: bytes`、`Content-Disposition`、稳定文件 ID 的 ETag；已知完整校验值时返回 `X-File-SHA256`。文件名使用 RFC 5987 UTF-8 编码，响应类型不直接插入用户输入。
+
+Safari 原生下载无法随普通导航附带 Bearer 请求头，因此先调用 `POST /api/files/{id}/ticket`，得到 `{ "url": "/api/downloads/随机凭据", "expiresAt": 0 }`，再由用户操作触发原生下载。该短期随机能力凭据绑定原会话，有效期 10 分钟；在有效期内允许 Safari 的 Range 和重试请求，设备断开或服务停止立即使其失效。凭据是敏感信息，不应复制到日志或转发。已经开始的连接可在有效期后继续，但新请求需新凭据。
+
+`DELETE /api/downloads-cancel/{下载任务id}` 可取消当前会话的活动下载。主机调用 `cancelDownload(id)` 取消。已经交给 Safari 下载管理器的保存位置、原生进度和后台恢复行为由 iOS 决定；网页不声称能够管理这些系统能力。
+
+## 文字
+
+`POST /api/texts`，JSON `{ "text": "内容" }`，返回 HTTP 201 和完整文字对象。UTF-8 内容最大 512 KiB，保留换行、中文及 Emoji。`DELETE /api/texts/{id}` 删除当前记录。主机 `sendText(text)` 生成来自“本机”的记录。内容是普通文字，网页必须通过 `textContent` 或输入框展示，不作为 HTML 执行。
+
+## 限额与错误
+
+HTTP 连接不复用，每个连接处理一个请求，6 个工作线程与 18 个等待连接。最多并行 3 个下载、2 个分块写入/完整校验，保留工作线程供状态查询和取消；超出返回 429。取消下载和撤销设备会关闭活动连接，避免停读的客户端让发送线程一直等待。请求头总计最多 16 KiB，重复请求头、Transfer-Encoding、Expect、非法 Content-Length、路径编码及路径遍历形式均拒绝。请求读取超时为 30 秒。JSON 请求上限 1 MiB，任务创建和完成上限 16 KiB。最多 16 个配对会话、128 个未完成上传、2048 个接收/共享文件记录（达到后移除不再需要的共享记录）；配对按来源地址限速，接口按会话限速。接收临时数据写入专用私有目录，共享源由主机授权提供，客户端不能指定文件系统路径。
+
+错误统一为 `{ "error": "可展示的中文说明", "code": "稳定错误码" }`。主要状态：400 参数无效，401 凭据过期，403 无访问权或跨站访问，404 文件/任务不存在，409 偏移或任务状态冲突，410 来源文件不可读取，413 分块过大，416 无效下载范围，422 校验失败，429 请求/任务过多，507 存储空间或写入失败。客户端遇到 409 应查询最新偏移，遇到 401 应重新配对后使用恢复密钥查找原任务。
+
+## 本机集成入口
+
+`DesktopServer --storage DIR --assets DIR --port 0 --ready FILE [--share FILE]` 使用与 Android 相同的引擎。`--assets` 指向 `app/src/main/assets/web`。启动后在本地标准输出和可选 ready 文件写入 `{port,pairToken,url,storage}` 供自动化测试读取；该输出仅用于显式启动的本机测试工具，包含有效配对凭据。
+
+核心采用 Java 17 编译目标，但运行库调用限定 Android API 34 可用的方法。编译成功不代表较新 Java 标准库方法在 Android 上可用；例如 `Files.readString/writeString` 从 Android 36.1 才提供，元数据恢复因此使用有界输入流。新增标准库调用需通过 API 34 平台编译检查，并在实际 API 34 运行环境验证持久化任务重启。
