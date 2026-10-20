@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "version": "0.1.6",
+  "versionCode": 10,
+  "minSdk": 29,
+  "targetSdk": 37,
+  "apkSha256": "a2e57f382be2cd711a9fc346e36d31215d7e7561c1f2790834c78a619b54c4f8",
+  "apkBytes": 22031239,
+  "signatureVerified": true,
+  "certificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "debuggable": false,
+  "releaseLintErrors": 0
+}

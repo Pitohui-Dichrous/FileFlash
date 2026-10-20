@@ -36,6 +36,10 @@ EVIDENCE = ROOT / 'docs' / 'test-evidence' / 'relay-android.json'
 API_LEVEL = None
 BASE = ''
 RESULTS = []
+EXPECTED_VERSION = None
+APK_SHA256 = None
+INSTALLED_APK_SHA256 = None
+COMPLETED = False
 
 
 def adb(*args, binary=False, check=True):
@@ -61,7 +65,9 @@ def save_report():
     EVIDENCE.parent.mkdir(parents=True, exist_ok=True)
     EVIDENCE.write_text(json.dumps({
         'environment': f'Dedicated rooted Android API{API_LEVEL} emulator; two desktop HTTP sessions over adb forwarding, not physical Wi-Fi or iOS',
-        'run': RUN, 'tests': RESULTS,
+        'run': RUN, 'version': EXPECTED_VERSION, 'apkSha256': APK_SHA256,
+        'installedApkSha256': INSTALLED_APK_SHA256,
+        'passed': COMPLETED and bool(RESULTS) and all(item['passed'] for item in RESULTS), 'tests': RESULTS,
     }, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
@@ -343,7 +349,7 @@ def baseline_intact(hashes):
 
 
 def main():
-    global API_LEVEL, OUT, EVIDENCE
+    global API_LEVEL, OUT, EVIDENCE, EXPECTED_VERSION, APK_SHA256, INSTALLED_APK_SHA256, COMPLETED
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apk', type=Path, default=ROOT / 'app/build/outputs/apk/release/app-release.apk')
     parser.add_argument('--version', required=True, help='Expected installed versionName')
@@ -369,6 +375,8 @@ def main():
         raise RuntimeError('Pairing credentials must remain under private .test-data') from error
     if not args.apk.is_file():
         raise FileNotFoundError(args.apk)
+    EXPECTED_VERSION = args.version
+    APK_SHA256 = hashlib.sha256(args.apk.read_bytes()).hexdigest()
     OUT.mkdir(parents=True, exist_ok=True)
     previous = version()
     stop()
@@ -381,8 +389,13 @@ def main():
     check('dedicated emulator guard and existing saved-file baseline recorded', True, api=API_LEVEL,
           previousVersion=previous, savedFiles=len(before), readableDownloads=len(readable_before),
           unreadableBefore=len(before) - len(readable_before))
-    check('new signed build upgrades without uninstall', 'Success' in adb('install', '-r', args.apk),
-          apkSha256=hashlib.sha256(args.apk.read_bytes()).hexdigest())
+    installed_result = adb('install', '-r', args.apk)
+    package_path = adb('shell', 'pm', 'path', 'app.fileflash').removeprefix('package:')
+    if not package_path.startswith('/data/app/') or not package_path.endswith('/base.apk') or '\n' in package_path:
+        raise RuntimeError('Unexpected installed APK path')
+    INSTALLED_APK_SHA256 = adb('shell', 'sha256sum', package_path).split()[0]
+    check('new signed build upgrades without uninstall', 'Success' in installed_result and INSTALLED_APK_SHA256 == APK_SHA256,
+          apkSha256=APK_SHA256, installedApkSha256=INSTALLED_APK_SHA256)
     check('expected relay release version installed', version()['name'] == args.version, installed=version())
     if API_LEVEL >= 33:
         adb('shell', 'pm', 'grant', 'app.fileflash', 'android.permission.POST_NOTIFICATIONS', check=False)
@@ -488,8 +501,11 @@ def main():
     screenshot('saved-files-final')
     tap('共享')
     ready.parent.mkdir(parents=True, exist_ok=True)
+    ready_data.update(version=args.version, serverApkSha256=INSTALLED_APK_SHA256, serial=SERIAL)
     ready.write_text(json.dumps(ready_data), encoding='utf-8')
     screenshot('completed')
+    COMPLETED = True
+    save_report()
     print('READY: dedicated host remains running; pairing credentials are private under .test-data.', flush=True)
 
 

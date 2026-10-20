@@ -5,6 +5,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from source_manifest import source_files
 
 root = Path(__file__).resolve().parent.parent
 version = re.search(r'versionName\s*=\s*"([^"]+)"', (root / 'app/build.gradle.kts').read_text(encoding='utf-8')).group(1)
@@ -21,11 +22,20 @@ with zipfile.ZipFile(apk) as archive:
 with zipfile.ZipFile(source) as archive:
     assert archive.testzip() is None
     sources = archive.namelist()
+    assert len(sources) == len(set(sources)), 'Duplicate source ZIP entry'
+    assert set(sources) == {'FileFlash/' + p.relative_to(root).as_posix() for p in source_files(root)}, 'Incomplete source ZIP manifest'
     for name in sources:
         relative = Path(name).relative_to('FileFlash')
         assert not any(part in {'.signing', '.tools', '.test-data', 'node_modules', 'build'} for part in relative.parts), relative
         assert relative.as_posix() != 'local.properties'
         assert archive.read(name) == (root / relative).read_bytes(), 'Source ZIP differs: ' + str(relative)
+if version == '0.1.6':
+    from delivery_ios_share import verify
+    report = verify(root, version, apk, source, assets, sources)
+    (root / 'dist/verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / 'dist/SHA256SUMS.txt').write_text(''.join(item['sha256'] + '  ' + item['name'] + '\n' for item in report['artifacts']), encoding='utf-8')
+    print(json.dumps(report, indent=2))
+    raise SystemExit(0)
 if version == '0.1.5-test.2':
     apk_sha = hashlib.sha256(apk.read_bytes()).hexdigest()
     binary = json.loads((root / 'docs/test-evidence/photo-picker-binary.json').read_text(encoding='utf-8'))

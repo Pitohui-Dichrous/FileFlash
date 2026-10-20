@@ -1,17 +1,31 @@
 # 复现测试
 
-本文对应 0.1.5-test.3 预发布版；网页保留 0.1.5-test.2 选取诊断，Java 传输内核沿用 0.1.5-test.1。实际验证范围见 [TEST_RESULTS.md](TEST_RESULTS.md)。照片库问题与备用方式见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)，本版不宣称已修复 iOS 照片库。
+本文对应 0.1.6。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+
+## 系统分享
+
+```powershell
+python scripts/build-ios-shortcut.py --check
+python scripts/verify-ios-shortcut.py --signed app/src/main/assets/web/FileFlash.shortcut --unsigned scripts/shortcut/FileFlash.unsigned.plist --report docs/test-evidence/ios-shortcut-signature.json
+.\gradlew.bat :core:test :app:testDebugUnitTest :core:installDist
+node scripts/integration-ios-share.cjs
+```
+
+验签额外依赖 `python-aea`、`cryptography`、`pyliblzfse`、`lz4`，只用于开发核验，不进入 APK。快捷指令已随源码提供；构建 APK 无须重新联网签发。默认大文件测试分别用固定长度和 chunked 单请求传输 4 GiB + 65539 字节，核对独立下载、跨界 Range、断线、取消、强杀恢复和物理清理。设置小文件大小只能用于快速调试。
+
+网页复查设置 `FILEFLASH_EVIDENCE_SUFFIX=-ios-share`、`FILEFLASH_IOS_SHARE_TEST=1`，再运行下方照片库脚本；检查原有上传及极简媒体入口。私有 ready 参数可复查最终 APK 服务。验签和桌面引擎不运行 iOS 照片分享。
 
 ## 照片库选取诊断
 
 ```powershell
-$env:FILEFLASH_EVIDENCE_SUFFIX='-test3'
+$env:FILEFLASH_EVIDENCE_SUFFIX='-ios-share'
+$env:FILEFLASH_IOS_SHARE_TEST='1'
 node scripts/photo-picker-smoke.cjs
 $env:FILEFLASH_BROWSER_ENGINE='webkit'
 node scripts/photo-picker-smoke.cjs
 ```
 
-独立夹具验证真实 DOM 点击、原生控件直接点击、无选取结果时不发上传、同文件再次选择、多选与重试切换、32 条内存记录和隐私。可追加私有 ready JSON 路径，对实际 Java 或 Android 服务重复测试；本次报告后缀为 `-test3.json`，不覆盖旧版证据。ready 文件含配对凭据，不应公开。
+独立夹具验证真实 DOM 点击、媒体安装入口、原生控件直接点击、无选取结果时不发上传、同文件再次选择、多选与重试切换、32 条内存记录和隐私。可追加私有 ready JSON 路径，对实际 Java 或 Android 服务重复测试；本次报告后缀为 `-ios-share.json`，不覆盖旧版证据。ready 文件含配对凭据，不应公开。
 
 这些自动测试注入 FileList，使用合成 HEIC/MOV 名称及类型检查字节保持，没有调用 iOS 照片库或解码真实相机媒体，不能证明白圈问题已经修复。真实设备只需在“连接详情 → 选取测试”选一张此前失败的相机照片；卡住时退出选取界面，再“诊断 → 复制诊断”。
 
@@ -21,7 +35,7 @@ node scripts/photo-picker-smoke.cjs
 .\gradlew.bat :core:test :app:assembleDebug :app:lintDebug
 ```
 
-核心测试会在本机临时目录运行真实 HTTP 服务，验证认证、分块、校验、重启恢复、取消、路径和长度参数、缓存清理及 4 GiB 以上偏移。本次 49 项通过，另覆盖有界内存诊断、合成探测、100 Continue、连续上传的长度与 EOF 清理、并行创建、取消、重启及保存保护；原生分块接口的鉴权和幂等检查保留。
+核心测试会在本机临时目录运行真实 HTTP 服务，验证认证、分块、校验、重启恢复、取消、路径和长度参数、缓存清理及 4 GiB 以上偏移。本次 70 项通过，包括新增系统分享、受限 chunked、并发和磁盘预算；原有 49 项保留。另有 2 项 Android JSON 模型兼容检查，确认旧服务仍显示已知总长、未知流不显示假总长。
 
 ## 桌面浏览器
 
@@ -82,10 +96,10 @@ node scripts/integration-large.cjs
 
 ```powershell
 $env:FILEFLASH_DEDICATED_EMULATOR='1'
-python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.5-test.3.apk --version 0.1.5-test.3
+python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.6.apk --version 0.1.6 --evidence docs/test-evidence/receive-ui-api34-0.1.6.json
 ```
 
-脚本启动真实传输内核与限速合成文件，通过实际点击验证连接页进度、完成、失败重试、暂停、防重复和大字号布局，并校验系统下载文件。API 29 使用对应模拟器序号重跑。截图留在私有 `.test-data`，脱敏报告为 `test-evidence/receive-ui-api{29,34}.json`。
+脚本启动真实传输内核与限速合成文件，通过实际点击验证连接页进度、完成、失败重试、暂停、防重复和大字号布局，并校验系统下载文件。API 29 使用对应模拟器序号重跑。截图留在私有 `.test-data`，本次脱敏报告为 `test-evidence/receive-ui-api{29,34}-0.1.6.json`。
 
 `scripts/android-smoke.py` 是最初 Android 14 基线脚本，使用 Python 3 标准库、JDK、ADB 和专用模拟器。可通过 `ANDROID_SERIAL` 选择设备。构建调试 APK 后执行；测试安装应用、实际启动本机服务、解码二维码、收发文件及文字，并读取 MediaStore 导出文件进行校验。0.1.2 最低 Android 10 使用下面的上传专项脚本单独验证。
 
@@ -95,7 +109,9 @@ python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/Fil
 
 `android-cache-smoke.py` 对专用可 root 的 API 34 模拟器执行缓存专项：需先安装带有合成测试数据的 0.1.0，再提供 `app/build/outputs/apk/release/app-release.apk`。脚本会覆盖升级、构造应用自己的中断保存状态、点击“清理 / 丢弃”、卸载并重装，结果写入 `docs/test-evidence/cache-android.json`。它会卸载测试应用，不能在个人手机上执行。
 
-`android-upload-smoke.py` 保留作 0.1.2 自动保存基线；0.1.3 起改为手动保存，请使用 `android-relay-smoke.py --version 0.1.5-test.1` 并先构建对应 APK。该脚本只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1`、指定模拟器序号并通过 `ro.kernel.qemu` 检查的专用 API 29 / 34 模拟器。它覆盖签名升级保留数据、B/C 独立会话、上传后没有下载目录副本、C 直接下载、重启恢复、停止共享后点保存、丢弃、手动清理以及启动自动过期清理；只修改本轮合成数据的时间，不删除已有用户保存文件。配对凭据仅写入私有 `.test-data/relay-android-api{N}-ready.json`。
+`android-upload-smoke.py` 保留作 0.1.2 自动保存基线；0.1.3 起改为手动保存。本次构建后使用 `android-relay-smoke.py --apk dist/FileFlash-0.1.6.apk --version 0.1.6 --ready .test-data/ios-share-api34-ready.json --evidence docs/test-evidence/relay-android-api34-0.1.6.json`（API 29 设置 `ANDROID_SERIAL=emulator-5556` 并使用对应报告名）。脚本只允许显式设置 `FILEFLASH_DEDICATED_EMULATOR=1`、指定模拟器并通过 `ro.kernel.qemu` 检查。它覆盖升级保留、B/C 中转、重启、停止后保存、私有副本释放、丢弃及清理；只修改本轮合成数据，不删除已有保存文件。配对凭据仅写入私有 `.test-data`。
+
+`android-ios-share-smoke.py --serial emulator-5554 --apk dist/FileFlash-0.1.6.apk --version 0.1.6 --ready .test-data/ios-share-api34-ready.json --evidence docs/test-evidence/ios-share-android-api34-0.1.6.json` 检查实际 APK 的两种原流上传、独立接收、会话撤销后继续中转、无自动下载目录副本、畸形/半正文清理及鉴权。报告绑定本地与实际安装的 APK，精确测试任务清理资料只写入私有 manifest。
 
 0.1.3 曾使用 `web-upload-regression.cjs` 验证六个空闲预连接、分块丢确认恢复及 B/C 中转。0.1.5-test.1 的实际 APK 浏览器路径改由 `transfer-diagnostics.cjs` 等当前专项脚本记录，验证连续请求及诊断；具体执行参数与结果见交付证据。ADB 转发、模拟器 WebView、桌面浏览器均不替代真实 iPhone 和局域网。
 
@@ -103,7 +119,7 @@ python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/Fil
 
 最终实际体验应使用 Android 手机及 iPhone Safari，在同一可信 Wi-Fi 验证扫码、双向文件、文字、系统保存、断网重试及权限拒绝。长时间后台和热点行为取决于系统与网络，不承诺无限后台持续运行。
 
-用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。test.3 尚未在该真机验证；桌面 WebKit 和模拟器不能替代系统照片库测试，相关边界见 [IOS_PHOTO_PICKER.md](IOS_PHOTO_PICKER.md)。
+用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。0.1.6 系统分享路径尚未在该真机验证；桌面 WebKit 和模拟器不能替代该项，见 [IOS_SHARE.md](IOS_SHARE.md)。
 
 ## 存储与卸载检查
 

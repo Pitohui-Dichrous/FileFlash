@@ -1,0 +1,90 @@
+{
+  "environment": "Dedicated rooted Android API34 emulator; actual signed APK host via adb forwarding; synthetic HEIC/MOV bytes; not physical iPhone, Photos, Shortcuts, Wi-Fi, or personal media",
+  "version": "0.1.6",
+  "apkSha256": "a2e57f382be2cd711a9fc346e36d31215d7e7561c1f2790834c78a619b54c4f8",
+  "installedApkSha256": "a2e57f382be2cd711a9fc346e36d31215d7e7561c1f2790834c78a619b54c4f8",
+  "passed": true,
+  "tests": [
+    {
+      "name": "actual dedicated Android APK matches the frozen release",
+      "passed": true,
+      "apiLevel": 34
+    },
+    {
+      "name": "upload sender and receiving peer authenticate independently",
+      "passed": true
+    },
+    {
+      "name": "authentication, Origin and method rejection create no file tasks",
+      "passed": true
+    },
+    {
+      "name": "Content-Length original HEIC returns one final completed receipt",
+      "passed": true,
+      "bytes": 8388625,
+      "sha256": "a617b210c45fc859c14610fbe4f03e93eb0a4d42bcd63498bb6248270bda2838"
+    },
+    {
+      "name": "independent C receives unchanged HEIC source bytes",
+      "passed": true,
+      "bytes": 8388625,
+      "sha256": "a617b210c45fc859c14610fbe4f03e93eb0a4d42bcd63498bb6248270bda2838"
+    },
+    {
+      "name": "HEIC remains private temporary relay without automatic Downloads publication",
+      "passed": true
+    },
+    {
+      "name": "chunked original MOV returns one final completed receipt",
+      "passed": true,
+      "bytes": 8388645,
+      "sha256": "346f09c50f8647b213700c1cb405342e3d834f55f9a9d6887b3bb779f481a37f"
+    },
+    {
+      "name": "independent C receives unchanged MOV source bytes",
+      "passed": true,
+      "bytes": 8388645,
+      "sha256": "346f09c50f8647b213700c1cb405342e3d834f55f9a9d6887b3bb779f481a37f"
+    },
+    {
+      "name": "MOV remains private temporary relay without automatic Downloads publication",
+      "passed": true
+    },
+    {
+      "name": "Content-Length interrupted body removes its task, prefix, metadata and share",
+      "passed": true,
+      "errorCode": "incomplete_body",
+      "apkStatus": 400,
+      "forwardedStatus": null,
+      "forwardedEof": "RemoteDisconnected"
+    },
+    {
+      "name": "chunked interrupted body removes its task, prefix, metadata and share",
+      "passed": true,
+      "errorCode": "invalid_chunked_body",
+      "apkStatus": 400,
+      "forwardedStatus": null,
+      "forwardedEof": "RemoteDisconnected"
+    },
+    {
+      "name": "malformed chunk framing fails without retaining an upload",
+      "passed": true
+    },
+    {
+      "name": "chunked framing remains forbidden on the ordinary native upload endpoint",
+      "passed": true
+    },
+    {
+      "name": "sender session revocation preserves C download and exact-key deletion removes only own temporary data",
+      "passed": true,
+      "completedFilesReadableAfterSenderRevocation": 2
+    },
+    {
+      "name": "pre-existing saved ledger and readable Downloads bytes remain unchanged",
+      "passed": true,
+      "ledgerEntries": 33,
+      "readableDownloads": 8,
+      "unreadableBefore": 25
+    }
+  ]
+}

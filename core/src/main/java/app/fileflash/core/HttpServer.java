@@ -207,7 +207,7 @@ final class HttpServer {
     }
 
     private static void drainRejectedBody(Request request,Socket socket) {
-        if(request==null||request.consumed>=request.length||request.length>2*1024*1024)return;
+        if(request==null||request.chunked||request.consumed>=request.length||request.length>2*1024*1024)return;
         long remaining=request.length-request.consumed,deadline=System.nanoTime()+TimeUnit.MILLISECONDS.toNanos(500);
         byte[] buffer=new byte[16*1024];
         try {
@@ -263,7 +263,9 @@ final class HttpServer {
         trace.headers(start[0],path,headers);
         if (!headers.containsKey("host") || headers.get("host").isEmpty())
             throw new HttpError(400, "missing_host", "缺少 Host");
-        if (headers.containsKey("transfer-encoding"))
+        String encoding=headers.get("transfer-encoding");
+        boolean chunked=encoding!=null;
+        if(chunked&&(headers.containsKey("content-length")||!encoding.equalsIgnoreCase("chunked")||!start[0].equals("POST")||!path.equals("/api/shortcuts/files")))
             throw new HttpError(400, "unsupported_encoding", "请使用明确的 Content-Length");
         if (headers.containsKey("expect")&&!headers.get("expect").equalsIgnoreCase("100-continue")) throw new HttpError(417, "expectation_failed", "不支持此 Expect 请求头");
         String length = headers.getOrDefault("content-length", "0");
@@ -273,7 +275,7 @@ final class HttpServer {
         // Routing identifiers contain no escapes. Never decode a path into a filesystem path.
         if (path.contains("%") || path.contains("\\") || path.contains("..") || path.contains("\0"))
             throw new HttpError(400, "bad_path", "无效的请求路径");
-        return new Request(start[0], path, headers, size, in, socket,trace);
+        return new Request(start[0], path, query<0?null:start[1].substring(query+1), headers, chunked?-1:size, chunked, in, socket,trace);
     }
 
     private static String readLine(InputStream in, int[] budget) throws IOException {
@@ -295,34 +297,37 @@ final class HttpServer {
     }
 
     static final class Request {
-        final String method, path;
+        final String method, path, rawQuery;
         final Map<String, String> headers;
         final long length;
+        final boolean chunked;
         final InputStream body;
+        final ChunkedBody chunks;
         final Socket socket;
         final TransportDiagnostics.Trace trace;
         Response response;
         boolean continued;
         long consumed;
-        Request(String method, String path, Map<String,String> headers, long length, InputStream body, Socket socket,TransportDiagnostics.Trace trace) {
-            this.method=method; this.path=path; this.headers=headers; this.length=length; this.body=body; this.socket=socket;this.trace=trace;
+        Request(String method, String path, String rawQuery, Map<String,String> headers, long length, boolean chunked, InputStream body, Socket socket,TransportDiagnostics.Trace trace) {
+            this.method=method; this.path=path; this.rawQuery=rawQuery; this.headers=headers; this.length=length; this.chunked=chunked;this.body=body;this.chunks=chunked?new ChunkedBody(body):null;this.socket=socket;this.trace=trace;
         }
         String header(String name) { return headers.get(name.toLowerCase(Locale.ROOT)); }
         void beginStreamBody() throws IOException {
-            if(length>0&&!continued&&"100-continue".equalsIgnoreCase(header("expect"))) {continued=true;response.continueRequest();}
+            if((length>0||chunked)&&!continued&&"100-continue".equalsIgnoreCase(header("expect"))) {continued=true;response.continueRequest();}
             trace.mark("body-reading");
         }
         int readStreamBody(byte[] buffer) throws IOException {
-            if(consumed==length)return -1;
+            if(!chunked&&consumed==length)return -1;
             long started=System.nanoTime();
             try {
-                int count=body.read(buffer,0,(int)Math.min(buffer.length,length-consumed));
-                if(count<0)throw new HttpError(400,"incomplete_body","传输中断，请重新上传");
-                if(count>0){consumed+=count;trace.received(count);if(consumed==length)trace.mark("body-complete");}
+                int count=chunked?chunks.read(buffer):body.read(buffer,0,(int)Math.min(buffer.length,length-consumed));
+                if(count<0) {if(chunked){trace.mark("body-complete");return -1;}throw new HttpError(400,"incomplete_body","传输中断，请重新上传");}
+                if(count>0){if(consumed>Long.MAX_VALUE-count)throw new HttpError(413,"body_too_large","文件过大");consumed+=count;trace.received(count);if(!chunked&&consumed==length)trace.mark("body-complete");}
                 return count;
             } finally {trace.addDuration("bodyRead",started);}
         }
         byte[] readBody(int maximum) throws IOException {
+            if(chunked)throw new HttpError(400,"unsupported_encoding","此操作需要 Content-Length");
             if (length > maximum) throw new HttpError(413, "body_too_large", "请求内容过大");
             if(length>0&&!continued&&"100-continue".equalsIgnoreCase(header("expect"))) {
                 continued=true;response.continueRequest();
@@ -341,6 +346,88 @@ final class HttpServer {
             return data;
             } finally {trace.duration("bodyRead",started);}
         }
+    }
+
+    /** Decodes only the explicitly opted-in Shortcuts route, with constant memory and bounded metadata. */
+    static final class ChunkedBody {
+        private final InputStream input;
+        private long remaining;
+        private boolean needsEnding,complete;
+        ChunkedBody(InputStream input){this.input=input;}
+        int read(byte[] buffer) throws IOException {
+            if(complete)return -1;
+            if(remaining==0) {
+                if(needsEnding) {
+                    if(input.read()!='\r'||input.read()!='\n')throw bad("分块结束符无效");
+                    needsEnding=false;
+                }
+                String line=line(new int[]{4096});int separator=line.indexOf(';');String size=separator<0?line:line.substring(0,separator);
+                if(!size.matches("[0-9A-Fa-f]{1,16}"))throw bad("分块长度无效");
+                try {remaining=Long.parseLong(size,16);}catch(NumberFormatException invalid){throw bad("分块长度超出范围");}
+                if(separator>=0)extensions(line,separator);
+                if(remaining==0) {
+                    int[] budget={16*1024};
+                    while(!(line=line(budget)).isEmpty()) {
+                        int colon=line.indexOf(':');
+                        if(colon<=0||!token(line.substring(0,colon)))throw bad("尾部字段无效");
+                        String key=line.substring(0,colon).toLowerCase(Locale.ROOT);
+                        if(Arrays.asList("content-length","transfer-encoding","host","authorization","cookie","origin","trailer").contains(key))throw bad("不允许此尾部字段");
+                        for(int i=colon+1;i<line.length();i++)if(line.charAt(i)<32&&line.charAt(i)!='\t')throw bad("尾部字段无效");
+                    }
+                    complete=true;return -1;
+                }
+                needsEnding=true;
+            }
+            int count=input.read(buffer,0,(int)Math.min(buffer.length,remaining));
+            if(count<0)throw bad("分块内容不完整");
+            remaining-=count;return count;
+        }
+        private String line(int[] budget) throws IOException {
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();int previous=-1;
+            while(true) {
+                int next=input.read();if(next<0)throw bad("分块内容不完整");
+                if(--budget[0]<0||bytes.size()>=4096)throw new HttpError(413,"chunk_metadata_too_large","分块元数据过长");
+                if(next=='\n') {
+                    if(previous!='\r')throw bad("分块须使用 CRLF");
+                    byte[] result=bytes.toByteArray();return new String(result,0,result.length-1,StandardCharsets.ISO_8859_1);
+                }
+                if(previous=='\r'||next==0)throw bad("分块须使用 CRLF");
+                bytes.write(next);previous=next;
+            }
+        }
+        private static boolean token(String value) {
+            if(value.isEmpty())return false;
+            for(int i=0;i<value.length();i++)if(!tokenCharacter(value.charAt(i)))return false;
+            return true;
+        }
+        private static boolean tokenCharacter(char value){return value>0&&value<128&&(Character.isLetterOrDigit(value)||"!#$%&'*+-.^_`|~".indexOf(value)>=0);}
+        private static void extensions(String value,int offset) throws HttpError {
+            while(offset<value.length()) {
+                if(value.charAt(offset++)!=';')throw bad("分块扩展无效");
+                while(offset<value.length()&&(value.charAt(offset)==' '||value.charAt(offset)=='\t'))offset++;
+                int start=offset;while(offset<value.length()&&tokenCharacter(value.charAt(offset)))offset++;
+                if(start==offset)throw bad("分块扩展无效");
+                while(offset<value.length()&&(value.charAt(offset)==' '||value.charAt(offset)=='\t'))offset++;
+                if(offset<value.length()&&value.charAt(offset)=='=') {
+                    offset++;while(offset<value.length()&&(value.charAt(offset)==' '||value.charAt(offset)=='\t'))offset++;
+                    if(offset<value.length()&&value.charAt(offset)=='"') {
+                        offset++;boolean closed=false;
+                        while(offset<value.length()) {
+                            char next=value.charAt(offset++);
+                            if(next=='"'){closed=true;break;}
+                            if(next=='\\'){if(offset==value.length())throw bad("分块扩展无效");next=value.charAt(offset++);}
+                            if(next<32&&next!='\t'||next>126)throw bad("分块扩展无效");
+                        }
+                        if(!closed)throw bad("分块扩展无效");
+                    } else {
+                        start=offset;while(offset<value.length()&&tokenCharacter(value.charAt(offset)))offset++;
+                        if(start==offset)throw bad("分块扩展无效");
+                    }
+                    while(offset<value.length()&&(value.charAt(offset)==' '||value.charAt(offset)=='\t'))offset++;
+                }
+            }
+        }
+        private static HttpError bad(String message){return new HttpError(400,"invalid_chunked_body",message);}
     }
 
     static final class Response {
@@ -378,7 +465,7 @@ final class HttpServer {
             switch(status) {
                 case 200:return "OK";case 201:return "Created";case 204:return "No Content";case 206:return "Partial Content";
                 case 400:return "Bad Request";case 401:return "Unauthorized";case 403:return "Forbidden";case 404:return "Not Found";
-                case 405:return "Method Not Allowed";case 408:return "Request Timeout";case 409:return "Conflict";case 410:return "Gone";
+                case 405:return "Method Not Allowed";case 408:return "Request Timeout";case 409:return "Conflict";case 410:return "Gone";case 411:return "Length Required";
                 case 413:return "Payload Too Large";case 416:return "Range Not Satisfiable";case 417:return "Expectation Failed";
                 case 422:return "Unprocessable Content";case 429:return "Too Many Requests";case 431:return "Request Header Fields Too Large";
                 case 503:return "Service Unavailable";case 507:return "Insufficient Storage";default:return "Internal Server Error";

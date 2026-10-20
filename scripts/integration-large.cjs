@@ -129,7 +129,8 @@ async function main() {
   const text = '中文 English 😀\n第二行 <>& # +\n' + '长文字'.repeat(3000);
   await api('POST', '/api/texts', { text }, {}, true, 201);
   assert((await api('GET', '/api/state')).texts.some(t => t.text === text)); checks.push('Unicode multiline long text roundtrip');
-  const report = { passed: true, bytes: size, sha256, checks, networkRetries, javaMaxHeapMiB: 128, nodePeakRssMiB: Math.round(peakRss / 1024 ** 2), elapsedSeconds: Math.round((Date.now() - started) / 1000), environment: 'Windows JVM real HTTP; not Android/iOS device validation' };
+  const version = fs.readFileSync(path.join(root, 'app/build.gradle.kts'), 'utf8').match(/versionName\s*=\s*"([^"]+)"/)[1];
+  const report = { passed: true, version, runtimeCoreSha256: hash(fs.readFileSync(path.join(runtime, 'core.jar'))), bytes: size, sha256, checks, networkRetries, javaMaxHeapMiB: 128, nodePeakRssMiB: Math.round(peakRss / 1024 ** 2), elapsedSeconds: Math.round((Date.now() - started) / 1000), environment: 'Windows JVM real HTTP; not Android/iOS device validation' };
   fs.writeFileSync(path.join(reportDir, 'large.json'), JSON.stringify(report, null, 2));
   passed = true;
   console.log(JSON.stringify(report, null, 2));

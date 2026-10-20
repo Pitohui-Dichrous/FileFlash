@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "scope": "Compile-time Java platform member resolution against Android API 29; not a device runtime test",
+  "platformApi": 29,
+  "hostJdkPlatformFallback": false,
+  "javacExitCode": 0,
+  "sourceCount": 8,
+  "classCount": 24,
+  "sources": {
+    "core/src/main/java/app/fileflash/core/AssetProvider.java": "e42dad62f8ac2287656393c32dbe409efefa12acbcb3395b3bc3f7bc1deb56f5",
+    "core/src/main/java/app/fileflash/core/ClientInfo.java": "277d757b19a1b02e428cac68853b5bc8b52685b70245664ca7e38280f39d8744",
+    "core/src/main/java/app/fileflash/core/DesktopServer.java": "dfe8205c1ee7dab842cef29d869c74edc29740077718e36b8d99583038ebfa44",
+    "core/src/main/java/app/fileflash/core/HttpServer.java": "967a2bfa02b60274a6a97038ff9868c434075a40cb7e4876e852d9ea21f9abe6",
+    "core/src/main/java/app/fileflash/core/ShareFile.java": "d5cf2b29aa5cdcb43eedfa0b8c9c1397ae48800a91efe6158dc06dd6f5ce069d",
+    "core/src/main/java/app/fileflash/core/Source.java": "f4588b55a3d2fbcd9a37f429091aaced3d62af69ff1d87e82c3318d4010eb719",
+    "core/src/main/java/app/fileflash/core/TransferServer.java": "0ad503627119ead5ea71f59ca22ec739d73bc95db538d28d003d221f74d56d61",
+    "core/src/main/java/app/fileflash/core/TransportDiagnostics.java": "83e9c092c318085bf8d3ac7f8d228b8357496fc52dea96bded5d7dfb1c9d2f05"
+  },
+  "androidJarSha256": "d4ce0daae1695abc7497009c61237f774f52c6ffdc222784e03f60effb917532",
+  "coreJarSha256": "b74b8805679682eca23c18b88dee3ec314299339bc1286eaae1b677bbdcd7c57",
+  "compilerIntrinsicStub": {
+    "class": "java.lang.invoke.LambdaMetafactory",
+    "purpose": "Compiler bootstrap symbols for Java lambdas desugared by D8; never packaged",
+    "sourceSha256": "87377e216fbf10c7dc0c99900de7eb1c9751f2acb86ac033e951d2f41df78a80"
+  },
+  "checkedAtUtc": "2026-10-20T16:16:04.030830+00:00"
+}

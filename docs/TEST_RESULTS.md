@@ -1,6 +1,19 @@
 # 验证结果与兼容性
 
-验证日期：2026-10-21。交付版本：0.1.5-test.3 预发布版。下文保留旧版基线，并单独标明本次重跑范围。
+验证日期：2026-10-21。交付版本：0.1.6 预发布版。下文保留旧版基线，并单独标明本次重跑范围。
+
+## 0.1.6 系统分享
+
+iPhone 通过 Apple「快捷指令」接收照片或文件的系统分享，扫描安卓二维码后直接发送；照片分享选择「当前」格式。流程绕开 Safari 照片选择器，不要求先另存到「文件」，不安装第三方 iOS 应用。普通网页文件上传、安卓原生互传和接收页进度保留。
+
+- **70 项核心测试、2 项 Android 模型兼容测试通过**；Release 构建和 lint 无错误，最低 Android 10 / API 29、目标 API 37，版本代码 10，沿用项目签名。全部 8 个核心 Java 源文件另通过 API 29 平台符号编译，见 `test-evidence/ios-share-core-api29.json`。
+- 随 APK 提供的快捷指令共 37 个动作，签名、Apple 证书链、AEA 完整性及解封后完整工作流与公开源逐项一致。没有图像转换、视频编码、Base64、另存文件或外网上传动作；正常完成和可识别的上传错误会断开会话。此项是静态核验，**不证明 iPhone 已成功导入或运行**。见 `test-evidence/ios-shortcut-signature.json`。
+- 最终签名 APK 在 API 29、API 34 专用模拟器各通过 25 项接收反馈、18 项中转存储和 15 项系统分享接口检查，合计 **116 项**。报告同时绑定本地与实际安装 APK 摘要。覆盖独立 B/C 配对、固定长度 HEIC 与 chunked MOV 合成字节、C 完整下载、未保存时不发布 Downloads、断线和非法正文清理、手动保存与清理、重启和 TTL，以及已有保存文件内容保持。见 `test-evidence/receive-ui-api*-0.1.6.json`、`relay-android-api*-0.1.6.json`、`ios-share-android-api*-0.1.6.json`。
+- Chrome、桌面 WebKit 各通过 9 组夹具与 9 组最终 APK 服务检查，合计 **36 组**。覆盖极简媒体安装入口、原有文件选取和上传，以及每轮 7 个自建任务的精确删除与状态核对。报告绑定全部网页资源；实服报告另绑定最终 APK。见 `test-evidence/photo-picker-browser-*-ios-share.json`。注入 FileList 与合成 HEIC/MOV 不调用 iOS 照片库，也不验证真实媒体解码。
+- 新接口分别以固定长度、chunked 单请求传输 **4,295,032,835 字节**，Java 堆上限 128 MiB；两种模式均通过独立 C 完整下载摘要、跨 4 GiB Range、断线、取消、真正强杀后的恢复清理，以及所有自建记录删除。原生分块协议的同规模上传、强杀续传、前缀摘要、Range 和完整下载也通过。三个结果均绑定最终核心 JAR，见 `test-evidence/ios-share-large.json`、`native-large-0.1.6.json`。
+- 源码 ZIP 在独立目录、没有私钥、SDK 副本及本地工程配置时离线构建 Debug APK，并通过 70 项核心及 2 项模型测试，见 `test-evidence/ios-share-clean-build.txt`。
+
+**尚无实体 iPhone 的快捷指令导入、照片分享及局域网传输结果。** 上述静态、桌面和安卓模拟器检查不能证明 iOS 照片库阻塞已经解决；因此以预发布版交付。操作及系统暂存边界见 [IOS_SHARE.md](IOS_SHARE.md)。
 
 ## 0.1.5-test.3 接收反馈
 

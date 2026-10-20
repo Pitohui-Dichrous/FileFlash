@@ -1,4 +1,4 @@
-# FileFlash 0.1.3 存储与隐私
+# FileFlash 0.1.6 存储与隐私
 
 FileFlash 不生成图片或视频的磁盘缩略图。文件列表显示通用图标；配对二维码只保存在当前 Compose 组件的内存中，离开组件后释放引用，由系统回收内存，不写入手机存储。
 
@@ -33,10 +33,10 @@ Android 卸载应用会删除应用私有文件、缓存和设置；FileFlash �
 
 另有一个系统边界：如果保存到下载目录期间进程被突然终止，随后未经再次打开便立即卸载，未完成的隐藏 MediaStore 项目可能暂时保留。应用正常失败时会删除它，下次启动也会恢复清理；卸载后则由系统按过期规则处理，通常为 7 天后、设备空闲时清除，不能保证卸载瞬间外部目录零残留。Android 14 的包移除处理会解除其余媒体记录的所属关系，没有承诺立即删除这类下载项。[Android 过期规则](https://developer.android.com/reference/android/provider/MediaStore.MediaColumns#DATE_EXPIRES)、[Android 14 MediaProvider 实现](https://android.googlesource.com/platform/packages/providers/MediaProvider/+/refs/heads/android14-release/src/com/android/providers/media/MediaProvider.java#1877)
 
-iPhone 使用 Safari 网页，不安装 FileFlash 应用。网页仅存连接和续传元数据，不持久化上传文件字节，不注册离线缓存服务；Safari 下载、网站数据及浏览器自身缓存由 iOS 管理，不受 Android 应用卸载影响。
+iPhone 使用网页和 Apple 系统快捷指令，不安装第三方 FileFlash iOS 应用。网页仅存连接及任务元数据，不持久化上传文件字节，不注册离线缓存服务。快捷指令没有另存媒体、写日志或持久保存地址和凭据的动作；系统分享准备的暂存由 iOS 管理。Safari 下载的安装文件、已添加的快捷指令、网站数据和浏览器缓存不受 Android 卸载影响，需要时可在 iPhone 删除。该路径不要求先在「文件」生成媒体副本。
 
 ## 隐私审查范围
 
-本次源码、运行依赖及合并发布清单检查未发现广告、统计、追踪 SDK、云服务调用或开机自启入口。网页资源随 APK 打包，仅向当前主机发起同源请求；HTTP 响应禁止缓存，Android 客户端也禁用 HTTP 缓存。相机用于扫码，文件通过系统选择器授权读取。
+应用、网页和快捷指令的运行代码未发现广告、统计、追踪 SDK、云服务调用或开机自启入口。网页资源随 APK 打包，仅向当前主机发起同源请求；HTTP 响应禁止缓存，Android 客户端也禁用 HTTP 缓存。相机用于扫码，文件通过系统选择器或分享表单授权读取。构建时对公开模板的外部签名与独立核验见 [IOS_SHARE.md](IOS_SHARE.md)，不发送设备凭据或用户内容。
 
-这些结论来自源码与配置审查，不是抓包结果，也不代表对所有系统行为的绝对保证。本版本在可信局域网使用未加密 HTTP，令牌提供访问控制，不提供内容加密。尚未完成实体 iPhone Safari 验证。
+这些结论来自源码与配置审查，不是抓包结果，也不代表对所有系统行为的绝对保证。本版本在可信局域网使用未加密 HTTP，令牌提供访问控制，不提供内容加密。尚未完成实体 iPhone 的快捷指令导入与媒体分享验证。

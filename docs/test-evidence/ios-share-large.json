@@ -1,0 +1,129 @@
+{
+  "passed": true,
+  "version": "0.1.6",
+  "bytesPerMode": 4295032835,
+  "totalUploadedBytes": 8590065670,
+  "javaMaxHeapMiB": 128,
+  "sourceBlockBytes": 131072,
+  "sourceBlockOrdinalBytes": 8,
+  "nodePeakRssMiB": 198,
+  "elapsedSeconds": 73,
+  "runtimeCoreSha256": "b74b8805679682eca23c18b88dee3ec314299339bc1286eaae1b677bbdcd7c57",
+  "modes": [
+    {
+      "mode": "content-length",
+      "passed": true,
+      "bytes": 4295032835,
+      "sha256": "149c65fa3c51255588f0d21ed5e75edf2df8e23f7fa1a7d67210bf0896a58cfd",
+      "dataRequests": 1,
+      "createUploadRequests": 0,
+      "senderChecksumPrepass": false,
+      "uploadMs": 15798,
+      "download": {
+        "bytes": 4295032835,
+        "sha256": "149c65fa3c51255588f0d21ed5e75edf2df8e23f7fa1a7d67210bf0896a58cfd",
+        "elapsedMs": 10599,
+        "independentlyPairedReceiver": true,
+        "range": {
+          "start": 4294934527,
+          "end": 4295000066,
+          "crosses4GiB": true,
+          "bytes": 65540,
+          "exactSourceBytes": true
+        }
+      },
+      "failureCases": [
+        {
+          "case": "client socket disconnect",
+          "passed": true,
+          "prefixBytes": 1048576,
+          "remainingRecords": 0
+        },
+        {
+          "case": "owner cancels active upload",
+          "passed": true,
+          "prefixBytes": 1048576,
+          "remainingRecords": 0
+        },
+        {
+          "case": "hard JVM kill then restart recovery",
+          "passed": true,
+          "prefixBytes": 1048576,
+          "remainingRecords": 0
+        }
+      ],
+      "remainingRecordsAfterOwnerDelete": 0,
+      "elapsedMs": 27243,
+      "transport": {
+        "route": "shortcut-upload",
+        "status": 200,
+        "receivedBytes": 4295032835,
+        "declaredLength": 4295032835,
+        "hasContentLength": true,
+        "transferEncoding": "none"
+      }
+    },
+    {
+      "mode": "chunked",
+      "passed": true,
+      "bytes": 4295032835,
+      "sha256": "149c65fa3c51255588f0d21ed5e75edf2df8e23f7fa1a7d67210bf0896a58cfd",
+      "dataRequests": 1,
+      "createUploadRequests": 0,
+      "senderChecksumPrepass": false,
+      "uploadMs": 28927,
+      "download": {
+        "bytes": 4295032835,
+        "sha256": "149c65fa3c51255588f0d21ed5e75edf2df8e23f7fa1a7d67210bf0896a58cfd",
+        "elapsedMs": 15770,
+        "independentlyPairedReceiver": true,
+        "range": {
+          "start": 4294934527,
+          "end": 4295000066,
+          "crosses4GiB": true,
+          "bytes": 65540,
+          "exactSourceBytes": true
+        }
+      },
+      "failureCases": [
+        {
+          "case": "client socket disconnect",
+          "passed": true,
+          "prefixBytes": 655360,
+          "remainingRecords": 0
+        },
+        {
+          "case": "owner cancels active upload",
+          "passed": true,
+          "prefixBytes": 524288,
+          "remainingRecords": 0
+        },
+        {
+          "case": "hard JVM kill then restart recovery",
+          "passed": true,
+          "prefixBytes": 786432,
+          "remainingRecords": 0
+        }
+      ],
+      "remainingRecordsAfterOwnerDelete": 0,
+      "elapsedMs": 45672,
+      "transport": {
+        "route": "shortcut-upload",
+        "status": 200,
+        "receivedBytes": 4295032835,
+        "declaredLength": -1,
+        "hasContentLength": false,
+        "transferEncoding": "chunked"
+      }
+    }
+  ],
+  "checks": [
+    "content-length: disconnect, owner cancellation and hard process restart leave no incomplete bytes, metadata or shares",
+    "content-length: one direct POST, no create-upload request or sender checksum pass; exact length and source/server SHA-256",
+    "content-length: independent C sees temporary file, full download SHA-256 and boundary Range match source; owner deletion removes bytes/metadata",
+    "chunked: disconnect, owner cancellation and hard process restart leave no incomplete bytes, metadata or shares",
+    "chunked: one direct POST, no create-upload request or sender checksum pass; exact length and source/server SHA-256",
+    "chunked: independent C sees temporary file, full download SHA-256 and boundary Range match source; owner deletion removes bytes/metadata"
+  ],
+  "environment": "Windows JVM real HTTP, synthetic reusable random source block with unique 64-bit ordinal per block. Tests direct File-body protocol with Content-Length and chunked framing. Does not run iOS, Shortcuts, Photos, a browser picker, physical Android or Wi-Fi; does not prove iOS import, media export, memory use or transfer performance."
+}

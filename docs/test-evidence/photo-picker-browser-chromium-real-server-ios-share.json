@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "version": "0.1.6",
+  "engine": "chromium",
+  "browserVersion": "155.0.8059.84",
+  "assetSha256": {
+    "FileFlash.shortcut": "7bd7e349a16767e92323094ca90f65c2e4bac7fe356b008b0fec2daf22d82064",
+    "app.js": "5186d645a4bae07aa59f5454d12621887e57452122ce200e707a3e9f6dad0fa7",
+    "icon.svg": "c223156e7392e60b57008a9923f2d9495c490ab629511af68e8743d421b04e69",
+    "index.html": "7ec899338ee3f8e42972254ff6fb3535a2e81ce896ddfa3dde9c0e19e478166e",
+    "sha256.js": "42d387b43f61a0e8a1c76cdb0d104e1657676a674ad15eb5b4ce3dc022141b48",
+    "styles.css": "e5b05c02ff5d4578aaa2f1a7f6d08fe9c336bf5b6f5953a390779920d4724a4b"
+  },
+  "serverVersion": "0.1.6",
+  "serverApkSha256": "a2e57f382be2cd711a9fc346e36d31215d7e7561c1f2790834c78a619b54c4f8",
+  "server": "existing Java or Android server",
+  "scope": "Desktop browser automation with iPhone identification; real DOM activation, injected FileList and byte-preserving uploads.",
+  "limitations": [
+    "Playwright supplies synthetic files and bypasses iOS PHPicker, Photos export, HEIC/HEVC decoding and photo-library conversion.",
+    "This does not reproduce or prove a fix for the physical iPhone white-circle problem.",
+    "Synthetic media bytes are transfer fixtures, not playable camera media."
+  ],
+  "selectedPayloads": [
+    {
+      "bytes": 4194321,
+      "sha256": "759a829a25cb176dbae841a85b87bdd5438ea789d3fa4ca3e545e3a605317598"
+    },
+    {
+      "bytes": 524295,
+      "sha256": "104bd5d9b56c6714c868055e1d23d12cc27c87d4fbf2543abcca586b914f0bed"
+    },
+    {
+      "bytes": 131079,
+      "sha256": "a3dcf04ac518124ac4f20a0ee9fcfdc8883e25f6908b3a0cb365ac37b2a7432d"
+    },
+    {
+      "bytes": 65541,
+      "sha256": "f83b777f4c61ed8e1faaa8875ac7b4d85d3dcb1fb4be7f968cc409cee5a072b9"
+    },
+    {
+      "bytes": 3001,
+      "sha256": "f7791362e57bc3f1d7a57fc2ac749f53f121dc967b4c201d69042e5338c99430"
+    },
+    {
+      "bytes": 4001,
+      "sha256": "d68baa23dfd711febf3b63f6de87e894d9b4ecf977e47981623ffd7206737442"
+    }
+  ],
+  "streamRequests": 7,
+  "fixtureCleanup": {
+    "created": 7,
+    "deleted": 7,
+    "stateAbsent": true
+  },
+  "checks": [
+    "iPhone has separate media and file controls; the modal installs the bundled shortcut and gives two action-only steps including Current format. Closing restores focus and the modal fits the viewport.",
+    "Normal file input remains unrestricted and multiple; iOS picker test stays collapsed until explicitly opened.",
+    "A real click opens the chooser; no change remains pending after focus/visibility events. Empty selection creates no upload and never asserts a user cancellation or an upload failure.",
+    "Multi-file HEIC and QuickTime payloads survive synchronous FileList copying and immediate input reset; both original byte sequences download unchanged.",
+    "Selecting the same file again triggers a new complete upload after input reset.",
+    "Visible single native input receives a trusted direct click without HTMLElement.click, accept or capture; original File uploads with no Blob.arrayBuffer, canvas or image decoding.",
+    "Picker diagnostics retain only the latest 32 RAM events and at most two attempts; no filename, token, URL or raw MIME is included. Repeated empty selections send no file request.",
+    "Android retains the normal multiple-file picker and has no visible iOS test control.",
+    "A stored failed task opens the single-file retry picker, then a new upload restores multiple selection and completes both files."
+  ],
+  "pageErrors": [],
+  "recordedAt": "2026-10-20T16:44:27.490Z"
+}

@@ -59,7 +59,7 @@
         <button class="tab" data-tab="tasks" type="button"><svg aria-hidden="true"><use href="#i-activity"/></svg>任务<span id="task-badge" class="badge" hidden></span></button>
       </nav>
       <section id="panel-files" class="panel" aria-label="文件">
-        <div class="send-bar"><div><strong>发送到 Android</strong><span id="queue-summary" class="help">支持多选</span></div><button id="choose-files" class="button primary" type="button"><svg aria-hidden="true"><use href="#i-upload"/></svg>选择文件</button></div>
+        <div class="send-bar"><span id="queue-summary" class="help" role="status" hidden></span><div class="send-actions"><button id="choose-media" class="button primary" type="button" aria-haspopup="dialog" hidden>照片 / 视频</button><button id="choose-files" class="button primary" type="button"><svg aria-hidden="true"><use href="#i-upload"/></svg><span id="choose-files-label">选择文件</span></button></div></div>
         <div class="section-heading"><h1>可接收文件</h1><span id="file-count" class="count"></span></div>
         <div id="file-list" class="list"></div>
         <p id="download-note" class="help download-note" hidden>下载进度请查看 Safari 下载管理器。保存位置由 Safari 决定；页面无法确认文件已保存，也无法保证下载自动恢复。</p>
@@ -82,6 +82,11 @@
     </div>
     <input id="file-input" type="file" multiple hidden>
   </main>
+  <dialog id="media-dialog" aria-labelledby="media-title">
+    <div class="details-top"><h2 id="media-title">照片 / 视频</h2><form method="dialog"><button class="button quiet" type="submit">关闭</button></form></div>
+    <a id="shortcut-download" class="button primary" href="/FileFlash.shortcut" download="FileFlash.shortcut">添加快捷指令</a>
+    <ol class="media-steps"><li>照片 → 分享 → 选项 → 当前</li><li>FileFlash → 扫安卓二维码</li></ol>
+  </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <noscript><p class="notice">请在 Safari 设置中启用 JavaScript，再重新打开此页面。</p></noscript>
 </body>

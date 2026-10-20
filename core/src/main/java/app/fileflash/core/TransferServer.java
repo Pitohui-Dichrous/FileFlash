@@ -360,6 +360,7 @@ public final class TransferServer implements AutoCloseable {
             requireMethod(request,"DELETE");response.json(200,"{\"ok\":true}");revokeClient(session.id);return;
         }
         if (path.equals("/api/uploads")) { requireMethod(request,"POST");createUpload(request,response,session);return; }
+        if (path.equals("/api/shortcuts/files")) { requireMethod(request,"POST");shortcutUpload(request,response,session);return; }
         if (path.startsWith("/api/uploads/")) { uploadRoute(request,response,session);return; }
         if (path.startsWith("/api/files/")) {
             String[] parts=path.split("/");
@@ -450,42 +451,98 @@ public final class TransferServer implements AutoCloseable {
         String mime=safeMime(string(body,"mime",false));String sha=optionalSha(body,"sha256");
         boolean restartOnly=optionalBoolean(body,"restartOnly");if(restartOnly)sha=null;
         synchronized(uploads) {
-            if(sha!=null) for(Upload u:uploads.values()) if(!u.restartOnly)synchronized(u) {
+            if(sha!=null) for(Upload u:uploads.values()) if(!u.restartOnly) {
                 if(session.id.equals(u.owner) && u.name.equals(name) && u.size==size && sha.equals(u.sha256) && u.status.equals("uploading")) {
                     response.json(200,uploadJson(u,true).toString());return;
                 }
             }
-            long pending=0;int count=0;
-            for(Upload u:uploads.values()) {
-                // Streaming tasks publish a volatile progress snapshot. Never hold the global
-                // creation guard while waiting for their monitor and an entire request body.
-                if(u.restartOnly) {
-                    if(!isComplete(u)&&!"cancelled".equals(u.status)) {
-                        count++;long remaining=u.size-u.offset;
-                        if(remaining>Long.MAX_VALUE-pending)throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
-                    }
-                    continue;
-                }
-                synchronized(u) {
-                if(!isComplete(u) && !u.status.equals("cancelled")) {
-                    count++;long remaining=u.size-u.offset;
-                    if(remaining>Long.MAX_VALUE-pending) throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
-                }
-                }
-            }
-            if(count>=128) throw error(429,"upload_limit","未完成任务过多，请先取消部分任务");
-            if(files.size()+count>=2048)throw error(429,"file_limit","文件记录过多，请先清理接收缓存");
-            long usable=root.getUsableSpace();
-            if(size>usable || pending>usable-size || usable-size-pending<4*1024*1024)
-                throw error(507,"storage_full","剩余存储空间不足");
-            Upload upload=new Upload();upload.id=randomToken(18);upload.resumeKey=randomToken(24);upload.owner=session.id;
-            upload.name=name;upload.size=size;upload.mime=mime;upload.sha256=sha;upload.status="uploading";
-            upload.temporaryReceived=true;upload.restartOnly=restartOnly;
-            upload.createdAt=now();upload.updatedAt=upload.createdAt;
-            try(RandomAccessFile data=new RandomAccessFile(partFile(upload),"rw")) {if(!restartOnly)data.getFD().sync();}
-            persist(upload,request.trace);uploads.put(upload.id,upload);
+            Upload upload=allocateUpload(name,size,mime,sha,restartOnly,session,request.trace);
+            uploads.put(upload.id,upload);
             response.json(201,uploadJson(upload,true).toString());
         }
+    }
+
+    /** Caller holds the creation guard; byte reservations include all active upload protocols. */
+    private Upload allocateUpload(String name,long size,String mime,String sha,boolean restartOnly,Session session,TransportDiagnostics.Trace trace) throws IOException {
+        long pending=0;int count=0;
+        for(Upload u:uploads.values()) {
+            // Streaming tasks publish a volatile progress snapshot. Never hold the global
+            // creation guard while waiting for their monitor and an entire request body.
+            if(u.restartOnly) {
+                if(!isComplete(u)&&!"cancelled".equals(u.status)) {
+                    count++;long remaining=u.unknownLength?0:u.size-u.offset;
+                    if(remaining>Long.MAX_VALUE-pending)throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+                }
+                continue;
+            }
+            if(!isComplete(u) && !u.status.equals("cancelled")) {
+                count++;long remaining=u.size-u.reservationOffset;
+                if(remaining>Long.MAX_VALUE-pending) throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+            }
+        }
+        if(count>=128) throw error(429,"upload_limit","未完成任务过多，请先取消部分任务");
+        if(files.size()+count>=2048)throw error(429,"file_limit","文件记录过多，请先清理接收缓存");
+        long usable=root.getUsableSpace();
+        if(size>usable || pending>usable-size || usable-size-pending<4*1024*1024)
+            throw error(507,"storage_full","剩余存储空间不足");
+        Upload upload=new Upload();upload.id=randomToken(18);upload.resumeKey=randomToken(24);upload.owner=session.id;
+        upload.name=name;upload.size=size;upload.mime=mime;upload.sha256=sha;upload.status="uploading";
+        upload.temporaryReceived=true;upload.restartOnly=restartOnly;
+        upload.createdAt=now();upload.updatedAt=upload.createdAt;
+        try {
+            try(RandomAccessFile data=new RandomAccessFile(partFile(upload),"rw")) {if(!restartOnly)data.getFD().sync();}
+            persist(upload,trace);
+        } catch(IOException failure) {
+            try {Files.deleteIfExists(partFile(upload).toPath());Files.deleteIfExists(metaFile(upload).toPath());Files.deleteIfExists(new File(incoming,upload.id+".json.tmp").toPath());}
+            catch(IOException cleanup){failure.addSuppressed(cleanup);}
+            throw failure;
+        }
+        return upload;
+    }
+
+    /** The system Shortcuts app sends one file body; no client checksum or resumable key is needed. */
+    private void shortcutUpload(HttpServer.Request request,HttpServer.Response response,Session session) throws IOException {
+        if(!request.chunked&&request.header("content-length")==null)throw error(411,"length_required","上传需要 Content-Length");
+        String name=shortcutName(request.rawQuery);
+        String type=request.header("content-type");
+        String mime=safeMime(type==null?null:type.split(";",2)[0].trim());
+        if(!uploadSlots.tryAcquire())throw error(429,"transfer_limit","传输任务繁忙，请稍后重试");
+        Upload upload=null;
+        try {
+            synchronized(uploads) {
+                upload=allocateUpload(name,request.chunked?0:request.length,mime,null,true,session,request.trace);
+                // Publish the active claim with the record so cleanup cannot remove it before streaming starts.
+                upload.unknownLength=request.chunked;upload.activeRequests=1;uploads.put(upload.id,upload);
+            }
+            synchronized(upload) {streamUpload(request,response,upload,session);}
+        } finally {
+            if(upload!=null)synchronized(upload.lifecycle){upload.activeRequests--;}
+            uploadSlots.release();
+        }
+    }
+
+    /** Decode only this bounded query value, never a routing or filesystem path. Plus is a literal URL character. */
+    private static String shortcutName(String query) throws HttpError {
+        if(query==null||!query.startsWith("name=")||query.indexOf('&')>=0)throw error(400,"invalid_name","缺少有效文件名");
+        if(query.length()>4096)throw error(413,"name_too_large","文件名过长");
+        String encoded=query.substring(5);ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        for(int i=0;i<encoded.length();i++) {
+            char next=encoded.charAt(i);
+            if(next=='%') {
+                if(i+2>=encoded.length())throw error(400,"invalid_name","文件名编码无效");
+                int high=Character.digit(encoded.charAt(++i),16),low=Character.digit(encoded.charAt(++i),16);
+                if(high<0||low<0)throw error(400,"invalid_name","文件名编码无效");bytes.write((high<<4)|low);
+            } else {
+                if(next>127)throw error(400,"invalid_name","文件名须使用 UTF-8 URL 编码");bytes.write(next);
+            }
+        }
+        if(bytes.size()>1024)throw error(413,"name_too_large","文件名过长");
+        String name;
+        try {name=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes.toByteArray())).toString();}
+        catch(CharacterCodingException invalid){throw error(400,"invalid_name","文件名编码无效");}
+        if(name.trim().isEmpty()||name.equals(".")||name.equals(".."))throw error(400,"invalid_name","文件名无效");
+        for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i))||name.charAt(i)=='/'||name.charAt(i)=='\\')throw error(400,"invalid_name","文件名不能包含路径或控制字符");
+        return safeName(name);
     }
 
     private void uploadRoute(HttpServer.Request request,HttpServer.Response response,Session session) throws IOException {
@@ -577,9 +634,13 @@ public final class TransferServer implements AutoCloseable {
             if(root.getUsableSpace()<chunk.length+1024L*1024) throw error(507,"storage_full","剩余存储空间不足");
             try(RandomAccessFile file=new RandomAccessFile(partFile(upload),"rw")) {
                 request.trace.mark("file-writing");long writeStarted=System.nanoTime();
-                file.setLength(upload.offset);file.seek(upload.offset);file.write(chunk);request.trace.duration("fileWrite",writeStarted);
+                // Metadata failure can leave a synchronized but unacknowledged tail.
+                // Re-reserve it before truncation, atomically with every creation/write budget check.
+                synchronized(uploads){upload.reservationOffset=upload.offset;file.setLength(upload.offset);}
+                file.seek(upload.offset);file.write(chunk);request.trace.duration("fileWrite",writeStarted);
                 request.trace.mark("data-syncing");long syncStarted=System.nanoTime();
                 try {file.getFD().sync();}finally{request.trace.duration("dataSync",syncStarted);}
+                upload.reservationOffset=offset+chunk.length;
             } catch(IOException e) {upload.status="failed";upload.error="文件写入失败，请检查剩余空间后重试";persist(upload);throw error(507,"write_failed",upload.error);}
             // Save committed offset only after the data has reached stable storage.
             long previous=upload.offset;
@@ -598,18 +659,21 @@ public final class TransferServer implements AutoCloseable {
         boolean succeeded=false;
         upload.activeSocket=request.socket;
         try {
-            if(request.header("content-length")==null)throw error(400,"length_required","连续上传需要 Content-Length");
-            if(request.length!=upload.size)throw error(409,"size_mismatch","上传长度与文件大小不符");
+            if(!request.chunked&&request.header("content-length")==null)throw error(400,"length_required","连续上传需要 Content-Length");
+            if(!request.chunked&&request.length!=upload.size)throw error(409,"size_mismatch","上传长度与文件大小不符");
             checkStreamActive(upload,session);
             MessageDigest hash=digest();byte[] buffer=new byte[128*1024];
             request.trace.mark("stream-receiving");
             try(FileOutputStream output=new FileOutputStream(partFile(upload),false)) {
                 request.beginStreamBody();
-                while(request.consumed<request.length) {
+                while(request.chunked||request.consumed<request.length) {
                     checkStreamActive(upload,session);
-                    int count=request.readStreamBody(buffer);if(count==0)continue;
+                    int count=request.readStreamBody(buffer);if(count<0)break;if(count==0)continue;
                     checkStreamActive(upload,session);
-                    long started=System.nanoTime();output.write(buffer,0,count);request.trace.addDuration("streamWrite",started);
+                    long started=System.nanoTime();
+                    if(request.chunked)writeUnknownLength(upload,output,buffer,count,request.consumed);
+                    else output.write(buffer,0,count);
+                    request.trace.addDuration("streamWrite",started);
                     started=System.nanoTime();hash.update(buffer,0,count);request.trace.addDuration("streamHash",started);
                     // This progress is intentionally not a resumable or durable checkpoint.
                     upload.offset=request.consumed;upload.updatedAt=now();
@@ -619,6 +683,7 @@ public final class TransferServer implements AutoCloseable {
                 try {output.getFD().sync();}finally{request.trace.duration("dataSync",started);}
             }
             checkStreamActive(upload,session);
+            if(request.chunked){upload.size=request.consumed;upload.unknownLength=false;}
             synchronized(received) {
                 checkStreamActive(upload,session);request.trace.mark("stream-promoting");
                 upload.sha256=hex(hash.digest());upload.finalName=uniqueName(upload.name);upload.status="promoting";
@@ -635,6 +700,30 @@ public final class TransferServer implements AutoCloseable {
                     request.trace.error(cleanup);
                 }
             }
+        }
+    }
+
+    /** Unknown streams may consume only free bytes left after every declared upload reservation. */
+    private void writeUnknownLength(Upload upload,FileOutputStream output,byte[] buffer,int count,long total) throws IOException {
+        synchronized(uploads) {
+            long pending=0;
+            for(Upload other:uploads.values()) {
+                if(other.restartOnly) {
+                    if(!other.unknownLength&&!isComplete(other)&&!"cancelled".equals(other.status)) {
+                        long remaining=other.size-other.offset;
+                        if(remaining>Long.MAX_VALUE-pending)throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+                    }
+                } else {
+                    if(!isComplete(other)&&!"cancelled".equals(other.status)) {
+                        long remaining=other.size-other.reservationOffset;
+                        if(remaining>Long.MAX_VALUE-pending)throw error(507,"storage_full","剩余存储空间不足");pending+=remaining;
+                    }
+                }
+            }
+            long usable=root.getUsableSpace();
+            if(pending>usable||usable-pending<count+4L*1024*1024)throw error(507,"storage_full","剩余存储空间不足");
+            // The same guard covers new reservations and this bounded write; it is never held while reading the network.
+            output.write(buffer,0,count);upload.size=total;
         }
     }
 
@@ -677,7 +766,10 @@ public final class TransferServer implements AutoCloseable {
         finally {request.trace.duration("fileHash",hashStarted);}
         if(!actual.equals(expected)) {
             // Corrupted completed uploads cannot be appended to. Start the same task from zero.
-            try(RandomAccessFile file=new RandomAccessFile(partFile(upload),"rw")) {file.setLength(0);file.getFD().sync();}
+            try(RandomAccessFile file=new RandomAccessFile(partFile(upload),"rw")) {
+                synchronized(uploads){upload.reservationOffset=0;file.setLength(0);}
+                file.getFD().sync();
+            }
             upload.offset=0;upload.lastOffset=-1;upload.lastLength=0;upload.lastSha=null;
             upload.status="failed";upload.error="完整文件校验失败，已重置，请重新发送";persist(upload);
             throw error(422,"file_checksum",upload.error);
@@ -837,14 +929,17 @@ public final class TransferServer implements AutoCloseable {
 
     private void serveAsset(HttpServer.Request request,HttpServer.Response response) throws IOException {
         requireDownloadMethod(request);
+        boolean shortcut=request.path.equals("/FileFlash.shortcut");
         String name=request.path.equals("/")?"index.html":request.path.substring(1);
-        if(!Arrays.asList("index.html","app.js","sha256.js","styles.css","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest").contains(name)) throw error(404,"not_found","页面不存在");
+        if(!shortcut&&!Arrays.asList("index.html","app.js","sha256.js","styles.css","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest").contains(name)) throw error(404,"not_found","页面不存在");
         try(InputStream input=assets.open(name)) {
             if(input==null) throw error(404,"not_found","页面不存在");
             ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count;
             while((count=input.read(buffer))>=0) {if(out.size()+count>2*1024*1024)throw error(500,"asset_too_large","页面资源过大");out.write(buffer,0,count);}
-            String mime=name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webmanifest")?"application/manifest+json":"text/html; charset=utf-8";
-            Map<String,String> headers=Collections.singletonMap("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+            if(shortcut&&out.size()==0)throw error(404,"not_found","快捷指令尚未就绪");
+            String mime=shortcut?"application/x-apple-shortcut":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webmanifest")?"application/manifest+json":"text/html; charset=utf-8";
+            Map<String,String> headers=new LinkedHashMap<>();headers.put("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+            if(shortcut)headers.put("Content-Disposition","attachment; filename=\"FileFlash.shortcut\"");
             if(request.method.equals("HEAD")) {response.begin(200,mime,out.size(),headers);response.flush();}
             else response.bytes(200,mime,out.toByteArray(),headers);
         } catch(FileNotFoundException e) {throw error(404,"not_found","页面不存在");}
@@ -952,6 +1047,7 @@ public final class TransferServer implements AutoCloseable {
                     if(file.length()<upload.offset) {upload.offset=0;upload.lastOffset=-1;upload.lastLength=0;upload.lastSha=null;}
                     file.setLength(upload.offset);file.getFD().sync();
                 }
+                upload.reservationOffset=upload.offset;
                 upload.status="uploading";upload.error=null;persist(upload);uploads.put(upload.id,upload);
             } catch(JsonParseException|IllegalArgumentException|NullPointerException ignored) {
                 // Never expose malformed persisted paths or mislabel corrupt metadata as complete.
@@ -1090,8 +1186,10 @@ public final class TransferServer implements AutoCloseable {
         return "attachment; filename=\"download\"; filename*=UTF-8''"+encoded;
     }
     private static JsonObject uploadJson(Upload upload,boolean key) {
-        JsonObject json=new JsonObject();json.addProperty("id",upload.id);json.addProperty("name",upload.name);json.addProperty("size",upload.size);json.addProperty("mime",upload.mime);
-        json.addProperty("offset",upload.offset);json.addProperty("status","released".equals(upload.status)?"complete":upload.status);json.addProperty("sha256",upload.sha256);json.addProperty("error",upload.error);
+        String status=upload.status;boolean lengthKnown=!upload.unknownLength;
+        long offset=upload.offset,size=upload.size;
+        JsonObject json=new JsonObject();json.addProperty("id",upload.id);json.addProperty("name",upload.name);json.addProperty("size",size);json.addProperty("mime",upload.mime);
+        json.addProperty("offset",offset);json.addProperty("lengthKnown",lengthKnown);json.addProperty("status","released".equals(status)?"complete":status);json.addProperty("sha256",upload.sha256);json.addProperty("error",upload.error);
         json.addProperty("temporary",isTemporaryReceived(upload));
         json.addProperty("restartOnly",upload.restartOnly);
         json.addProperty("createdAt",upload.createdAt);json.addProperty("updatedAt",upload.updatedAt);if(key)json.addProperty("resumeKey",upload.resumeKey);return json;
@@ -1105,11 +1203,15 @@ public final class TransferServer implements AutoCloseable {
     private static final class Upload {
         String id,name,mime,resumeKey,owner,finalName,lastSha;
         volatile String sha256,status,error;
-        long size,createdAt,lastOffset=-1;volatile long offset,updatedAt;int lastLength;
+        long createdAt,lastOffset=-1;volatile long size,offset,updatedAt;int lastLength;
         // Missing fields in legacy metadata deliberately keep its old completed private files safe.
         volatile boolean temporaryReceived,saveRequested;
         boolean restartOnly;
         transient volatile boolean cancelRequested;
+        transient volatile boolean unknownLength;
+        // Actual synchronized native bytes can outlive a rolled-back protocol offset until retry.
+        // Decreases and truncation share the budget guard; increases follow successful data sync.
+        transient volatile long reservationOffset;
         transient volatile Socket activeSocket;
         transient final Object lifecycle=new Object();
         transient volatile int activeRequests;

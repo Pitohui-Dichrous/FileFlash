@@ -185,6 +185,11 @@
     $('server-name').textContent = server.serverName || '连接详情';
     message($('connection-error'), reason || (next === 'disconnected' && session ? '连接已中断。请确认 Android 服务已启动，两台设备连接同一 Wi-Fi；恢复后会自动重连。' : ''));
     $('choose-files').disabled = next !== 'connected';
+    $('choose-media').hidden = !IOS || !session;
+    $('choose-media').disabled = next !== 'connected';
+    $('choose-files-label').textContent = IOS ? '文件' : '选择文件';
+    $('choose-files').classList.toggle('primary', !IOS);
+    if (!session && $('media-dialog').open) $('media-dialog').close();
     $('send-text').disabled = next !== 'connected' || !$('text-input').value.length || textSending;
   }
   function expired() {
@@ -322,7 +327,8 @@
     const list=$('task-list'),active=tasks.filter(t=>['queued','uploading'].includes(t.status)).length;
     $('task-badge').textContent=active;$('task-badge').hidden=!active;
     $('foreground-note').hidden=!tasks.some(t=>!['complete','cancelled'].includes(t.status));
-    $('queue-summary').textContent=active?active+' 个任务进行中':'支持多选';
+    $('queue-summary').textContent=active?active+' 个任务进行中':'';
+    $('queue-summary').hidden=!active;
     const downloads=(server.downloads||[]).filter(d=>!clientId||d.clientId===clientId);
     const alive=new Set(),ordered=[];
     tasks.slice().reverse().forEach(task=>{alive.add(task.key);ordered.push(renderTaskRow(task,false));});
@@ -424,6 +430,8 @@
   });
   document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>switchTab(el.dataset.tab)));
   $('choose-files').addEventListener('click',()=>chooseFile(null));
+  $('choose-media').addEventListener('click',()=>$('media-dialog').showModal());
+  $('media-dialog').addEventListener('close',()=>{if(!$('choose-media').hidden)$('choose-media').focus({preventScroll:true});});
   $('picker-test-button').addEventListener('click',()=>{const panel=$('picker-test-panel');panel.hidden=!panel.hidden;$('picker-test-button').setAttribute('aria-expanded',String(!panel.hidden));});
   ['file-input','native-file-input'].forEach(id=>{
     const input=$(id);

@@ -13,6 +13,9 @@
 - [XMLHttpRequest 标准](https://xhr.spec.whatwg.org/)：上传进度事件表示请求正文发送进度，不能当成接收端持久化确认。0.1.2 主进度采用服务端已确认偏移。
 - [AGP 9.2 兼容表](https://developer.android.com/build/releases/agp-9-2-0-release-notes)：Gradle 9.4.1、JDK 17+、API 37。
 - [Google SDK 官方仓库](https://dl.google.com/android/repository/repository2-3.xml)：下载的平台和构建工具均核对仓库校验值。
+- [Apple 照片分享](https://support.apple.com/guide/iphone/share-photos-and-videos-iphf28f17237/ios)：分享选项「当前」防止格式转换。
+- [快捷指令输入类型](https://support.apple.com/en-euro/guide/shortcuts/apd7644168e1/ios)与 [URL 请求](https://support.apple.com/en-am/guide/shortcuts/apd58d46713f/ios)：系统分享输入和 POST File 请求体。
+- [Shortcuty 签名服务接口](https://github.com/Shortcuty/Signing-Server-API-Documentation)：构建时仅提交公开模板；本机另行验证 Apple 证书链、签名和完整工作流。
 
 ## 直接依赖
 

@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="FileFlash Android model compatibility" tests="2" failures="0" errors="0" skipped="0">
+  <testcase name="olderServersKeepTheirKnownLengthProgress" classname="app.fileflash.UploadEntryTest" time="0.024" />
+  <testcase name="streamingUnknownLengthRemainsExplicitAfterJsonParsing" classname="app.fileflash.UploadEntryTest" time="0.001" />
+</testsuite>

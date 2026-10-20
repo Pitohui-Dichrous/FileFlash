@@ -79,6 +79,7 @@ def main():
     parser.add_argument('--apk', required=True, type=Path)
     parser.add_argument('--serial', default=os.environ.get('ANDROID_SERIAL', 'emulator-5554'))
     parser.add_argument('--version', required=True)
+    parser.add_argument('--evidence', type=Path, help='Public report path; defaults to the API-specific report')
     parser.add_argument('--keep-fixtures', action='store_true')
     args = parser.parse_args()
     if os.environ.get('FILEFLASH_DEDICATED_EMULATOR') != '1' or not re.fullmatch(r'emulator-\d+', args.serial):
@@ -105,7 +106,7 @@ def main():
     fixtures = []
     original_font = None
     installed_sha256 = None
-    evidence = ROOT / 'docs/test-evidence' / ('receive-ui-' + args.serial + '.json')
+    evidence = args.evidence or ROOT / 'docs/test-evidence' / ('receive-ui-' + args.serial + '.json')
 
     def adb(*items, binary=False, check=True):
         result = subprocess.run([str(adb_exe), '-s', args.serial, *map(str, items)], capture_output=True, check=check)
@@ -235,7 +236,7 @@ def main():
         if adb('shell', 'getprop', 'ro.kernel.qemu') != '1' or 'uid=0' not in adb('shell', 'id'):
             raise RuntimeError('Dedicated rooted emulator required; no physical-device operation')
         api = int(adb('shell', 'getprop', 'ro.build.version.sdk'))
-        evidence = ROOT / 'docs/test-evidence' / ('receive-ui-api' + str(api) + '.json')
+        evidence = args.evidence or ROOT / 'docs/test-evidence' / ('receive-ui-api' + str(api) + '.json')
         saved_before = pref('saved') if 'package:app.fileflash' in adb('shell', 'pm', 'list', 'packages', 'app.fileflash') else []
         for saved in saved_before:
             data = adb('exec-out', 'content', 'read', '--uri', saved['uri'], binary=True, check=False)

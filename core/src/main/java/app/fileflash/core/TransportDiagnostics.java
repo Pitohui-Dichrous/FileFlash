@@ -60,6 +60,7 @@ final class TransportDiagnostics {
             else if(path.equals("/api/pair"))route="pair";
             else if(path.equals("/api/state"))route="state";
             else if(path.equals("/api/uploads"))route="upload-create";
+            else if(path.equals("/api/shortcuts/files"))route="shortcut-upload";
             else if(path.startsWith("/api/uploads/"))route=path.endsWith("/stream")?"upload-stream":path.endsWith("/complete")?"upload-complete":path.endsWith("/prefix")?"upload-prefix":path.endsWith("/chunk")||requestMethod.equals("PUT")?"upload-chunk":"upload-state";
             else if(path.startsWith("/api/files/")||path.startsWith("/api/downloads/"))route="download";
             else if(path.startsWith("/api/"))route="api-other";

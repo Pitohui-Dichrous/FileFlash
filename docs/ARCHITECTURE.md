@@ -1,16 +1,19 @@
 # FileFlash 架构
 
-本文对应 0.1.5-test.1 预发布版，HTTP 协议版本仍为 v1。
+本文对应 0.1.6，HTTP 协议版本仍为 v1。
 
 ## 模块
 
 - `app`：Kotlin / Jetpack Compose Android 应用。最低 Android 10（API 29），目标 Android 17；同一 APK 包含主机和客户端。最低版本受当前 MediaStore Downloads 保存流程约束。
 - `core`：不依赖 Android 的 Java 传输内核；Android 和本机集成测试使用相同实现。
 - `app/src/main/assets/web`：原生 HTML、CSS、JavaScript。由 Android 本地服务提供，资源全部随 APK 打包。
+- `FileFlash.shortcut`：签名的 Apple 系统分享工作流；公开源在 `scripts/shortcut`。没有转码、持久化媒体或运行期外网服务动作。
 
 ## 数据路径
 
 Android 主机通过系统文件选择器取得 URI 读取权限，只公开用户选中的文件。iPhone 在 Safari 打开二维码地址；另一台 Android 通过原生扫码或输入地址连接。配对后双方使用同一个会话发送文件和文字，不需要交换主机角色。
+
+iPhone 照片与视频从系统照片分享「当前」格式给 FileFlash 快捷指令，扫码配对后按文件发送原始 File 请求体，避开 Safari 照片选择器。新接口兼容固定长度及受限 chunked；上传仍先临时中转。该路径的 iOS 导入、命名及实际媒体行为尚未取得真机证据。
 
 原生客户端上传串行发送有独立 SHA-256 的小块。服务器校验每块后持久化偏移；恢复时使用文件完整摘要和随机恢复凭据识别任务。完成接口再次校验完整文件，校验通过才公开文件。
 

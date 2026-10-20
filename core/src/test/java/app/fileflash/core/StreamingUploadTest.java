@@ -64,7 +64,11 @@ class StreamingUploadTest {
         assertEquals("complete",receipt.get("status").getAsString());assertEquals(data.length,receipt.get("offset").getAsLong());assertEquals(sha(data),receipt.get("sha256").getAsString());assertTrue(receipt.get("restartOnly").getAsBoolean());assertTrue(receipt.get("temporary").getAsBoolean());
         assertArrayEquals(data,Files.readAllBytes(server.receivedFile(task.get("id").getAsString()).toPath()));assertEquals(0,server.protectedReceivedBytes());assertEquals(data.length,server.reclaimableCacheBytes());
         String other=pair();assertArrayEquals(data,send("GET","/api/files/"+task.get("id").getAsString(),null,other,null).body());
-        assertEquals(409,stream(task,data).statusCode(),"A duplicate full stream cannot overwrite its completion");
+        try(Socket duplicate=socket()) {
+            duplicate.getOutputStream().write(header(task,data.length,true).getBytes(StandardCharsets.US_ASCII));
+            assertTrue(readHeader(duplicate.getInputStream()).startsWith("HTTP/1.1 409"),"A duplicate full stream cannot overwrite its completion or trigger 100 Continue");
+            assertEquals("upload_closed",JsonParser.parseString(new String(duplicate.getInputStream().readAllBytes(),StandardCharsets.UTF_8)).getAsJsonObject().get("code").getAsString());
+        }
         assertNotNull(server.receivedFile(task.get("id").getAsString()));
         assertEquals(200,send("DELETE",path(task),null,session,null).statusCode(),"An uncertain ACK may be discarded while its completed file is still temporary");absent(task);
     }
