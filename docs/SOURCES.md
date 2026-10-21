@@ -16,6 +16,9 @@
 - [Apple 照片分享](https://support.apple.com/guide/iphone/share-photos-and-videos-iphf28f17237/ios)：分享选项「当前」防止格式转换。
 - [快捷指令输入类型](https://support.apple.com/en-euro/guide/shortcuts/apd7644168e1/ios)与 [URL 请求](https://support.apple.com/en-am/guide/shortcuts/apd58d46713f/ios)：系统分享输入和 POST File 请求体。
 - [Shortcuty 签名服务接口](https://github.com/Shortcuty/Signing-Server-API-Documentation)：构建时仅提交公开模板；本机另行验证 Apple 证书链、签名和完整工作流。
+- [Apple 大量数据与隐私设置](https://support.apple.com/guide/shortcuts/adjust-privacy-settings-apd961a4fc65/ios)、[Content Graph](https://support.apple.com/guide/shortcuts/the-content-graph-engine-apd4618db957/ios)：大量数据权限及输入内容的自动类型转换。
+- [SW-DLT 实际导出工作流](https://github.com/net00-1/SW-DLT/blob/3846e145ce3acb5ad82caf2fdc84a82d9c7921f1/src/SW-DLT.plist)：字典值做字符串比较时显式使用 `WFStringContentItem` 转换，作为独立参数依据。
+- [Apple 引擎导出动作元数据](https://github.com/frontboat/shortcutkit/blob/ee52c32937053268e4a035eba4b372fe77ec6411/data/builtin-actions.json)：`dismisssiri` 映射 `WFHandoffAction`，旧 `handoff` 已停用；该资料不是 iOS 执行测试。
 
 ## 直接依赖
 

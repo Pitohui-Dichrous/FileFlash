@@ -1,12 +1,14 @@
 # iPhone 照片与文件
 
-0.1.6 使用 Apple「快捷指令」接收系统分享，再将文件直接发送到同一局域网的 FileFlash。不经过 Safari 照片选择器，不要求先另存到「文件」，也不安装第三方 iOS 应用。
+0.1.7 使用 Apple「快捷指令」接收系统分享，再将文件直接发送到同一局域网的 FileFlash。不经过 Safari 照片选择器，不要求先另存到「文件」，也不安装第三方 iOS 应用。
 
 ## 添加一次
 
 1. 安卓开启共享，iPhone 扫码打开网页。
 2. 点「照片 / 视频」→「添加快捷指令」。
 3. 打开下载的 `FileFlash.shortcut`，点「添加快捷指令」。
+
+已有 0.1.6 快捷指令时选择「替换」，避免继续运行旧版。也可直接下载[新版快捷指令](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.7/FileFlash.shortcut)；安卓 0.1.6 的传输服务可继续使用。
 
 如果删除过 Apple「快捷指令」，可从[国区 App Store](https://apps.apple.com/cn/app/快捷指令/id1462947752)重新安装。
 
@@ -18,6 +20,8 @@
 
 首次运行按系统提示允许相机和局域网访问。传输期间保持快捷指令在前台；完成显示「已发送」。失败会显示错误，重新分享即可，不保留断点。
 
+大媒体还应检查 iPhone「设置」中的「快捷指令 → 高级 → 允许共享大量数据」。这是 Apple 列出的处理大量数据前提，未公布统一字节阈值，不能单凭此确定卡住原因。[Apple 隐私设置说明](https://support.apple.com/guide/shortcuts/adjust-privacy-settings-apd961a4fc65/ios)
+
 正常完成及可识别的上传错误会断开本轮会话；系统强行结束快捷指令时仍按服务端过期规则回收。
 
 安卓收到后仍为临时中转；可由其他已连接设备直接下载，点击「保存」才进入系统下载目录。自动清理和手动清理沿用原有规则。
@@ -28,6 +32,8 @@ Apple 的[照片分享说明](https://support.apple.com/guide/iphone/share-photo
 
 「当前」仍需要系统准备可分享的媒体；云端原件可能需要下载。它不代表完整编辑历史、未编辑 RAW 或 Live Photo 的全部组件。本方案避开 Safari 的兼容格式选取与转码路径，不承诺系统处理、网络和后台行为永远不会等待。
 
-快捷指令已签名并随 APK 提供。构建时只把无设备地址、凭据及用户内容的公开模板交给签名服务；运行时不依赖该服务。签名的 Apple 证书链、完整性，以及解封后的完整工作流均独立核对。公开源为 `scripts/shortcut/FileFlash.unsigned.plist`，核验见 `test-evidence/ios-shortcut-signature.json`。
+即使工作流没有显式转码动作，Apple [Content Graph](https://support.apple.com/guide/shortcuts/the-content-graph-engine-apd4618db957/ios)仍可能为了下个动作的输入类型自动准备或转换内容；本项目没有证据证明 iOS 客户端始终保留原字节或以固定内存发送。
 
-静态验签、桌面协议与安卓模拟器测试不能代替 iPhone 的实际导入和照片分享运行；未获得真机结果前，不将此项写为已验证。
+快捷指令已签名并随 APK 提供。构建时只把无设备地址、凭据及用户内容的公开模板交给签名服务；运行时不依赖该服务。签名的 Apple 证书链、完整性，以及解封后的完整工作流均独立核对。公开源为 `scripts/shortcut/FileFlash.unsigned.plist`，核验见 `test-evidence/ios-shortcut-signature-0.1.7.json`。
+
+0.1.6 真机反馈已确认可导入、扫码并执行至上传回执判断，但该条件在 iOS 中缺少可用的比较参数。0.1.7 改为将状态作为文本严格匹配，再检查匹配是否为空。大媒体运行指示本身不能定位等待阶段；新版本仍需真机复测，静态验签不等于分享成功。

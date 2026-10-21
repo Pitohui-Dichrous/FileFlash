@@ -140,10 +140,16 @@ def workflow():
                                   "Content-Type": "application/octet-stream"}))
     add("getvalueforkey", "Upload Status", WFInput=output("Upload Response"),
         WFGetDictionaryValueType="Value", WFDictionaryKey="status")
+    # A dictionary-value magic variable has no fixed text type in Shortcuts.
+    # iOS can import a string-comparison IF with an empty right operand even
+    # though the plist contains WFConditionalActionString. Render status as
+    # text, match it strictly, then use the same no-value check as the QR path.
+    add("text.match", "Upload Complete", text=text(output_value("Upload Status")),
+        WFMatchTextPattern=r"\Acomplete(?![\s\S])", WFMatchTextCaseSensitive=True)
     failure_group = uid("Upload Failure")
     add("conditional", "Upload Failure", GroupingIdentifier=failure_group,
-        WFControlFlowMode=0, WFCondition=5, WFConditionalActionString="complete",
-        WFInput={"Type": "Variable", "Variable": output("Upload Status")})
+        WFControlFlowMode=0, WFCondition=101,
+        WFInput={"Type": "Variable", "Variable": output("Upload Complete")})
     add("getvalueforkey", "Upload Error Detail", WFInput=output("Upload Response"),
         WFGetDictionaryValueType="Value", WFDictionaryKey="error")
     revoke_session("Release Failed Session")
@@ -152,8 +158,7 @@ def workflow():
         WFAlertActionCancelButtonShown=False)
     add("exit", "Upload Stop")
     add("conditional", "Upload Failure End", GroupingIdentifier=failure_group,
-        WFControlFlowMode=2,
-        WFInput={"Type": "Variable", "Variable": output("Upload Status")})
+        WFControlFlowMode=2)
     # Do not retain the previous upload's JSON as a repeat result list.
     add("nothing", "Release Upload Result")
     add("repeat.each", "File Loop End", WFControlFlowMode=2,
@@ -188,6 +193,7 @@ def validate(data):
     if plistlib.loads(data) != expected:
         raise ValueError("Shortcut differs from the reproducible public template")
     actions = expected["WFWorkflowActions"]
+    validate_conditions(expected)
     identifiers = [a["WFWorkflowActionIdentifier"] for a in actions]
     forbidden = ("base64", "convert", "encode.media", "getimages", "getlatestphotos", "selectphotos",
                  "clipboard", "savefile", "file.append", "runjavascript", "runshell")
@@ -209,6 +215,36 @@ def validate(data):
             "rawFileBody": True, "shortcutRuntimeExternalServices": []}
 
 
+def validate_conditions(document):
+    """Reject the iPhone-reproduced untyped dictionary/string IF, independently
+    of template equality. Only no-value predicates are needed by this workflow.
+    """
+    actions = document["WFWorkflowActions"]
+    by_uuid = {a["WFWorkflowActionParameters"].get("UUID"): a for a in actions}
+    for action in actions:
+        if action["WFWorkflowActionIdentifier"] != "is.workflow.actions.conditional":
+            continue
+        params = action["WFWorkflowActionParameters"]
+        if params.get("WFControlFlowMode") != 0:
+            continue
+        if params.get("WFCondition") != 101 or "WFConditionalActionString" in params:
+            raise ValueError("Conditional requires a no-value predicate; untyped dictionary/string comparisons are unsafe")
+        variable = params["WFInput"]["Variable"]
+        source = variable["Value"]
+        if source.get("Type") == "ActionOutput":
+            producer = by_uuid.get(source.get("OutputUUID"))
+            if producer is None:
+                raise ValueError("Conditional references an unknown output")
+            # Session uses an existence check on a dictionary value. Upload
+            # completion must be a strict match, never an untyped comparison.
+            if params.get("UUID") == uid("Upload Failure"):
+                if producer["WFWorkflowActionIdentifier"] != "is.workflow.actions.text.match":
+                    raise ValueError("Upload completion must consume a text-match result")
+                match = producer["WFWorkflowActionParameters"]
+                if match.get("WFMatchTextPattern") != r"\Acomplete(?![\s\S])" or match.get("WFMatchTextCaseSensitive") is not True:
+                    raise ValueError("Upload completion match must be exact and case-sensitive")
+
+
 def sign(data, provider, destination):
     # Exact equality above is intentional: arbitrary local workflows or inputs
     # cannot accidentally be sent to either external signing service.
@@ -216,12 +252,12 @@ def sign(data, provider, destination):
     if provider == "hubsign":
         url = "https://hubsign.routinehub.services/sign"
         body = json.dumps({"shortcutName": "FileFlash", "shortcut": data.decode("utf-8")}).encode()
-        headers = {"Content-Type": "application/json", "User-Agent": "FileFlash-shortcut-builder/0.1.6"}
+        headers = {"Content-Type": "application/json", "User-Agent": "FileFlash-shortcut-builder/0.1.7"}
     else:
         url = "https://sign.shortcuty.app/api/v1/sign?mode=anyone"
         body = data
         headers = {"Content-Type": "application/octet-stream", "X-Filename": "FileFlash.shortcut",
-                   "User-Agent": "FileFlash-shortcut-builder/0.1.6"}
+                   "User-Agent": "FileFlash-shortcut-builder/0.1.7"}
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(request, timeout=60) as response:

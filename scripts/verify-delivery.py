@@ -29,8 +29,11 @@ with zipfile.ZipFile(source) as archive:
         assert not any(part in {'.signing', '.tools', '.test-data', 'node_modules', 'build'} for part in relative.parts), relative
         assert relative.as_posix() != 'local.properties'
         assert archive.read(name) == (root / relative).read_bytes(), 'Source ZIP differs: ' + str(relative)
-if version == '0.1.6':
-    from delivery_ios_share import verify
+if version in {'0.1.6', '0.1.7'}:
+    if version == '0.1.7':
+        from delivery_shortcut_fix import verify
+    else:
+        from delivery_ios_share import verify
     report = verify(root, version, apk, source, assets, sources)
     (root / 'dist/verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     (root / 'dist/SHA256SUMS.txt').write_text(''.join(item['sha256'] + '  ' + item['name'] + '\n' for item in report['artifacts']), encoding='utf-8')

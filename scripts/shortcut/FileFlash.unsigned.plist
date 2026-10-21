@@ -880,6 +880,41 @@
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>3944BE4A-D520-5513-92C8-0DE27631E702</string>
+								<key>OutputName</key>
+								<string>Upload Status</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFMatchTextPattern</key>
+				<string>\Acomplete(?![\s\S])</string>
+				<key>WFMatchTextCaseSensitive</key>
+				<true/>
+				<key>UUID</key>
+				<string>945368A2-B9F7-5F52-8570-CFB771F03894</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.conditional</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -888,9 +923,7 @@
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>5</integer>
-				<key>WFConditionalActionString</key>
-				<string>complete</string>
+				<integer>101</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -902,9 +935,9 @@
 							<key>Type</key>
 							<string>ActionOutput</string>
 							<key>OutputUUID</key>
-							<string>3944BE4A-D520-5513-92C8-0DE27631E702</string>
+							<string>945368A2-B9F7-5F52-8570-CFB771F03894</string>
 							<key>OutputName</key>
-							<string>Upload Status</string>
+							<string>Upload Complete</string>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
@@ -1089,25 +1122,6 @@
 				<string>84F12410-5A61-5EDF-96DB-01B24A90D5E5</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
-				<key>WFInput</key>
-				<dict>
-					<key>Type</key>
-					<string>Variable</string>
-					<key>Variable</key>
-					<dict>
-						<key>Value</key>
-						<dict>
-							<key>Type</key>
-							<string>ActionOutput</string>
-							<key>OutputUUID</key>
-							<string>3944BE4A-D520-5513-92C8-0DE27631E702</string>
-							<key>OutputName</key>
-							<string>Upload Status</string>
-						</dict>
-						<key>WFSerializationType</key>
-						<string>WFTextTokenAttachment</string>
-					</dict>
-				</dict>
 				<key>UUID</key>
 				<string>DA8E921D-B073-574C-B0AB-4A2BA2A43B1D</string>
 			</dict>

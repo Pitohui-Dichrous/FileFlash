@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "releaseProvenance": {
+    "version": "0.1.6",
+    "commit": "f978a563bbea05ec5f3d7b82ad0a12d0bb7c6fc6",
+    "path": "scripts/shortcut/FileFlash.unsigned.plist",
+    "sourceSha256": "34b469c13b25eb6d8ecb3265b6d71f72118d5718aa0ef8aff2bac0725ad56d66",
+    "extraction": "Only the actual status producer, failing comparison, unchanged initial IF inputs and network actions are retained; no generator execution."
+  },
+  "releasedFailingWorkflow": {
+    "WFWorkflowActions": [
+      {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+        "WFWorkflowActionParameters": {
+          "WFInput": {
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "A1A15465-3A01-5050-8273-F443175BAFF3",
+              "OutputName": "Upload Response"
+            },
+            "WFSerializationType": "WFTextTokenAttachment"
+          },
+          "WFGetDictionaryValueType": "Value",
+          "WFDictionaryKey": "status",
+          "UUID": "3944BE4A-D520-5513-92C8-0DE27631E702"
+        }
+      },
+      {
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+          "GroupingIdentifier": "84F12410-5A61-5EDF-96DB-01B24A90D5E5",
+          "WFControlFlowMode": 0,
+          "WFCondition": 5,
+          "WFConditionalActionString": "complete",
+          "WFInput": {
+            "Type": "Variable",
+            "Variable": {
+              "Value": {
+                "Type": "ActionOutput",
+                "OutputUUID": "3944BE4A-D520-5513-92C8-0DE27631E702",
+                "OutputName": "Upload Status"
+              },
+              "WFSerializationType": "WFTextTokenAttachment"
+            }
+          },
+          "UUID": "84F12410-5A61-5EDF-96DB-01B24A90D5E5"
+        }
+      }
+    ]
+  },
+  "initialIfInputs": [
+    {
+      "UUID": "01058083-1B2A-5BEF-88AD-4FB6F11A390F",
+      "WFInput": {
+        "Type": "Variable",
+        "Variable": {
+          "Value": {
+            "Type": "ExtensionInput"
+          },
+          "WFSerializationType": "WFTextTokenAttachment"
+        }
+      }
+    },
+    {
+      "UUID": "78DFDBEB-6216-58AE-A3E6-D33B5B2163AF",
+      "WFInput": {
+        "Type": "Variable",
+        "Variable": {
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "A5DD62E9-F224-5A52-81FC-5496D3E21095",
+            "OutputName": "Pair QR Match"
+          },
+          "WFSerializationType": "WFTextTokenAttachment"
+        }
+      }
+    },
+    {
+      "UUID": "7DA2CEAC-F005-5959-A91A-4C7B4256E7D9",
+      "WFInput": {
+        "Type": "Variable",
+        "Variable": {
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "4747CED8-C385-5266-A379-8AB8C80050E6",
+            "OutputName": "Session"
+          },
+          "WFSerializationType": "WFTextTokenAttachment"
+        }
+      }
+    }
+  ],
+  "networkActions": [
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "Advanced": true,
+        "ShowHeaders": true,
+        "WFURL": {
+          "Value": {
+            "string": "￼/api/pair",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "84978AE7-2FED-59E0-B373-9F3D3CA8475E",
+                "OutputName": "Server"
+              }
+            }
+          },
+          "WFSerializationType": "WFTextTokenString"
+        },
+        "WFHTTPMethod": "POST",
+        "WFHTTPBodyType": "JSON",
+        "WFJSONValues": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "token",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "￼",
+                    "attachmentsByRange": {
+                      "{0, 1}": {
+                        "Type": "ActionOutput",
+                        "OutputUUID": "A925FFAD-F81C-557A-949B-1B4BE9EC0EF0",
+                        "OutputName": "Pair Token"
+                      }
+                    }
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              },
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "name",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "iPhone",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "WFHTTPHeaders": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "Content-Type",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "application/json",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "UUID": "CA5AD2AB-C7F0-5DC2-82FF-8629048418E4"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "Advanced": true,
+        "ShowHeaders": true,
+        "WFURL": {
+          "Value": {
+            "string": "￼/api/shortcuts/files?name=￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "84978AE7-2FED-59E0-B373-9F3D3CA8475E",
+                "OutputName": "Server"
+              },
+              "{27, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "40FF4DCE-4AAD-5ACD-92BF-A241F26926BD",
+                "OutputName": "Encoded Name"
+              }
+            }
+          },
+          "WFSerializationType": "WFTextTokenString"
+        },
+        "WFHTTPMethod": "POST",
+        "WFHTTPBodyType": "File",
+        "WFRequestVariable": {
+          "Value": {
+            "Type": "Variable",
+            "VariableName": "Repeat Item"
+          },
+          "WFSerializationType": "WFTextTokenAttachment"
+        },
+        "WFHTTPHeaders": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "Authorization",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "Bearer ￼",
+                    "attachmentsByRange": {
+                      "{7, 1}": {
+                        "Type": "ActionOutput",
+                        "OutputUUID": "4747CED8-C385-5266-A379-8AB8C80050E6",
+                        "OutputName": "Session"
+                      }
+                    }
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              },
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "Content-Type",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "application/octet-stream",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "UUID": "A1A15465-3A01-5050-8273-F443175BAFF3"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "Advanced": true,
+        "ShowHeaders": true,
+        "WFURL": {
+          "Value": {
+            "string": "￼/api/session",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "84978AE7-2FED-59E0-B373-9F3D3CA8475E",
+                "OutputName": "Server"
+              }
+            }
+          },
+          "WFSerializationType": "WFTextTokenString"
+        },
+        "WFHTTPMethod": "DELETE",
+        "WFHTTPHeaders": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "Authorization",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "Bearer ￼",
+                    "attachmentsByRange": {
+                      "{7, 1}": {
+                        "Type": "ActionOutput",
+                        "OutputUUID": "4747CED8-C385-5266-A379-8AB8C80050E6",
+                        "OutputName": "Session"
+                      }
+                    }
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "UUID": "678AA92D-5183-5EED-9A31-FA81D0AA36ED"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "Advanced": true,
+        "ShowHeaders": true,
+        "WFURL": {
+          "Value": {
+            "string": "￼/api/session",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "84978AE7-2FED-59E0-B373-9F3D3CA8475E",
+                "OutputName": "Server"
+              }
+            }
+          },
+          "WFSerializationType": "WFTextTokenString"
+        },
+        "WFHTTPMethod": "DELETE",
+        "WFHTTPHeaders": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "Authorization",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "Bearer ￼",
+                    "attachmentsByRange": {
+                      "{7, 1}": {
+                        "Type": "ActionOutput",
+                        "OutputUUID": "4747CED8-C385-5266-A379-8AB8C80050E6",
+                        "OutputName": "Session"
+                      }
+                    }
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "UUID": "2A8E79BF-B1F2-54E8-A510-ABF9793B1FCB"
+      }
+    }
+  ],
+  "allowedActionIdentifiers": [
+    "is.workflow.actions.alert",
+    "is.workflow.actions.conditional",
+    "is.workflow.actions.dismisssiri",
+    "is.workflow.actions.downloadurl",
+    "is.workflow.actions.exit",
+    "is.workflow.actions.getitemname",
+    "is.workflow.actions.getvalueforkey",
+    "is.workflow.actions.nothing",
+    "is.workflow.actions.repeat.each",
+    "is.workflow.actions.scanbarcode",
+    "is.workflow.actions.text.match",
+    "is.workflow.actions.text.match.getgroup",
+    "is.workflow.actions.urlencode"
+  ],
+  "exportedSchemaReference": {
+    "url": "https://raw.githubusercontent.com/net00-1/SW-DLT/3846e145ce3acb5ad82caf2fdc84a82d9c7921f1/src/SW-DLT.plist",
+    "sourceSha256": "6ff2e6654e91922cad5b78be0df9cb8bbcf9f33019fa6a14f06f8f9a400d6902",
+    "meaning": "A project-published exported Shortcuts IF using the same nested Variable/Value attachment and explicit text coercion for a dictionary-derived string comparison. This is schema evidence, not execution of FileFlash.",
+    "action": {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "09727868-B89B-4336-A97A-439D3AD84938",
+        "WFCondition": 4,
+        "WFConditionalActionString": "exception",
+        "WFControlFlowMode": 0,
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "Value": {
+              "Aggrandizements": [
+                {
+                  "CoercionItemClass": "WFStringContentItem",
+                  "Type": "WFCoercionVariableAggrandizement"
+                }
+              ],
+              "OutputName": "outputCode",
+              "OutputUUID": "E9D7FCD4-C72E-406F-8730-2030861973A8",
+              "Type": "ActionOutput"
+            },
+            "WFSerializationType": "WFTextTokenAttachment"
+          }
+        }
+      }
+    }
+  }
+}
