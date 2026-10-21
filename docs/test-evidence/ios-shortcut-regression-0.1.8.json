@@ -1,0 +1,217 @@
+{
+  "passed": true,
+  "unsignedSha256": "8859eec1a751dcf28e9747093b2f99ec0d405329d7ff50a4656dc0b633b2a13f",
+  "fixtureSha256": "ddfe242ae8e52fdb45cc914edfe631c33094f52b5dfba4de9b56ad699b3ffd5c",
+  "checks": [
+    {
+      "name": "Frozen released fixture retains the literal right value and missing input text type",
+      "passed": true
+    },
+    {
+      "name": "Independent exported IF confirms nested token wrapper and typed string comparison",
+      "passed": true
+    },
+    {
+      "name": "Independent schema audit rejects the released 0.1.6 comparison",
+      "passed": true
+    },
+    {
+      "name": "Production condition guard independently rejects the released fixture",
+      "passed": true
+    },
+    {
+      "name": "Previously working input/QR/session IF wrappers are unchanged",
+      "passed": true
+    },
+    {
+      "name": "Current status flows through text match into a no-value IF",
+      "passed": true
+    },
+    {
+      "name": "Only exact lowercase complete is accepted across adversarial status strings",
+      "passed": true
+    },
+    {
+      "name": "Production condition guard accepts current source",
+      "passed": true
+    },
+    {
+      "name": "Network/body/header/session operations and effectful action vocabulary are unchanged",
+      "passed": true
+    },
+    {
+      "name": "An unanchored complete matcher is detected",
+      "passed": true
+    },
+    {
+      "name": "A dollar-end matcher that accepts a trailing newline is detected",
+      "passed": true
+    },
+    {
+      "name": "Case-insensitive completion matching is detected",
+      "passed": true
+    },
+    {
+      "name": "Flattening the exported IF attachment wrapper is detected",
+      "passed": true
+    },
+    {
+      "name": "Bypassing the text match with the dictionary-value output is detected",
+      "passed": true
+    },
+    {
+      "name": "Adding an external upload destination is detected",
+      "passed": true
+    },
+    {
+      "name": "Adding a local Save File persistence action is detected",
+      "passed": true
+    },
+    {
+      "name": "Adding an image conversion action is detected",
+      "passed": true
+    }
+  ],
+  "checkCount": 17,
+  "actionCount": 38,
+  "statusVectors": [
+    {
+      "value": "complete",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "value": "",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "error",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "Complete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "COMPLETE",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\n",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "\ncomplete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\r\n",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\r",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\t",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "\tcomplete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete ",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": " complete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": " complete ",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "incomplete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "completed",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "completecomplete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "xcomplete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "completex",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\nx",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete\u0000",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "\u0000complete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "complete ",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "﻿complete",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "value": "{\"status\":\"complete\"}",
+      "accepted": false,
+      "expected": false
+    }
+  ],
+  "releaseFixtureProvenance": {
+    "version": "0.1.6",
+    "commit": "f978a563bbea05ec5f3d7b82ad0a12d0bb7c6fc6",
+    "path": "scripts/shortcut/FileFlash.unsigned.plist",
+    "sourceSha256": "34b469c13b25eb6d8ecb3265b6d71f72118d5718aa0ef8aff2bac0725ad56d66",
+    "extraction": "Only the actual status producer, failing comparison, unchanged initial IF inputs and network actions are retained; no generator execution."
+  },
+  "independentSchemaReference": {
+    "url": "https://raw.githubusercontent.com/net00-1/SW-DLT/3846e145ce3acb5ad82caf2fdc84a82d9c7921f1/src/SW-DLT.plist",
+    "sourceSha256": "6ff2e6654e91922cad5b78be0df9cb8bbcf9f33019fa6a14f06f8f9a400d6902",
+    "meaning": "A project-published exported Shortcuts IF using the same nested Variable/Value attachment and explicit text coercion for a dictionary-derived string comparison. This is schema evidence, not execution of FileFlash."
+  },
+  "scope": "Offline plist schema/dataflow and Python regex regression. Frozen 0.1.6 and independent exported schema fixtures; no Git or network required. Does not execute Shortcuts, iOS import, Photos, media conversion or network transfer."
+}

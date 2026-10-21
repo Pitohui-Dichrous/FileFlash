@@ -19,6 +19,7 @@
 - [Apple 大量数据与隐私设置](https://support.apple.com/guide/shortcuts/adjust-privacy-settings-apd961a4fc65/ios)、[Content Graph](https://support.apple.com/guide/shortcuts/the-content-graph-engine-apd4618db957/ios)：大量数据权限及输入内容的自动类型转换。
 - [SW-DLT 实际导出工作流](https://github.com/net00-1/SW-DLT/blob/3846e145ce3acb5ad82caf2fdc84a82d9c7921f1/src/SW-DLT.plist)：字典值做字符串比较时显式使用 `WFStringContentItem` 转换，作为独立参数依据。
 - [Apple 引擎导出动作元数据](https://github.com/frontboat/shortcutkit/blob/ee52c32937053268e4a035eba4b372fe77ec6411/data/builtin-actions.json)：`dismisssiri` 映射 `WFHandoffAction`，旧 `handoff` 已停用；该资料不是 iOS 执行测试。
+- [引擎参数编码数据](https://github.com/frontboat/shortcutkit/blob/ee52c32937053268e4a035eba4b372fe77ec6411/data/parameter-encodings.json)与[实际 URL Encode 导出](https://github.com/huaminghuangtw/Shortcutomation/blob/a20b443874fde2f3ca503994dab1fd826b190b7d/All%20Shortcuts/Deep%20Links/Huberman%20Lab/huberman-lab.plist)：URL Encode 的文本槽使用 `WFTextTokenString`，与 Get Name 的变量选择器封装不同。第三方提取的引擎数据和实际导出用于离线类型检查，不代替 FileFlash 的真机运行。
 
 ## 直接依赖
 

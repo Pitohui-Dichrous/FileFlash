@@ -29,8 +29,8 @@ with zipfile.ZipFile(source) as archive:
         assert not any(part in {'.signing', '.tools', '.test-data', 'node_modules', 'build'} for part in relative.parts), relative
         assert relative.as_posix() != 'local.properties'
         assert archive.read(name) == (root / relative).read_bytes(), 'Source ZIP differs: ' + str(relative)
-if version in {'0.1.6', '0.1.7'}:
-    if version == '0.1.7':
+if version in {'0.1.6', '0.1.7', '0.1.8'}:
+    if version in {'0.1.7', '0.1.8'}:
         from delivery_shortcut_fix import verify
     else:
         from delivery_ios_share import verify

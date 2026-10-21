@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "signedFile": "FileFlash.shortcut",
+  "unsignedFile": "FileFlash.unsigned.plist",
+  "scope": "Static signature, integrity and full workflow equality; no iOS execution or import check",
+  "signedSha256": "26d5b7380182d2c85cd7a726ceabc25377e77541c8f874e9f7c5b10024335a70",
+  "unsignedSha256": "8859eec1a751dcf28e9747093b2f99ec0d405329d7ff50a4656dc0b633b2a13f",
+  "profile": 0,
+  "archiveBytes": 7875,
+  "archiveEntries": [
+    {
+      "path": "",
+      "type": "D",
+      "dataBytes": 0
+    },
+    {
+      "path": "Shortcut.wflow",
+      "type": "F",
+      "dataBytes": 7777
+    }
+  ],
+  "signingChainSha256": [
+    "41af8dadb1214e335b8273f0b1cb3e71d58fe0153d0105d1991746de68f1c5d0",
+    "7da79ba48b1c160852433c15a684dfe4747b81d1720787c339609cab7c68326c",
+    "63343abfb89a6a03ebb57e9b3f5fa7be7c4f5c756f3017b3a8c488c3653e9179"
+  ],
+  "appleRootCaG3Sha256": "63343abfb89a6a03ebb57e9b3f5fa7be7c4f5c756f3017b3a8c488c3653e9179",
+  "leafCertificateExpiresUtc": "2027-11-16T20:45:23+00:00",
+  "signatureVerified": true,
+  "archiveIntegrityVerified": true,
+  "certificateChainVerified": true,
+  "revocationChecked": false,
+  "workflowMatchesUnsigned": true,
+  "workflowSha256": "61526bb6c3bc38e463248cbbcc770bad14e23c2d40c4d52f4217d2a3d2ee08a8",
+  "workflowPlistSha256": "0f49f85829b3d27001f6fef684a184344d4aebd3fed1d8335be013d11a081462",
+  "actionCount": 38,
+  "dependencies": {
+    "python-aea": "1.1.0",
+    "cryptography": "50.0.2",
+    "pyliblzfse": "0.4.1",
+    "lz4": "4.4.5"
+  },
+  "checkedAtUtc": "2026-10-21T00:21:58.478567+00:00"
+}

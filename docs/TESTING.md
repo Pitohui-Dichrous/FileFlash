@@ -1,14 +1,14 @@
 # 复现测试
 
-本文对应 0.1.7。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 0.1.8。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
 
-0.1.7 仅修正签名快捷指令。先运行 `python scripts/test-ios-shortcut.py`，验签报告使用 `test-evidence/ios-shortcut-signature-0.1.7.json`。交付核验逐字节比较 0.1.6 APK；仅清单版本、快捷指令资源和构建提交号可改变。下方传输与设备测试保留为 0.1.6 的复现方法，不能把它们解释为 iPhone 已执行新工作流。
+0.1.8 仅修正签名快捷指令。运行 `python scripts/test-ios-shortcut-contract.py` 检查全部参数类型，再运行 `python scripts/test-ios-shortcut.py` 检查条件及隐私回归。验签报告使用 `test-evidence/ios-shortcut-signature-0.1.8.json`。交付核验逐字节比较 0.1.6 APK；仅清单版本、快捷指令资源和构建提交号可改变。下方传输与设备测试保留为 0.1.6 的复现方法，不能把它们解释为 iPhone 已执行新工作流。
 
 ## 系统分享
 
 ```powershell
 python scripts/build-ios-shortcut.py --check
-python scripts/verify-ios-shortcut.py --signed app/src/main/assets/web/FileFlash.shortcut --unsigned scripts/shortcut/FileFlash.unsigned.plist --report docs/test-evidence/ios-shortcut-signature-0.1.7.json
+python scripts/verify-ios-shortcut.py --signed app/src/main/assets/web/FileFlash.shortcut --unsigned scripts/shortcut/FileFlash.unsigned.plist --report docs/test-evidence/ios-shortcut-signature-0.1.8.json
 .\gradlew.bat :core:test :app:testDebugUnitTest :core:installDist
 node scripts/integration-ios-share.cjs
 ```
@@ -121,7 +121,7 @@ python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/Fil
 
 最终实际体验应使用 Android 手机及 iPhone Safari，在同一可信 Wi-Fi 验证扫码、双向文件、文字、系统保存、断网重试及权限拒绝。长时间后台和热点行为取决于系统与网络，不承诺无限后台持续运行。
 
-用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。0.1.6 系统分享已在真机运行至回执判断，但小图参数错误、大媒体持续运行；0.1.7 修正及完整成功仍待复测。桌面 WebKit 和模拟器不能替代该项，见 [IOS_SHARE.md](IOS_SHARE.md)。
+用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。0.1.6 系统分享执行到回执判断时报参数错误；0.1.7 后小图显示文件名无效、大媒体持续运行。0.1.8 修正文件名编码槽位，仍待真机验证完整成功；桌面 WebKit 和模拟器不能替代该项，见 [IOS_SHARE.md](IOS_SHARE.md)。
 
 ## 存储与卸载检查
 

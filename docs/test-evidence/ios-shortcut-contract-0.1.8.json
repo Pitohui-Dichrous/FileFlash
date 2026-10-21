@@ -1,0 +1,1456 @@
+{
+  "passed": true,
+  "unsignedSha256": "8859eec1a751dcf28e9747093b2f99ec0d405329d7ff50a4656dc0b633b2a13f",
+  "fixtureSha256": "2bd5162dfbe6905a67280b510effa0e6d5a6ee0374d875f4a41db50ab72cef96",
+  "actionCount": 38,
+  "configuredParameterCount": 136,
+  "engineParameterCount": 63,
+  "variableReferenceCount": 25,
+  "nestedDictionaryEntryCount": 7,
+  "parameters": [
+    {
+      "action": 0,
+      "identifier": "is.workflow.actions.dismisssiri",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 1,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 1,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 1,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFCondition",
+      "kind": "conditional-operator",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 1,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 1,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 2,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionTitle",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 2,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionMessage",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 2,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionCancelButtonShown",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 2,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 3,
+      "identifier": "is.workflow.actions.exit",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 4,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 4,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 4,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 4,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 5,
+      "identifier": "is.workflow.actions.scanbarcode",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 6,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "text",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 6,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "WFMatchTextPattern",
+      "kind": "engine-parameter",
+      "parameterClass": "WFRegexFieldParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 6,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "WFMatchTextCaseSensitive",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 6,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 7,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 7,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 7,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFCondition",
+      "kind": "conditional-operator",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 7,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 7,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 8,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionTitle",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 8,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionMessage",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 8,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionCancelButtonShown",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 8,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 9,
+      "identifier": "is.workflow.actions.exit",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 10,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 10,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 10,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 10,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 11,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "matches",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 11,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "WFGetGroupType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFCustomIntentEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 11,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "WFGroupIndex",
+      "kind": "engine-parameter",
+      "parameterClass": "WFNumberFieldParameter",
+      "stateClass": "WFNumberStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 11,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 12,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "matches",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 12,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "WFGetGroupType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFCustomIntentEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 12,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "WFGroupIndex",
+      "kind": "engine-parameter",
+      "parameterClass": "WFNumberFieldParameter",
+      "stateClass": "WFNumberStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 12,
+      "identifier": "is.workflow.actions.text.match.getgroup",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "Advanced",
+      "kind": "legacy-ui-boolean-true",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "ShowHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFExpandingParameter",
+      "stateClass": "WFNumberParameterState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFURL",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPMethod",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPBodyType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFJSONValues",
+      "kind": "engine-parameter",
+      "parameterClass": "WFDictionaryParameter",
+      "stateClass": "WFDictionaryParameterState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFDictionaryParameter",
+      "stateClass": "WFDictionaryParameterState",
+      "passed": true
+    },
+    {
+      "action": 13,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 14,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 14,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFGetDictionaryValueType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 14,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFDictionaryKey",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 14,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 15,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 15,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 15,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFCondition",
+      "kind": "conditional-operator",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 15,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 15,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 16,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 16,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFGetDictionaryValueType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 16,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFDictionaryKey",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 16,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 17,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionTitle",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 17,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionMessage",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 17,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionCancelButtonShown",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 17,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 18,
+      "identifier": "is.workflow.actions.exit",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 19,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 19,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 19,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 19,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 20,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 20,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 20,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 20,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 21,
+      "identifier": "is.workflow.actions.getitemname",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 21,
+      "identifier": "is.workflow.actions.getitemname",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 22,
+      "identifier": "is.workflow.actions.urlencode",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 22,
+      "identifier": "is.workflow.actions.urlencode",
+      "parameter": "WFEncodeMode",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 22,
+      "identifier": "is.workflow.actions.urlencode",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "Advanced",
+      "kind": "legacy-ui-boolean-true",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "ShowHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFExpandingParameter",
+      "stateClass": "WFNumberParameterState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFURL",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPMethod",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPBodyType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFRequestVariable",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFDictionaryParameter",
+      "stateClass": "WFDictionaryParameterState",
+      "passed": true
+    },
+    {
+      "action": 23,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 24,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 24,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFGetDictionaryValueType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 24,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFDictionaryKey",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 24,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 25,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "text",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 25,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "WFMatchTextPattern",
+      "kind": "engine-parameter",
+      "parameterClass": "WFRegexFieldParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 25,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "WFMatchTextCaseSensitive",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 25,
+      "identifier": "is.workflow.actions.text.match",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 26,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 26,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 26,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFCondition",
+      "kind": "conditional-operator",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 26,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFInput",
+      "kind": "conditional-subject",
+      "parameterClass": "WFVariableConditionalSubjectState",
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 26,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 27,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFInput",
+      "kind": "engine-parameter",
+      "parameterClass": "WFVariablePickerParameter",
+      "stateClass": "WFVariableParameterState",
+      "passed": true
+    },
+    {
+      "action": 27,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFGetDictionaryValueType",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 27,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "WFDictionaryKey",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 27,
+      "identifier": "is.workflow.actions.getvalueforkey",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 28,
+      "identifier": "is.workflow.actions.nothing",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "Advanced",
+      "kind": "legacy-ui-boolean-true",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "ShowHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFExpandingParameter",
+      "stateClass": "WFNumberParameterState",
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFURL",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPMethod",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFDictionaryParameter",
+      "stateClass": "WFDictionaryParameterState",
+      "passed": true
+    },
+    {
+      "action": 29,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 30,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionTitle",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 30,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionMessage",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 30,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionCancelButtonShown",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 30,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 31,
+      "identifier": "is.workflow.actions.exit",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 32,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 32,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 32,
+      "identifier": "is.workflow.actions.conditional",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 33,
+      "identifier": "is.workflow.actions.nothing",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 34,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "WFControlFlowMode",
+      "kind": "block-mode",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 34,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "GroupingIdentifier",
+      "kind": "block-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 34,
+      "identifier": "is.workflow.actions.repeat.each",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 35,
+      "identifier": "is.workflow.actions.nothing",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "Advanced",
+      "kind": "legacy-ui-boolean-true",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "ShowHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFExpandingParameter",
+      "stateClass": "WFNumberParameterState",
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFURL",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPMethod",
+      "kind": "engine-parameter",
+      "parameterClass": "WFEnumerationParameter",
+      "stateClass": "WFStringSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "WFHTTPHeaders",
+      "kind": "engine-parameter",
+      "parameterClass": "WFDictionaryParameter",
+      "stateClass": "WFDictionaryParameterState",
+      "passed": true
+    },
+    {
+      "action": 36,
+      "identifier": "is.workflow.actions.downloadurl",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    },
+    {
+      "action": 37,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionTitle",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 37,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionMessage",
+      "kind": "engine-parameter",
+      "parameterClass": "WFTextInputParameter",
+      "stateClass": "WFVariableStringParameterState",
+      "passed": true
+    },
+    {
+      "action": 37,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "WFAlertActionCancelButtonShown",
+      "kind": "engine-parameter",
+      "parameterClass": "WFSwitchParameter",
+      "stateClass": "WFBooleanSubstitutableState",
+      "passed": true
+    },
+    {
+      "action": 37,
+      "identifier": "is.workflow.actions.alert",
+      "parameter": "UUID",
+      "kind": "action-uuid",
+      "parameterClass": null,
+      "stateClass": null,
+      "passed": true
+    }
+  ],
+  "variableReferences": [
+    {
+      "action": 6,
+      "parameter": "text",
+      "producer": 5,
+      "outputUuid": "BDCCBB8B-E6F6-5D99-B38C-2A12D0D07FF9"
+    },
+    {
+      "action": 7,
+      "parameter": "WFInput",
+      "producer": 6,
+      "outputUuid": "A5DD62E9-F224-5A52-81FC-5496D3E21095"
+    },
+    {
+      "action": 10,
+      "parameter": "WFInput",
+      "producer": 6,
+      "outputUuid": "A5DD62E9-F224-5A52-81FC-5496D3E21095"
+    },
+    {
+      "action": 11,
+      "parameter": "matches",
+      "producer": 6,
+      "outputUuid": "A5DD62E9-F224-5A52-81FC-5496D3E21095"
+    },
+    {
+      "action": 12,
+      "parameter": "matches",
+      "producer": 6,
+      "outputUuid": "A5DD62E9-F224-5A52-81FC-5496D3E21095"
+    },
+    {
+      "action": 13,
+      "parameter": "WFURL",
+      "producer": 11,
+      "outputUuid": "84978AE7-2FED-59E0-B373-9F3D3CA8475E"
+    },
+    {
+      "action": 13,
+      "parameter": "WFJSONValues",
+      "producer": 12,
+      "outputUuid": "A925FFAD-F81C-557A-949B-1B4BE9EC0EF0"
+    },
+    {
+      "action": 14,
+      "parameter": "WFInput",
+      "producer": 13,
+      "outputUuid": "CA5AD2AB-C7F0-5DC2-82FF-8629048418E4"
+    },
+    {
+      "action": 15,
+      "parameter": "WFInput",
+      "producer": 14,
+      "outputUuid": "4747CED8-C385-5266-A379-8AB8C80050E6"
+    },
+    {
+      "action": 16,
+      "parameter": "WFInput",
+      "producer": 13,
+      "outputUuid": "CA5AD2AB-C7F0-5DC2-82FF-8629048418E4"
+    },
+    {
+      "action": 17,
+      "parameter": "WFAlertActionMessage",
+      "producer": 16,
+      "outputUuid": "3746CEED-9BB2-5E42-BE9E-57A838B48ABB"
+    },
+    {
+      "action": 19,
+      "parameter": "WFInput",
+      "producer": 14,
+      "outputUuid": "4747CED8-C385-5266-A379-8AB8C80050E6"
+    },
+    {
+      "action": 22,
+      "parameter": "WFInput",
+      "producer": 21,
+      "outputUuid": "366A8DE2-1F6B-5092-A6CF-7451C4208B9C"
+    },
+    {
+      "action": 23,
+      "parameter": "WFURL",
+      "producer": 11,
+      "outputUuid": "84978AE7-2FED-59E0-B373-9F3D3CA8475E"
+    },
+    {
+      "action": 23,
+      "parameter": "WFURL",
+      "producer": 22,
+      "outputUuid": "40FF4DCE-4AAD-5ACD-92BF-A241F26926BD"
+    },
+    {
+      "action": 23,
+      "parameter": "WFHTTPHeaders",
+      "producer": 14,
+      "outputUuid": "4747CED8-C385-5266-A379-8AB8C80050E6"
+    },
+    {
+      "action": 24,
+      "parameter": "WFInput",
+      "producer": 23,
+      "outputUuid": "A1A15465-3A01-5050-8273-F443175BAFF3"
+    },
+    {
+      "action": 25,
+      "parameter": "text",
+      "producer": 24,
+      "outputUuid": "3944BE4A-D520-5513-92C8-0DE27631E702"
+    },
+    {
+      "action": 26,
+      "parameter": "WFInput",
+      "producer": 25,
+      "outputUuid": "945368A2-B9F7-5F52-8570-CFB771F03894"
+    },
+    {
+      "action": 27,
+      "parameter": "WFInput",
+      "producer": 23,
+      "outputUuid": "A1A15465-3A01-5050-8273-F443175BAFF3"
+    },
+    {
+      "action": 29,
+      "parameter": "WFURL",
+      "producer": 11,
+      "outputUuid": "84978AE7-2FED-59E0-B373-9F3D3CA8475E"
+    },
+    {
+      "action": 29,
+      "parameter": "WFHTTPHeaders",
+      "producer": 14,
+      "outputUuid": "4747CED8-C385-5266-A379-8AB8C80050E6"
+    },
+    {
+      "action": 30,
+      "parameter": "WFAlertActionMessage",
+      "producer": 27,
+      "outputUuid": "3C42A103-31BB-57D3-9B4E-29AFA0104DD8"
+    },
+    {
+      "action": 36,
+      "parameter": "WFURL",
+      "producer": 11,
+      "outputUuid": "84978AE7-2FED-59E0-B373-9F3D3CA8475E"
+    },
+    {
+      "action": 36,
+      "parameter": "WFHTTPHeaders",
+      "producer": 14,
+      "outputUuid": "4747CED8-C385-5266-A379-8AB8C80050E6"
+    }
+  ],
+  "errors": [],
+  "uncheckedFields": [],
+  "checks": [
+    {
+      "name": "Every configured action slot, including nested dictionaries and references, has a validated class",
+      "passed": true
+    },
+    {
+      "name": "Filename is UTF-16 token text bound to Get Name of the active Repeat Item",
+      "passed": true
+    },
+    {
+      "name": "Real published 0.1.7 encoder attachment is rejected specifically as a text-slot mismatch",
+      "passed": true
+    },
+    {
+      "name": "Independent exported Encode action and actual text-state serialization corroborate the repaired slot",
+      "passed": true
+    },
+    {
+      "name": "Unknown configured fields fail and appear in uncheckedFields",
+      "passed": true
+    },
+    {
+      "name": "A text token cannot replace a variable-picker attachment",
+      "passed": true
+    },
+    {
+      "name": "UTF-16 offset after a supplementary character is accepted",
+      "passed": true
+    },
+    {
+      "name": "A code-point offset incorrectly used as a UTF-16 offset is rejected",
+      "passed": true
+    },
+    {
+      "name": "Encode mode must be a real extracted enumeration literal",
+      "passed": true
+    },
+    {
+      "name": "Nested header values cannot hide a bare media/variable attachment",
+      "passed": true
+    },
+    {
+      "name": "Repeat Item cannot be used outside its loop",
+      "passed": true
+    }
+  ],
+  "checkCount": 11,
+  "metadataSources": {
+    "builtin-actions.json": {
+      "url": "https://raw.githubusercontent.com/frontboat/shortcutkit/ee52c32937053268e4a035eba4b372fe77ec6411/data/builtin-actions.json",
+      "sha256": "1fbe0066921a6bfe58e1cb87058e67c6b32773d39168187fa92d86d7377b55fd"
+    },
+    "parameter-encodings.json": {
+      "url": "https://raw.githubusercontent.com/frontboat/shortcutkit/ee52c32937053268e4a035eba4b372fe77ec6411/data/parameter-encodings.json",
+      "sha256": "1a47443153d1b1688fd0ceac2be2fa2915afc385afc7864cf12cddb21498573b"
+    },
+    "encoding-table.json": {
+      "url": "https://raw.githubusercontent.com/frontboat/shortcutkit/ee52c32937053268e4a035eba4b372fe77ec6411/data/encoding-table.json",
+      "sha256": "b9dd843f63ba90e24739027017178cbf09ef602538b1f9337d92e4407d5138fc"
+    },
+    "provenance.json": {
+      "url": "https://raw.githubusercontent.com/frontboat/shortcutkit/ee52c32937053268e4a035eba4b372fe77ec6411/data/provenance.json",
+      "sha256": "b265ef31d6892c7786f9d8e1dab5667cf1d71159db95c49e0fd6d7a63af5fa39"
+    }
+  },
+  "scope": "Offline per-parameter class/serialization, nested value, UUID and loop/conditional scope validation. Independent extracted Apple engine metadata plus explicit structural/legacy exceptions; no Git/network required. Does not execute iOS, Shortcuts, media export or network transfer."
+}

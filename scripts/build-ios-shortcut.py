@@ -132,7 +132,9 @@ def workflow():
         GroupingIdentifier=repeat_group, WFInput=shared)
     item = attachment({"Type": "Variable", "VariableName": "Repeat Item"})
     add("getitemname", "File Name", WFInput=item)
-    add("urlencode", "Encoded Name", WFInput=output("File Name"), WFEncodeMode="Encode")
+    # URL Encode's input is a text parameter, unlike Get Name's variable picker.
+    # A bare attachment imports without a usable text value on iOS.
+    add("urlencode", "Encoded Name", WFInput=text(output_value("File Name")), WFEncodeMode="Encode")
     add("downloadurl", "Upload Response", Advanced=True, ShowHeaders=True,
         WFURL=text(output_value("Server"), "/api/shortcuts/files?name=", output_value("Encoded Name")),
         WFHTTPMethod="POST", WFHTTPBodyType="File", WFRequestVariable=item,
@@ -252,12 +254,12 @@ def sign(data, provider, destination):
     if provider == "hubsign":
         url = "https://hubsign.routinehub.services/sign"
         body = json.dumps({"shortcutName": "FileFlash", "shortcut": data.decode("utf-8")}).encode()
-        headers = {"Content-Type": "application/json", "User-Agent": "FileFlash-shortcut-builder/0.1.7"}
+        headers = {"Content-Type": "application/json", "User-Agent": "FileFlash-shortcut-builder"}
     else:
         url = "https://sign.shortcuty.app/api/v1/sign?mode=anyone"
         body = data
         headers = {"Content-Type": "application/octet-stream", "X-Filename": "FileFlash.shortcut",
-                   "User-Agent": "FileFlash-shortcut-builder/0.1.7"}
+                   "User-Agent": "FileFlash-shortcut-builder"}
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(request, timeout=60) as response:

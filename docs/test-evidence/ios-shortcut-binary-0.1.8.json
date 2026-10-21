@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "version": "0.1.8",
+  "apkSha256": "67e0233f745f7fca6e95bc3e3a4954be22322063f7ab3410f5a22aff242c3831",
+  "baselineVersion": "0.1.6",
+  "baselineApkSha256": "a2e57f382be2cd711a9fc346e36d31215d7e7561c1f2790834c78a619b54c4f8",
+  "archiveEntryNamesUnchanged": true,
+  "changedApkEntries": [
+    "META-INF/version-control-info.textproto",
+    "assets/web/FileFlash.shortcut",
+    "AndroidManifest.xml"
+  ],
+  "allDexByteIdentical": true,
+  "dexFiles": [
+    "classes.dex",
+    "classes2.dex"
+  ],
+  "signatureVerified": true,
+  "certificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "versionCode": 12,
+  "minSdk": 29,
+  "targetSdk": 37,
+  "releaseLintErrors": 0,
+  "physicalIPhoneExecutionVerified": false
+}
