@@ -1,0 +1,340 @@
+{
+  "environment": "Dedicated rooted Android API29 emulator; actual signed APK host/native Save/Open UI; desktop HTTP Shortcuts-protocol senders, not a physical iPhone or Shortcuts execution",
+  "version": "0.1.10",
+  "apiLevel": 29,
+  "apkSha256": "b6faa0729f5036877e7d1e90c51bcc7ff0011d1e9c47176edf202ee46c595179",
+  "installedApkSha256": "b6faa0729f5036877e7d1e90c51bcc7ff0011d1e9c47176edf202ee46c595179",
+  "passed": true,
+  "tests": [
+    {
+      "name": "signed release upgrades and installed APK hash matches",
+      "passed": true
+    },
+    {
+      "name": "previous saved ledger and readable Downloads unchanged after upgrade",
+      "passed": true,
+      "ledgerEntries": 36,
+      "readableDownloads": 11
+    },
+    {
+      "name": "independent sender B and receiver C authenticate",
+      "passed": true
+    },
+    {
+      "name": "shortcut filename recovery: PNG",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-png-source.png",
+      "contentType": "image/png",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91"
+    },
+    {
+      "name": "explicit Save publishes correct name MIME and exact bytes: PNG",
+      "passed": true,
+      "requestedMime": "image/png",
+      "actualMediaStoreMime": "image/png",
+      "platformMimeNormalized": false,
+      "displayName": "media-name-29-8897a906fd-png-source.png",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91"
+    },
+    {
+      "name": "native Open uses recovered MIME and exact saved URI: PNG",
+      "passed": true,
+      "mediaType": "image/png",
+      "desktopDecodedFixture": true,
+      "openMode": "external-view",
+      "runtimeViewMimeAndExactSavedUriVerified": true
+    },
+    {
+      "name": "shortcut filename recovery: JPEG",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-jpeg-source.jpg",
+      "contentType": "image/jpeg",
+      "bytes": 633,
+      "sha256": "a118c550caab406f2af91f703d65b28e83cb34022a195d6477e8a1847e288375"
+    },
+    {
+      "name": "shortcut filename recovery: HEIC",
+      "passed": true,
+      "framing": "chunked",
+      "decodableMedia": false,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-heic-source.heic",
+      "contentType": "image/heic",
+      "bytes": 70,
+      "sha256": "af2d71e9c3240aed1f782eaef806f0672aec740a26db61ce8cc96a0bf708d3b6"
+    },
+    {
+      "name": "shortcut filename recovery: MP4",
+      "passed": true,
+      "framing": "chunked",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-mp4-source.mp4",
+      "contentType": "video/mp4",
+      "bytes": 1533,
+      "sha256": "fd0993c2c7ad2997cb66383be1b13d689f19e5a33ac22d88e335ac010e9d7a58"
+    },
+    {
+      "name": "shortcut filename recovery: MOV",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-mov-source.mov",
+      "contentType": "video/quicktime",
+      "bytes": 1480,
+      "sha256": "92b19ccc18b1b6e73ea74918a1c476ff516ce01849330a8aa7330c4b696d22a9"
+    },
+    {
+      "name": "shortcut filename recovery: existing JPEG extension",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-existing.JPEG",
+      "contentType": "image/jpeg",
+      "bytes": 633,
+      "sha256": "a118c550caab406f2af91f703d65b28e83cb34022a195d6477e8a1847e288375"
+    },
+    {
+      "name": "shortcut filename recovery: Unicode PNG",
+      "passed": true,
+      "framing": "chunked",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-原图_😀.png",
+      "contentType": "image/png",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91"
+    },
+    {
+      "name": "shortcut filename recovery: version suffix",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-trip.v2.png",
+      "contentType": "image/png",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91"
+    },
+    {
+      "name": "shortcut filename recovery: unknown fallback",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": false,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-unknown.bin",
+      "contentType": "application/octet-stream",
+      "bytes": 35,
+      "sha256": "6b9109b6ec5785138d2b97f47bcce8320cafeb136315f06a9bfcc304035a5bc5"
+    },
+    {
+      "name": "shortcut filename recovery: untrusted MIME",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": false,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-untrusted-mime.bin",
+      "contentType": "application/octet-stream",
+      "bytes": 56,
+      "sha256": "4dfdd9eb4cff7ec46d35db45f7bab88efdf9eb0dd43bcf03ae8f4865da780312"
+    },
+    {
+      "name": "shortcut filename recovery: nonmedia extension",
+      "passed": true,
+      "framing": "Content-Length",
+      "decodableMedia": true,
+      "contentDispositionExtendedName": "media-name-29-8897a906fd-original.CUSTOM",
+      "contentType": "image/png",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91"
+    },
+    {
+      "name": "all matrix uploads stay temporary until explicit Save",
+      "passed": true
+    },
+    {
+      "name": "server restart preserves recovered media names MIME and body bytes",
+      "passed": true
+    },
+    {
+      "name": "server restart preserves every pre-existing shared filename",
+      "passed": true,
+      "previousSharedFiles": 7
+    },
+    {
+      "name": "explicit Save publishes correct name MIME and exact bytes: JPEG",
+      "passed": true,
+      "requestedMime": "image/jpeg",
+      "actualMediaStoreMime": "image/jpeg",
+      "platformMimeNormalized": false,
+      "displayName": "media-name-29-8897a906fd-jpeg-source.jpg",
+      "bytes": 633,
+      "sha256": "a118c550caab406f2af91f703d65b28e83cb34022a195d6477e8a1847e288375"
+    },
+    {
+      "name": "native Open uses recovered MIME and exact saved URI: JPEG",
+      "passed": true,
+      "mediaType": "image/jpeg",
+      "desktopDecodedFixture": true,
+      "openMode": "external-view",
+      "runtimeViewMimeAndExactSavedUriVerified": true
+    },
+    {
+      "name": "explicit Save publishes correct name MIME and exact bytes: MOV",
+      "passed": true,
+      "requestedMime": "video/quicktime",
+      "actualMediaStoreMime": "video/quicktime",
+      "platformMimeNormalized": false,
+      "displayName": "media-name-29-8897a906fd-mov-source.mov",
+      "bytes": 1480,
+      "sha256": "92b19ccc18b1b6e73ea74918a1c476ff516ce01849330a8aa7330c4b696d22a9"
+    },
+    {
+      "name": "native Open fallback preserves MIME and exact saved URI without a video viewer: MOV",
+      "passed": true,
+      "mediaType": "video/quicktime",
+      "desktopDecodedFixture": true,
+      "openMode": "share-chooser-no-video-viewer",
+      "noViewHandlerForRequestedQuicktimeMime": true,
+      "alternateMp4ViewHandlerAvailable": true,
+      "alternateMp4PlaybackAttempted": false,
+      "runtimeChooserObserved": true,
+      "savedFileIdentityVisible": true,
+      "exactSavedUriReadableWithOriginalBytes": true,
+      "sourceAction": "android.intent.action.SEND",
+      "sourceMimeFromSavedRecord": "video/quicktime",
+      "sourceExtraStreamUsesExactSavedUri": true,
+      "sourceReadGrantFlag": true,
+      "sourceContractVerified": true,
+      "storageSourceSha256": "c0e49acbb1765e98c41729f5fa56adede75856786532ab387209138b02786d27",
+      "runtimeInnerExtrasVisible": false,
+      "runtimeReadGrantObserved": false,
+      "evidenceLimit": "System activity dump exposes only outer chooser intent; inner MIME/EXTRA_STREAM/read flag are verified in frozen Storage.open source, not runtime extras.",
+      "physicalOrEmulatorVideoPlaybackVerified": false
+    },
+    {
+      "name": "saved names and MIME survive a hard process restart",
+      "passed": true,
+      "testedFreshMedia": [
+        "PNG",
+        "JPEG",
+        "MOV"
+      ]
+    },
+    {
+      "name": "precise cleanup removes only this run public MediaStore rows",
+      "passed": true,
+      "publicFixtures": 3
+    },
+    {
+      "name": "precise cleanup removes own private bytes metadata and ledger entries",
+      "passed": true,
+      "privateFixtures": 11
+    },
+    {
+      "name": "pre-existing saved ledger and readable Downloads remain unchanged",
+      "passed": true,
+      "ledgerEntries": 36,
+      "readableDownloads": 11,
+      "unreadableBefore": 25
+    },
+    {
+      "name": "APK remains exact frozen version after media filename scenarios",
+      "passed": true
+    }
+  ],
+  "fixtureCatalog": [
+    {
+      "label": "PNG",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "JPEG",
+      "bytes": 633,
+      "sha256": "a118c550caab406f2af91f703d65b28e83cb34022a195d6477e8a1847e288375",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "HEIC",
+      "bytes": 70,
+      "sha256": "af2d71e9c3240aed1f782eaef806f0672aec740a26db61ce8cc96a0bf708d3b6",
+      "decodableMedia": false,
+      "framing": "chunked"
+    },
+    {
+      "label": "MP4",
+      "bytes": 1533,
+      "sha256": "fd0993c2c7ad2997cb66383be1b13d689f19e5a33ac22d88e335ac010e9d7a58",
+      "decodableMedia": true,
+      "framing": "chunked"
+    },
+    {
+      "label": "MOV",
+      "bytes": 1480,
+      "sha256": "92b19ccc18b1b6e73ea74918a1c476ff516ce01849330a8aa7330c4b696d22a9",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "existing JPEG extension",
+      "bytes": 633,
+      "sha256": "a118c550caab406f2af91f703d65b28e83cb34022a195d6477e8a1847e288375",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "Unicode PNG",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91",
+      "decodableMedia": true,
+      "framing": "chunked"
+    },
+    {
+      "label": "version suffix",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "unknown fallback",
+      "bytes": 35,
+      "sha256": "6b9109b6ec5785138d2b97f47bcce8320cafeb136315f06a9bfcc304035a5bc5",
+      "decodableMedia": false,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "untrusted MIME",
+      "bytes": 56,
+      "sha256": "4dfdd9eb4cff7ec46d35db45f7bab88efdf9eb0dd43bcf03ae8f4865da780312",
+      "decodableMedia": false,
+      "framing": "Content-Length"
+    },
+    {
+      "label": "nonmedia extension",
+      "bytes": 92,
+      "sha256": "676ba2c920867187233c9f09642b4e7f00c77d1540987a7db1c093823997cb91",
+      "decodableMedia": true,
+      "framing": "Content-Length"
+    }
+  ],
+  "fixtureNotes": "PNG/JPEG generated with Pillow; embedded MP4/MOV are generated 64x64 H.264 clips decoded successfully on desktop before embedding. HEIC is signature-only, not a valid decodable image. Unknown/untrusted MIME cases are synthetic nonmedia bytes.",
+  "screenshots": [
+    {
+      "stage": "open-png",
+      "path": ".test-data/media-filename/media-name-29-8897a906fd/open-png.png"
+    },
+    {
+      "stage": "open-jpeg",
+      "path": ".test-data/media-filename/media-name-29-8897a906fd/open-jpeg.png"
+    },
+    {
+      "stage": "open-mov",
+      "path": ".test-data/media-filename/media-name-29-8897a906fd/open-mov.png"
+    }
+  ]
+}

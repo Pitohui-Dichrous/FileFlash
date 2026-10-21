@@ -1,6 +1,18 @@
 # 复现测试
 
-本文对应 0.1.9。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 0.1.10。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+
+## 媒体文件名
+
+```powershell
+.\gradlew.bat :core:test :core:installDist --no-parallel
+.\gradlew.bat :app:assembleRelease :app:lintRelease :app:testDebugUnitTest --no-parallel
+python scripts/android-media-filename-smoke.py --help
+```
+
+核心新增 `MediaFilenameTest` 覆盖有界格式识别、原有后缀、点号与版本尾段、未知数据、Unicode 长名和碰撞、重启、独立客户端下载、保存声明及非系统分享上传保持原名。空间预算测试与构建串行运行，避免编译写盘改变其采样可用空间。
+
+安卓脚本只用于专用模拟器，对最终签名 APK 上传媒体，核对文件名、类型、下载兼容文件名、原字节和显式保存后的系统记录；清理仅限本轮登记的文件及记录。新报告为 `media-filename-ui-api29.json` / `media-filename-ui-api34.json`；不执行实体 iPhone 快捷指令。快捷指令、网页及安卓 Kotlin 源码与 0.1.9 逐字节核对，交付门禁为 `scripts/delivery_media_filename.py`。
 
 0.1.9 增加安卓服务端全局接收反馈，快捷指令与网页资源逐字节沿用 0.1.8。核心仅调整 HTTP 错误响应及连接清理边界，防止停止活动上传时平台流抛出未检查异常导致进程退出；上传和保存协议不变。`scripts/delivery_host_receive.py` 核验最终签名 APK、两台模拟器实际安装摘要、模型与核心测试、资源与核心摘要；`scripts/verify-delivery.py` 另检查源码包完整性。下方大文件与传输专项保留为 0.1.6 的复现方法。
 
@@ -132,7 +144,7 @@ python scripts/android-receive-ui-smoke.py --serial emulator-5554 --apk dist/Fil
 
 最终实际体验应使用 Android 手机及 iPhone Safari，在同一可信 Wi-Fi 验证扫码、双向文件、文字、系统保存、断网重试及权限拒绝。长时间后台和热点行为取决于系统与网络，不承诺无限后台持续运行。
 
-用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。0.1.6 系统分享执行到回执判断时报参数错误；0.1.7 后小图显示文件名无效、大媒体持续运行。0.1.8 修正文件名编码槽位，仍待真机验证完整成功；桌面 WebKit 和模拟器不能替代该项，见 [IOS_SHARE.md](IOS_SHARE.md)。
+用户已报告 0.1.4 在实体 iPhone 17 Pro / iOS 27 的 Safari、Chrome 中失败，ROG 9 Pro 和红魔 9 Pro 两台服务器均可复现。后续已确认 test.1 的 APK、截图、下载图片及直接拍照上传正常，照片库相机媒体仍失败。0.1.6 系统分享执行到回执判断时报参数错误；0.1.7 后小图显示文件名无效、大媒体持续运行。0.1.8 修正文件名编码槽位后，用户已确认大小文件可发送，随后确认安卓接收正常；0.1.10 后缀补齐尚无实体 iPhone 复测。桌面 WebKit 和模拟器不能替代该项，见 [IOS_SHARE.md](IOS_SHARE.md)。
 
 ## 存储与卸载检查
 

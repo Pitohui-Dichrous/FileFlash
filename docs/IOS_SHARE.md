@@ -8,7 +8,7 @@ FileFlash 使用 Apple「快捷指令」接收系统分享，再将文件直接�
 2. 点「照片 / 视频」→「添加快捷指令」。
 3. 打开下载的 `FileFlash.shortcut`，点「添加快捷指令」。
 
-已有旧快捷指令时选择「替换」，避免继续运行旧版。也可直接下载[快捷指令](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.9/FileFlash.shortcut)；与 0.1.8 相同，已安装该版快捷指令无需替换。
+已有旧快捷指令时选择「替换」，避免继续运行旧版。也可直接下载[快捷指令](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.10/FileFlash.shortcut)；与 0.1.8 相同，已安装该版快捷指令无需替换。
 
 如果删除过 Apple「快捷指令」，可从[国区 App Store](https://apps.apple.com/cn/app/快捷指令/id1462947752)重新安装。
 
@@ -36,4 +36,4 @@ Apple 的[照片分享说明](https://support.apple.com/guide/iphone/share-photo
 
 快捷指令已签名并随 APK 提供。构建时只把无设备地址、凭据及用户内容的公开模板交给签名服务；运行时不依赖该服务。签名的 Apple 证书链、完整性，以及解封后的完整工作流均独立核对。公开源为 `scripts/shortcut/FileFlash.unsigned.plist`，核验见 `test-evidence/ios-shortcut-signature-0.1.8.json`。
 
-0.1.6 真机反馈确认可导入、扫码并执行至回执判断，0.1.7 修正了该条件。后续小文件返回「文件名无效」，大文件仍持续运行；0.1.8 将 URL Encode 的输入改为文本变量，并对全部动作的配置参数做独立类型核对，保留原名和服务端严格校验。用户随后确认大小文件均可发送。0.1.9 沿用同一快捷指令，并在安卓主机顶部显示接收进度。
+0.1.6 真机反馈确认可导入、扫码并执行至回执判断，0.1.7 修正了该条件。后续小文件返回「文件名无效」，大文件仍持续运行；0.1.8 将 URL Encode 的输入改为文本变量，并对全部动作的配置参数做独立类型核对，保留原名和服务端严格校验。用户随后确认大小文件均可发送。0.1.9 增加安卓主机接收进度，0.1.10 在主机端补齐新上传媒体缺少的后缀，继续使用同一快捷指令。

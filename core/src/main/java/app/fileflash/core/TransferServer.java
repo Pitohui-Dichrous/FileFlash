@@ -542,7 +542,15 @@ public final class TransferServer implements AutoCloseable {
         catch(CharacterCodingException invalid){throw error(400,"invalid_name","文件名编码无效");}
         if(name.trim().isEmpty()||name.equals(".")||name.equals(".."))throw error(400,"invalid_name","文件名无效");
         for(int i=0;i<name.length();i++)if(Character.isISOControl(name.charAt(i))||name.charAt(i)=='/'||name.charAt(i)=='\\')throw error(400,"invalid_name","文件名不能包含路径或控制字符");
-        return safeName(name);
+        String safe=safeName(name),original=name.trim();
+        while(original.endsWith("."))original=original.substring(0,original.length()-1);
+        int dot=original.lastIndexOf('.');
+        if(dot>0&&original.getBytes(StandardCharsets.UTF_8).length>180) {
+            String extension=original.substring(dot);
+            if(extension.matches("\\.[A-Za-z0-9]{1,32}"))
+                return fitShortcutName(safeName(original.substring(0,dot)),extension);
+        }
+        return safe;
     }
 
     private void uploadRoute(HttpServer.Request request,HttpServer.Response response,Session session) throws IOException {
@@ -684,6 +692,9 @@ public final class TransferServer implements AutoCloseable {
             }
             checkStreamActive(upload,session);
             if(request.chunked){upload.size=request.consumed;upload.unknownLength=false;}
+            // Shortcuts can supply a media title without its original extension and a generic MIME.
+            // Resolve metadata from a bounded prefix before persisting/publishing the completed share.
+            if(request.path.equals("/api/shortcuts/files"))completeShortcutFilename(upload);
             synchronized(received) {
                 checkStreamActive(upload,session);request.trace.mark("stream-promoting");
                 upload.sha256=hex(hash.digest());upload.finalName=uniqueName(upload.name);upload.status="promoting";
@@ -1179,11 +1190,97 @@ public final class TransferServer implements AutoCloseable {
         return normalized;
     }
     private static String safeMime(String mime) {return mime!=null&&mime.matches("[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+")?mime:"application/octet-stream";}
+    private void completeShortcutFilename(Upload upload) throws IOException {
+        int dot=upload.name.lastIndexOf('.');
+        boolean hasExtension=dot>0&&dot<upload.name.length()-1;
+        boolean versionSuffix=hasExtension&&upload.name.substring(dot+1).matches("(?i)(?:v|ver)?[0-9]+");
+        if(hasExtension&&!versionSuffix&&!"application/octet-stream".equalsIgnoreCase(upload.mime))return;
+        File source=partFile(upload);
+        byte[] prefix=new byte[(int)Math.min(source.length(),64L*1024)];int count=0;
+        try(InputStream input=new FileInputStream(source)) {
+            while(count<prefix.length) {int read=input.read(prefix,count,prefix.length-count);if(read<0)break;count+=read;}
+        }
+        MediaType type=mediaType(prefix,count);
+        // Get Name removes only the real extension: trip.v2.jpg can arrive as trip.v2.
+        // A verified signature disambiguates version-like suffixes, never an arbitrary custom suffix.
+        if(type!=null&&versionSuffix)hasExtension=false;
+        if(!hasExtension) {
+            upload.name=fitShortcutName(upload.name,"."+(type==null?"bin":type.extension));
+            upload.mime=type==null?"application/octet-stream":type.mime;
+        } else if(type!=null)upload.mime=type.mime;
+    }
+    private static String fitShortcutName(String stem,String extension) {
+        // Leave room for uniqueName's largest numeric collision suffix in persisted safe names.
+        while((stem+extension).getBytes(StandardCharsets.UTF_8).length>172)
+            stem=stem.substring(0,stem.offsetByCodePoints(0,stem.codePointCount(0,stem.length())-1));
+        return stem+extension;
+    }
+
+    /** Magic identifies a container, not its decodability; unknown/oversized headers stay binary. */
+    private static MediaType mediaType(byte[] bytes,int length) {
+        // Image signatures follow https://mimesniff.spec.whatwg.org/#matching-an-image-type-pattern.
+        if(matches(bytes,length,0,0xff,0xd8,0xff))return new MediaType("jpg","image/jpeg");
+        if(matches(bytes,length,0,0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a))return new MediaType("png","image/png");
+        if(ascii(bytes,length,0,"GIF87a")||ascii(bytes,length,0,"GIF89a"))return new MediaType("gif","image/gif");
+        if(ascii(bytes,length,0,"RIFF")&&ascii(bytes,length,8,"WEBPVP"))return new MediaType("webp","image/webp");
+        if(matches(bytes,length,0,0x49,0x49,0x2a,0)||matches(bytes,length,0,0x4d,0x4d,0,0x2a))return new MediaType("tif","image/tiff");
+        if(ascii(bytes,length,0,"BM"))return new MediaType("bmp","image/bmp");
+        // Parse complete, bounded top-level boxes. Never search arbitrary payload bytes for ftyp.
+        int offset=0;
+        while(offset<=length-8) {
+            long size=unsignedInt(bytes,offset);int header=8;
+            if(size==1) {
+                if(offset>length-16||(bytes[offset+8]&0x80)!=0)return null;
+                size=(unsignedInt(bytes,offset+8)<<32)|unsignedInt(bytes,offset+12);header=16;
+            }
+            if(size<header||size>length-offset)return null;
+            int end=offset+(int)size;
+            if(ascii(bytes,length,offset+4,"ftyp")) {
+                int brands=offset+header;
+                if(end-brands<8||(end-brands)%4!=0)return null;
+                if(brand(bytes,brands,end,"avif","avis"))return new MediaType("avif","image/avif");
+                if(brand(bytes,brands,end,"hevc","hevx","hevm","hevs"))return new MediaType("heics","image/heic-sequence");
+                if(brand(bytes,brands,end,"heic","heix","heim","heis"))return new MediaType("heic","image/heic");
+                if(brand(bytes,brands,end,"msf1"))return new MediaType("heifs","image/heif-sequence");
+                if(brand(bytes,brands,end,"mif1"))return new MediaType("heif","image/heif");
+                if(brand(bytes,brands,end,"qt  "))return new MediaType("mov","video/quicktime");
+                if(brand(bytes,brands,end,"M4A ","M4B ","M4P "))return new MediaType("m4a","audio/mp4");
+                if(brand(bytes,brands,end,"mp41","mp42","M4V ","M4VH","M4VP"))return new MediaType("mp4","video/mp4");
+                return null;
+            }
+            offset=end;
+        }
+        return null;
+    }
+    private static long unsignedInt(byte[] bytes,int offset) {
+        return ((long)(bytes[offset]&255)<<24)|((long)(bytes[offset+1]&255)<<16)|((long)(bytes[offset+2]&255)<<8)|(bytes[offset+3]&255);
+    }
+    private static boolean matches(byte[] bytes,int length,int offset,int... expected) {
+        if(offset<0||offset>length-expected.length)return false;
+        for(int i=0;i<expected.length;i++)if((bytes[offset+i]&255)!=expected[i])return false;
+        return true;
+    }
+    private static boolean ascii(byte[] bytes,int length,int offset,String expected) {
+        if(offset<0||offset>length-expected.length())return false;
+        for(int i=0;i<expected.length();i++)if(bytes[offset+i]!=(byte)expected.charAt(i))return false;
+        return true;
+    }
+    private static boolean brand(byte[] bytes,int start,int end,String... expected) {
+        for(int offset=start;offset<end;offset+=offset==start?8:4)
+            for(String value:expected)if(ascii(bytes,end,offset,value))return true;
+        return false;
+    }
+    private static final class MediaType {
+        final String extension,mime;
+        MediaType(String extension,String mime){this.extension=extension;this.mime=mime;}
+    }
     private static String shortName(String name) {if(name==null||name.trim().isEmpty())return "浏览器";String result=name.replaceAll("[\\p{Cntrl}]","").trim();return result.length()>60?result.substring(0,60):result;}
     private static String contentDisposition(String name) {
         String encoded;
         try {encoded=URLEncoder.encode(name,"UTF-8").replace("+","%20").replace("*","%2A");}catch(UnsupportedEncodingException e){throw new AssertionError(e);}
-        return "attachment; filename=\"download\"; filename*=UTF-8''"+encoded;
+        int dot=name.lastIndexOf('.');String extension=dot>=0?name.substring(dot+1):"";
+        String fallback="download"+(extension.matches("[A-Za-z0-9]{1,32}")?"."+extension:"");
+        return "attachment; filename=\""+fallback+"\"; filename*=UTF-8''"+encoded;
     }
     private static JsonObject uploadJson(Upload upload,boolean key) {
         String status=upload.status;boolean lengthKnown=!upload.unknownLength;

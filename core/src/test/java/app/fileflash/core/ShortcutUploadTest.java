@@ -104,7 +104,8 @@ class ShortcutUploadTest {
         String longName="照片😀".repeat(35)+".heic";JsonObject result=upload(longName,new byte[0],"image/heic; charset=binary");String id=result.get("id").getAsString();
         assertEquals(0,server.receivedFile(id).length());assertEquals(sha(new byte[0]),result.get("sha256").getAsString());assertEquals("image/heic",result.get("mime").getAsString());
         assertTrue(result.get("name").getAsString().getBytes(StandardCharsets.UTF_8).length<=180);
-        assertEquals(TransferServer.safeName(longName),result.get("name").getAsString());
+        assertTrue(result.get("name").getAsString().endsWith(".heic"),"Truncating a long title must retain its original extension");
+        assertEquals(TransferServer.safeName(result.get("name").getAsString()),result.get("name").getAsString());
         assertEquals("literal+plus.bin",object(send("POST","/api/shortcuts/files?name=literal+plus.bin",new byte[0],session,null)).get("name").getAsString());
     }
 

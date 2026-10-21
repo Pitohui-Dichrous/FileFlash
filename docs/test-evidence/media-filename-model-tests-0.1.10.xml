@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites tests="22" failures="0" errors="0" skipped="0" name="FileFlash-0.1.10-model"><testsuite name="app.fileflash.HostReceiveFeedbackTest" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-10-21T05:13:53.671Z" hostname="RO" time="0.088">
+  <properties />
+  <testcase name="anUnchangedNativeCheckpointWaitsWithoutClaimingFailureOrPause" classname="app.fileflash.HostReceiveFeedbackTest" time="0.052" />
+  <testcase name="recoveredBaselineDoesNotPretendToBeNewTraffic" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="aNewUploadReplacesThePreviousInterruptedBatchImmediately" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="failedPollingDoesNotImplyThatAnUploadDisappeared" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="resumedBaselineStartsOnlyWhenItsOffsetOrStatusChanges" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="resumingTheSameFailedIdBeginsANewBatchWithoutOtherOldTerminals" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="byteAndSpeedAggregationCannotOverflowLong" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="aFailureWithinAnActuallyConcurrentBatchRemainsPartOfItsOutcome" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="aFastReceivedFileWithoutAnUploadRecordStillShowsCompletion" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="aDisappearingUploadWithAReceivedFileIsComplete" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="terminalExpiryIsNotExtendedByRepeatedSnapshotsOrPollFailures" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="allKnownBytesReceivedIsProcessingUntilTheServerCompletes" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="aFastNewCompletionReplacesAnEarlierFailureBeforeItExpires" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="concurrentFilesAggregateKnownAndUnknownLengthsAndSpeeds" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="failureCanResumeAndCancellationDoesNotBecomeSuccessfulCompletion" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="fastCompletionIsVisibleOnceAndExpiresWithoutBeingReplayed" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="unknownLengthNeverPublishesAFalseTotalOrProcessingPercentage" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="aDisappearingUploadWithoutAFileIsInterruptedAndExpires" classname="app.fileflash.HostReceiveFeedbackTest" time="0.0" />
+  <testcase name="stoppingClearsFeedbackAndStaleGenerationsCannotRestoreIt" classname="app.fileflash.HostReceiveFeedbackTest" time="0.001" />
+  <testcase name="largeSnapshotsRemainStrictlyBounded" classname="app.fileflash.HostReceiveFeedbackTest" time="0.026" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="app.fileflash.UploadEntryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-21T05:13:53.764Z" hostname="RO" time="0.049">
+  <properties />
+  <testcase name="olderServersKeepTheirKnownLengthProgress" classname="app.fileflash.UploadEntryTest" time="0.048" />
+  <testcase name="streamingUnknownLengthRemainsExplicitAfterJsonParsing" classname="app.fileflash.UploadEntryTest" time="0.001" />
+  <system-out />
+  <system-err />
+</testsuite></testsuites>
