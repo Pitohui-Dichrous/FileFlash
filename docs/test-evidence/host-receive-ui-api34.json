@@ -1,0 +1,259 @@
+{
+  "environment": "Dedicated rooted Android API34 emulator; actual signed APK server and native receiving UI; paced desktop HTTP protocol fixtures for browser stream, Shortcuts chunked and native PUT; not physical iPhone/Shortcuts/browser/native-sender/Wi-Fi testing",
+  "apiLevel": 34,
+  "version": "0.1.9",
+  "apkSha256": "1010bf1e3810ddd1c26d2620cc0a2f4bb2ae53b4f0cacb477ef0dd0b31443968",
+  "installedApkSha256": "1010bf1e3810ddd1c26d2620cc0a2f4bb2ae53b4f0cacb477ef0dd0b31443968",
+  "passed": true,
+  "tests": [
+    {
+      "name": "final signed APK upgrades in place and actual installed bytes match",
+      "passed": true,
+      "apiLevel": 34
+    },
+    {
+      "name": "upgrade retains previous saved ledger and readable Downloads",
+      "passed": true,
+      "ledgerEntries": 33,
+      "readableDownloads": 8
+    },
+    {
+      "name": "starting server does not replay old uploads as newly received",
+      "passed": true,
+      "previousSharedFiles": 8
+    },
+    {
+      "name": "Content-Length browser stream exposes immediate global receiving feedback without switching tab",
+      "passed": true,
+      "selectedTab": "文字"
+    },
+    {
+      "name": "known-length upload displays a bounded nonfinal percentage",
+      "passed": true,
+      "percentages": [
+        0
+      ]
+    },
+    {
+      "name": "long filename, 1.3 font and 360dp screen retain visible state and byte progress",
+      "passed": true,
+      "fontScale": 1.3,
+      "screenDp": "360x640"
+    },
+    {
+      "name": "landscape retains the entire global receive status without tab change",
+      "passed": true,
+      "cardBounds": [
+        32,
+        176,
+        1152,
+        384
+      ],
+      "navigationBarBounds": [
+        [
+          1184,
+          0,
+          1280,
+          720
+        ]
+      ],
+      "zeroNavigationFrameNeedsVisualReview": false,
+      "visualReviewPassed": true
+    },
+    {
+      "name": "system animation disabled retains known-length feedback and progress information",
+      "passed": true
+    },
+    {
+      "name": "receiving progress remains global on 共享 tab",
+      "passed": true,
+      "selectedTab": "共享"
+    },
+    {
+      "name": "receiving progress remains global on 连接 tab",
+      "passed": true,
+      "selectedTab": "连接"
+    },
+    {
+      "name": "receiving progress remains global on 文字 tab",
+      "passed": true,
+      "selectedTab": "文字"
+    },
+    {
+      "name": "receiving progress remains global on 记录 tab",
+      "passed": true,
+      "selectedTab": "记录"
+    },
+    {
+      "name": "stream source is still in flight during cross-tab observations",
+      "passed": true
+    },
+    {
+      "name": "browser stream finishes as one unchanged temporary file for independent client C",
+      "passed": true,
+      "bytes": 67108864,
+      "sha256": "f136471bc108edbfe9bfb5630bf9100a5aabc66ecf1f826320476ae86921ffb6"
+    },
+    {
+      "name": "server completion says received rather than saved",
+      "passed": true
+    },
+    {
+      "name": "layout fixture completes without changing the temporary-storage contract",
+      "passed": true
+    },
+    {
+      "name": "completed feedback expires without becoming a persistent old receive event",
+      "passed": true,
+      "terminalDisplayMs": 4000
+    },
+    {
+      "name": "chunked Shortcuts protocol shows received bytes with an indeterminate progress node",
+      "passed": true,
+      "knownLength": false
+    },
+    {
+      "name": "paused sender becomes waiting for data without a false failure or completion",
+      "passed": true,
+      "senderBytes": 1572864
+    },
+    {
+      "name": "new bytes return waiting feedback to receiving on the current tab",
+      "passed": true
+    },
+    {
+      "name": "chunked Shortcuts protocol finishes unchanged without automatic Downloads",
+      "passed": true,
+      "bytes": 16777253,
+      "sha256": "7a6bc1ab5dd1ae59629ea267b25c72cf764f27d125ff8dec648b8d7233b7705b"
+    },
+    {
+      "name": "native chunk protocol shows committed byte and percentage progress globally",
+      "passed": true,
+      "committedBytes": 2097152
+    },
+    {
+      "name": "native chunk protocol completes unchanged as temporary without Downloads",
+      "passed": true,
+      "bytes": 12582931,
+      "sha256": "f76fc73591fae7235b10a8572c1bf14d36dcba191092ac52bbc391fcc2636ea5"
+    },
+    {
+      "name": "connection interruption is visible without claiming a received or saved file",
+      "passed": true
+    },
+    {
+      "name": "a fast new file inside interruption display window clears the old batch outcome",
+      "passed": true,
+      "newUploadStartedMsAfterInterruptionObservation": 250,
+      "bytes": 32781,
+      "selectedTab": "连接"
+    },
+    {
+      "name": "concurrent known and unknown uploads aggregate as two active files",
+      "passed": true,
+      "activeFiles": 2
+    },
+    {
+      "name": "one completion does not replace the remaining active upload with a completed banner",
+      "passed": true
+    },
+    {
+      "name": "both concurrent files remain temporary and byte-identical",
+      "passed": true
+    },
+    {
+      "name": "stopping an actively receiving server clears global feedback immediately",
+      "passed": true
+    },
+    {
+      "name": "restarting server begins without stale received or interrupted feedback",
+      "passed": true
+    },
+    {
+      "name": "exact-ID cleanup removes all this run temporary records and bytes only",
+      "passed": true
+    },
+    {
+      "name": "hard process restart does not replay old server receives",
+      "passed": true
+    },
+    {
+      "name": "previous saved ledger and readable Downloads remain unchanged after all scenarios",
+      "passed": true,
+      "ledgerEntries": 33,
+      "readableDownloads": 8,
+      "unreadableBefore": 25
+    }
+  ],
+  "screenshots": [
+    {
+      "stage": "stream-progress",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/stream-progress.png"
+    },
+    {
+      "stage": "large-font-small-screen",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/large-font-small-screen.png"
+    },
+    {
+      "stage": "large-font-small-landscape",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/large-font-small-landscape.png"
+    },
+    {
+      "stage": "animations-disabled",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/animations-disabled.png"
+    },
+    {
+      "stage": "global-tab-0",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/global-tab-0.png"
+    },
+    {
+      "stage": "global-tab-1",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/global-tab-1.png"
+    },
+    {
+      "stage": "global-tab-2",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/global-tab-2.png"
+    },
+    {
+      "stage": "global-tab-3",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/global-tab-3.png"
+    },
+    {
+      "stage": "stream-complete",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/stream-complete.png"
+    },
+    {
+      "stage": "shortcuts-unknown-length",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/shortcuts-unknown-length.png"
+    },
+    {
+      "stage": "waiting-for-data",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/waiting-for-data.png"
+    },
+    {
+      "stage": "shortcuts-complete",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/shortcuts-complete.png"
+    },
+    {
+      "stage": "native-chunk-progress",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/native-chunk-progress.png"
+    },
+    {
+      "stage": "native-complete",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/native-complete.png"
+    },
+    {
+      "stage": "interrupted",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/interrupted.png"
+    },
+    {
+      "stage": "new-small-after-interruption",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/new-small-after-interruption.png"
+    },
+    {
+      "stage": "concurrent-two-files",
+      "path": ".test-data/host-receive-ui/host-receive-34-90349a0d48/concurrent-two-files.png"
+    }
+  ]
+}

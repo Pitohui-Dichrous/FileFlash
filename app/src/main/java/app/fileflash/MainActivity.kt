@@ -21,14 +21,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -162,7 +167,12 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     LaunchedEffect(state.remoteAddress) { if (state.remoteAddress.isNotBlank()) lastReceiveEndpoint = state.remoteAddress }
     val tabs = listOf("共享", "连接", "文字", "记录")
     Scaffold(containerColor = Background,
-        topBar = { TopAppBar(title = { Text("FileFlash", fontSize = 21.sp, fontWeight = FontWeight.SemiBold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Background), actions = { TextButton(onClick = { showInfo = true }) { Text("帮助") } }) },
+        topBar = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TopAppBar(title = { Text("FileFlash", fontSize = 21.sp, fontWeight = FontWeight.SemiBold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Background), actions = { TextButton(onClick = { showInfo = true }) { Text("帮助") } })
+                if (state.hostRunning) state.hostReceiveFeedback?.let { HostReceiveProgress(it) }
+            }
+        },
         bottomBar = { NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) { tabs.forEachIndexed { index, title -> NavigationBarItem(selected = page == index, onClick = { page = index }, icon = { NavGlyph(index, page == index) }, label = { Text(title) }) } } },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
@@ -177,6 +187,36 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
     qr?.let { value -> AlertDialog(onDismissRequest = { qr = null }, title = { Text("扫码连接") }, text = { Column(horizontalAlignment = Alignment.CenterHorizontally) { QrImage(value); Spacer(Modifier.height(12.dp)); SelectionContainer { Text(value.substringBefore("/#"), fontSize = 14.sp) } } }, confirmButton = { TextButton(onClick = { onCopy(value) }) { Text("复制链接") } }, dismissButton = { TextButton(onClick = { qr = null }) { Text("关闭") } }) }
     if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, title = { Text("使用与权限") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("设备连接同一个 Wi-Fi。开启共享后，iPhone 用相机扫码并在 Safari 打开；另一台 Android 在“连接”中扫码。", fontSize = 14.sp); Text("使用可信局域网：HTTP 传输未加密。二维码链接授予访问权限，请仅与接收方分享。停止共享会撤销当前连接。", fontSize = 14.sp); Text("其他设备上传到本机的文件先临时存放，连接本机的第三台设备可直接下载。只有本机点击“保存”，才会保存到“下载 / FileFlash”。临时文件会按缓存规则清理，请及时转发或保存。", fontSize = 14.sp); Text("在“连接”页面点击“接收”，会将所选文件保存到本机。网页中断后需重新选择文件，从零发送；大文件传输保持前台。", fontSize = 14.sp); Text("系统可能限制长时间后台传输。网络改变后重新扫码；访客 Wi-Fi 可能禁止设备互通。", fontSize = 14.sp) } }, confirmButton = { TextButton(onClick = { showInfo = false }) { Text("关闭") } }, dismissButton = { TextButton(onClick = onSettings) { Text("系统设置") } })
+}
+
+@Composable private fun HostReceiveProgress(feedback: HostReceiveFeedback) {
+    val failed = feedback.phase == "接收中断" || feedback.phase == "失败"
+    val title = if (feedback.fileCount > 1) "${feedback.fileCount} 个文件" else feedback.name
+    val total = feedback.totalBytes
+    val progress = total?.let { if (it == 0L) 0f else (feedback.receivedBytes.toDouble() / it.toDouble()).coerceIn(0.0, 1.0).toFloat() }
+    Card(
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)).widthIn(max = 720.dp).fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White), shape = Corner
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(feedback.phase, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = if (failed) Error else Blue, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+            val bar = Modifier.fillMaxWidth().semantics { contentDescription = "接收进度" }
+            if (feedback.active && progress == null) LinearProgressIndicator(modifier = bar)
+            else LinearProgressIndicator(progress = { if (feedback.phase == "已接收") 1f else progress ?: 0f }, modifier = bar, color = if (failed) Error else Blue)
+            val detail = buildString {
+                append(bytes(feedback.receivedBytes))
+                if (feedback.active && total != null) {
+                    append(" / ").append(bytes(total))
+                    append(" · ").append(if (total == 0L) 0 else ((feedback.receivedBytes.toDouble() / total.toDouble()).coerceIn(0.0, 1.0) * 100).toInt()).append('%')
+                }
+                if (feedback.active && feedback.speedBytesPerSecond > 0L) append(" · ").append(bytes(feedback.speedBytesPerSecond)).append("/s")
+            }
+            Text(detail, color = Muted, fontSize = 12.sp)
+        }
+    }
 }
 
 @Composable private fun NavGlyph(index: Int, selected: Boolean) {

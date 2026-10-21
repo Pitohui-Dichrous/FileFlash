@@ -187,20 +187,22 @@ final class HttpServer {
             trace.mark("handler-complete");
         } catch (HttpError e) {
             trace.error(e);
-            if (response != null && !response.started) try { response.error(e.status, e.code, e.getMessage()); } catch (IOException ignored) { }
+            if (response != null && !response.started) try { response.error(e.status, e.code, e.getMessage()); } catch (IOException|RuntimeException failure) {trace.error(failure);}
         } catch (SocketTimeoutException e) {
             diagnostics.increment("body-timeout");trace.error(e);
-            if (response != null && !response.started) try { response.error(408, "timeout", "连接超时，请重试"); } catch (IOException ignored) { }
+            if (response != null && !response.started) try { response.error(408, "timeout", "连接超时，请重试"); } catch (IOException|RuntimeException failure) {trace.error(failure);}
         } catch (Exception e) {
             trace.error(e);
-            if (response != null && !response.started) try { response.error(500, "internal_error", "操作失败，请重试或检查剩余存储空间"); } catch (IOException ignored) { }
+            if (response != null && !response.started) try { response.error(500, "internal_error", "操作失败，请重试或检查剩余存储空间"); } catch (IOException|RuntimeException failure) {trace.error(failure);}
         } finally {
-            if (response != null) try { response.flush(); } catch (IOException e) {trace.error(e);}
+            // Android channel streams can throw unchecked exceptions when stop closes an in-flight socket.
+            // A failed response must still release this connection without escaping its worker thread.
+            if (response != null) try { response.flush(); } catch (IOException|RuntimeException e) {trace.error(e);}
             // Send FIN after the response before closing an early-rejected request. Closing with
             // unread body bytes immediately can reset TCP and hide an otherwise valid 409/4xx.
-            try {socket.shutdownOutput();}catch(IOException ignored){ }
+            try {socket.shutdownOutput();}catch(IOException|RuntimeException e){trace.error(e);}
             drainRejectedBody(request,socket);
-            try { socket.close(); } catch (IOException ignored) { }
+            try { socket.close(); } catch (IOException|RuntimeException e) {trace.error(e);}
             sockets.remove(socket);
             trace.closed=true;trace.mark("closed");
         }
@@ -216,7 +218,7 @@ final class HttpServer {
                 int count=request.body.read(buffer,0,(int)Math.min(buffer.length,remaining));
                 if(count<0)break;remaining-=count;
             }
-        }catch(IOException ignored){ }
+        }catch(IOException|RuntimeException ignored){ }
     }
 
     synchronized void stop() {

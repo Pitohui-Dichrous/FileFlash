@@ -39,6 +39,7 @@ data class AppState(
     val hostStopping: Boolean = false,
     val addresses: List<String> = emptyList(),
     val hostState: ServerState = ServerState(),
+    val hostReceiveFeedback: HostReceiveFeedback? = null,
     val remoteConnected: Boolean = false,
     val remoteConnecting: Boolean = false,
     val remoteAddress: String = "",
@@ -71,6 +72,7 @@ class TransferRepository(private val context: Context) {
     private val hashing = ConcurrentHashMap<String, AtomicBoolean>()
     private val shareSources = ConcurrentHashMap<String, LocalFile>()
     private val hostSamples = mutableMapOf<String, Pair<Long, Long>>()
+    private val hostReceiveFeedback = HostReceiveFeedbackTracker()
     private val activeExports = ConcurrentHashMap<String, AtomicBoolean>()
     private var shared = mutableListOf<LocalFile>()
     private val maintenanceLock = Any()
@@ -103,19 +105,36 @@ class TransferRepository(private val context: Context) {
         scope.launch {
             while (true) {
                 val s = server
+                val generation = hostGeneration.get()
                 if (s != null) {
                     runCatching { gson.fromJson(s.state(), ServerState::class.java) }.onSuccess { value ->
-                        _state.update { it.copy(hostState = withHostSpeeds(value)) }
-                        value.files.filter { it.received }.forEach { item ->
-                            _state.value.saved.firstOrNull { it.id == item.id }?.let { releaseSavedCache(s, it, item) }
+                        synchronized(lock) {
+                            if (server === s && generation == hostGeneration.get()) {
+                                val feedback = hostReceiveFeedback.update(generation, value, monotonicMillis())
+                                _state.update { it.copy(hostState = withHostSpeeds(value), hostReceiveFeedback = feedback) }
+                                value.files.filter { it.received }.forEach { item ->
+                                    _state.value.saved.firstOrNull { it.id == item.id }?.let { releaseSavedCache(s, it, item) }
+                                }
+                                refreshHostTemporary(s, value)
+                            }
                         }
-                        refreshHostTemporary(s, value)
-                    }.onFailure { notice("读取传输状态失败：${it.message}") }
+                    }.onFailure { failure -> synchronized(lock) {
+                        if (server === s && generation == hostGeneration.get()) {
+                            val feedback = hostReceiveFeedback.tick(generation, monotonicMillis())
+                            _state.update { it.copy(hostReceiveFeedback = feedback) }
+                            notice("读取传输状态失败：${failure.message}")
+                        }
+                    } }
                     updateAddresses()
+                } else synchronized(lock) {
+                    if (server == null && generation == hostGeneration.get()) {
+                        val feedback = hostReceiveFeedback.tick(generation, monotonicMillis())
+                        _state.update { it.copy(hostReceiveFeedback = feedback) }
+                    }
                 }
                 notificationChanged?.invoke()
                 if (System.currentTimeMillis() - lastMaintenance > 60_000) maintainStorage()
-                if (s != null || remote != null || clients.isNotEmpty() || activeExports.isNotEmpty()) withTimeoutOrNull(900L) { hostWake.receive() }
+                if (s != null || remote != null || clients.isNotEmpty() || activeExports.isNotEmpty() || _state.value.hostReceiveFeedback != null) withTimeoutOrNull(900L) { hostWake.receive() }
                 else if (_state.value.temporaryBytes > 0) withTimeoutOrNull(60_000L) { hostWake.receive() }
                 else hostWake.receive()
             }
@@ -137,6 +156,7 @@ class TransferRepository(private val context: Context) {
     }
 
     fun notice(message: String?) { _state.update { it.copy(notice = message) } }
+    private fun monotonicMillis() = System.nanoTime() / 1_000_000L
 
     private fun withHostSpeeds(value: ServerState): ServerState {
         val now = System.nanoTime()
@@ -167,6 +187,13 @@ class TransferRepository(private val context: Context) {
                 val created = synchronized(lock) { TransferServer(File(context.filesDir, "server")) { path -> runCatching { context.assets.open("web/$path") }.getOrNull() } }
                 fresh = created
                 restoreSavedShares(created)
+                val baseline = gson.fromJson(created.state(), ServerState::class.java)
+                synchronized(lock) {
+                    if (generation != hostGeneration.get()) { created.stop(); return@launch }
+                    hostReceiveFeedback.start(generation, baseline, monotonicMillis())
+                    hostSamples.clear()
+                    _state.update { it.copy(hostReceiveFeedback = null) }
+                }
                 val previousPort = prefs.getInt("hostPort", 8787)
                 try { created.start(previousPort) } catch (_: java.net.BindException) { created.stop(); created.start(0) }
                 prefs.edit().putInt("hostPort", created.port).apply()
@@ -188,11 +215,17 @@ class TransferRepository(private val context: Context) {
     }
 
     fun stopHost() {
-        hostGeneration.incrementAndGet()
+        val generation = hostGeneration.incrementAndGet()
         hashing.values.forEach { it.set(true) }
-        val old = synchronized(lock) { val existing = server; server = null; existing }
+        val old = synchronized(lock) {
+            val existing = server
+            server = null
+            val feedback = hostReceiveFeedback.stop(generation, monotonicMillis())
+            _state.update { it.copy(hostRunning = false, hostStarting = false, hostStopping = existing != null || it.hostStopping, addresses = emptyList(), hostState = ServerState(), hostReceiveFeedback = feedback) }
+            hostWake.trySend(Unit)
+            existing
+        }
         shareSources.clear()
-        _state.update { it.copy(hostRunning = false, hostStarting = false, hostStopping = old != null || it.hostStopping, addresses = emptyList(), hostState = ServerState()) }
         if (old != null) scope.launch {
             runCatching { old.stop() }
             _state.update { it.copy(hostStopping = false) }

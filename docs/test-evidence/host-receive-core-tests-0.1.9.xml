@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites tests="73" failures="0" errors="0" skipped="0" name="FileFlash-0.1.9-core"><testsuite name="app.fileflash.core.HttpServerCleanupTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:04:20.008Z" hostname="RO" time="0.212">
+  <properties />
+  <testcase name="uncheckedFinalFlushFailureClosesTheConnectionAndKeepsServing()" classname="app.fileflash.core.HttpServerCleanupTest" time="0.082" />
+  <testcase name="uncheckedShutdownDrainAndCloseFailuresCannotSkipBookkeeping()" classname="app.fileflash.core.HttpServerCleanupTest" time="0.025" />
+  <testcase name="uncheckedErrorResponseFailuresAreContainedForEveryHandlerCatch()" classname="app.fileflash.core.HttpServerCleanupTest" time="0.069" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="app.fileflash.core.ShortcutUploadTest" tests="21" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:04:20.235Z" hostname="RO" time="3.432">
+  <properties />
+  <testcase name="ambiguousEncodingsAndChunkingOutsideTheNewRouteAreRejectedBeforeCreatingData()" classname="app.fileflash.core.ShortcutUploadTest" time="0.123" />
+  <testcase name="durableNativePrefixIsNotReservedTwiceWhenOnlyASmallAmountOfSpaceRemains()" classname="app.fileflash.core.ShortcutUploadTest" time="0.18" />
+  <testcase name="chunkedContinueEmptyBodyExtensionsAndTrailersHaveNoPerChunkAcknowledgement()" classname="app.fileflash.core.ShortcutUploadTest" time="0.1" />
+  <testcase name="missingOrEmptyShortcutAttachmentReturnsNotFoundWithoutPairingMutation()" classname="app.fileflash.core.ShortcutUploadTest" time="0.024" />
+  <testcase name="heicMovAndFileBytesRemainUnmodifiedAndAvailableToAnotherPairedClient()" classname="app.fileflash.core.ShortcutUploadTest" time="0.407" />
+  <testcase name="standardHttpClientUnknownLengthBodyStreamsWithoutConversionOrClientChecksum()" classname="app.fileflash.core.ShortcutUploadTest" time="1.043" />
+  <testcase name="invalidNamesAndOversizedMetadataNeverCreateTasks()" classname="app.fileflash.core.ShortcutUploadTest" time="0.043" />
+  <testcase name="chunkedDecodedOffsetsRemainLongBeyondFourGiBWithoutAllocatingTheFile()" classname="app.fileflash.core.ShortcutUploadTest" time="0.018" />
+  <testcase name="shortcutAttachmentIsFixedPublicAndDoesNotExposeOtherAssetsOrPairingSecrets()" classname="app.fileflash.core.ShortcutUploadTest" time="0.023" />
+  <testcase name="slowNativeChunkDoesNotBlockShortcutCreationStreamingOrNativeDeduplication()" classname="app.fileflash.core.ShortcutUploadTest" time="0.114" />
+  <testcase name="twoStreamsShareUploadSlotsAndDiskReservationsWithNativeProtocol()" classname="app.fileflash.core.ShortcutUploadTest" time="0.085" />
+  <testcase name="unknownLengthProgressCleanupCancellationAndDeclaredReservationsRemainConsistent()" classname="app.fileflash.core.ShortcutUploadTest" time="0.079" />
+  <testcase name="pairingBearerOriginAndMethodGuardsPrecedeAnyFileCreation()" classname="app.fileflash.core.ShortcutUploadTest" time="0.022" />
+  <testcase name="manualSaveIntentProtectsPrivateFileAndCompletedTemporaryDataRecovers()" classname="app.fileflash.core.ShortcutUploadTest" time="0.069" />
+  <testcase name="emptyFileAndLongUnicodeNameAreSafeWithoutReadingASecondCopy()" classname="app.fileflash.core.ShortcutUploadTest" time="0.061" />
+  <testcase name="incompleteOrMalformedChunkFramesNeverPromoteAPrefix()" classname="app.fileflash.core.ShortcutUploadTest" time="0.105" />
+  <testcase name="hostCancellationAndSessionRevocationDeleteActiveDataAndReleaseSlots()" classname="app.fileflash.core.ShortcutUploadTest" time="0.076" />
+  <testcase name="contentLengthIsRequiredAndBadLengthsOrInsufficientStorageFailBeforeContinue()" classname="app.fileflash.core.ShortcutUploadTest" time="0.022" />
+  <testcase name="chunkExtensionAndTrailerBudgetsAreBoundedAndFailuresCleanTheTask()" classname="app.fileflash.core.ShortcutUploadTest" time="0.036" />
+  <testcase name="eofDeletesBodyPrefixMetadataAndShare()" classname="app.fileflash.core.ShortcutUploadTest" time="0.028" />
+  <testcase name="unknownStreamCannotPublishKnownLengthWithAnOldPartialProgressSnapshot()" classname="app.fileflash.core.ShortcutUploadTest" time="0.592" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="app.fileflash.core.StreamingUploadTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:04:23.669Z" hostname="RO" time="0.683">
+  <properties />
+  <testcase name="recoveryDropsInterruptedStreamAndPromotionButRestoresCompletedRelay()" classname="app.fileflash.core.StreamingUploadTest" time="0.091" />
+  <testcase name="streamsLargeBodyWithoutClientHashAndRemainsPrivateUntilExplicitSave()" classname="app.fileflash.core.StreamingUploadTest" time="0.218" />
+  <testcase name="eofDeletesReceivedPrefixMetadataAndShare()" classname="app.fileflash.core.StreamingUploadTest" time="0.033" />
+  <testcase name="emptyStreamAndStrictRestartFlagNeedNoClientChecksum()" classname="app.fileflash.core.StreamingUploadTest" time="0.069" />
+  <testcase name="activeStreamDoesNotBlockOtherCreateStateOrDiagnosticsAndCancelInterruptsIt()" classname="app.fileflash.core.StreamingUploadTest" time="0.046" />
+  <testcase name="stopDeletesActiveAndUnstartedStreamsButPreservesNativeCheckpoint()" classname="app.fileflash.core.StreamingUploadTest" time="0.08" />
+  <testcase name="authRecoveryKeyAndModeGuardsDoNotEraseProtectedFiles()" classname="app.fileflash.core.StreamingUploadTest" time="0.07" />
+  <testcase name="lengthMismatchAndMissingLengthFailBeforeContinueAndRemoveRestartTask()" classname="app.fileflash.core.StreamingUploadTest" time="0.061" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="app.fileflash.core.TransferServerTest" tests="34" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:04:24.353Z" hostname="RO" time="7.903">
+  <properties />
+  <testcase name="statePollingTicketsAndHeadDoNotKeepExpiredRelayAlive()" classname="app.fileflash.core.TransferServerTest" time="0.08" />
+  <testcase name="rangesBeyondFourGiBAreLongAndBounded()" classname="app.fileflash.core.TransferServerTest" time="0.017" />
+  <testcase name="releasingRemovedShareDeletesDuplicateWithoutRevealingSavedFile()" classname="app.fileflash.core.TransferServerTest" time="0.084" />
+  <testcase name="parserRejectsAmbiguousLengthsAndUnsafeHost()" classname="app.fileflash.core.TransferServerTest" time="0.019" />
+  <testcase name="runtimeSweepRemovesOnlyUnregisteredEngineUploadNames()" classname="app.fileflash.core.TransferServerTest" time="0.015" />
+  <testcase name="handlesZeroByteFilesAndNamesWithoutOverwriting()" classname="app.fileflash.core.TransferServerTest" time="0.108" />
+  <testcase name="durableResumeTruncatesUncommittedTailAndRejectsMissingRecoveryKey()" classname="app.fileflash.core.TransferServerTest" time="0.117" />
+  <testcase name="revokingClientInterruptsAnActiveStreamingDownload()" classname="app.fileflash.core.TransferServerTest" time="0.018" />
+  <testcase name="explicitSaveClaimPinsAndFailedSaveIntentSurvivesRestartUntilDiscard()" classname="app.fileflash.core.TransferServerTest" time="0.085" />
+  <testcase name="discardingTemporaryRelayRemovesItsShareTicketAndCompletionReceipt()" classname="app.fileflash.core.TransferServerTest" time="0.078" />
+  <testcase name="releasedCacheKeepsShareAndDurableCompletionReceiptWithoutPrivateBytes()" classname="app.fileflash.core.TransferServerTest" time="0.089" />
+  <testcase name="idleCleanupSkipsActiveSlowChunkAndCanClearItAfterDisconnect()" classname="app.fileflash.core.TransferServerTest" time="0.073" />
+  <testcase name="idleCleanupExpiresPartsPreservesRecentResumeGraceAndExplicitlyRetainedData()" classname="app.fileflash.core.TransferServerTest" time="0.2" />
+  <testcase name="partialHeaderHasAnAbsoluteDeadlineAndPrefetchedBinaryBodyIsUnchanged()" classname="app.fileflash.core.TransferServerTest" time="5.041" />
+  <testcase name="headerGateLimitsPendingMemoryAndRecoversAfterIdlePeersLeave()" classname="app.fileflash.core.TransferServerTest" time="0.13" />
+  <testcase name="wrongWholeFileDigestResetsToZeroAndNeverCompletes()" classname="app.fileflash.core.TransferServerTest" time="0.052" />
+  <testcase name="startupRemovesOrphansAndInvalidMetadataOnlyInsideEngineDirectories()" classname="app.fileflash.core.TransferServerTest" time="0.055" />
+  <testcase name="sixFragmentedHeadersCannotStarveStateOrUploadWorkers()" classname="app.fileflash.core.TransferServerTest" time="0.13" />
+  <testcase name="disconnectReturnsSuccessThenInvalidatesSession()" classname="app.fileflash.core.TransferServerTest" time="0.013" />
+  <testcase name="authenticatesAndGuardsOriginsAndPaths()" classname="app.fileflash.core.TransferServerTest" time="0.017" />
+  <testcase name="actualDownloadRenewsRelayIdleLifetimeDurably()" classname="app.fileflash.core.TransferServerTest" time="0.081" />
+  <testcase name="chunkChecksDuplicateRetryCompletionAndRange()" classname="app.fileflash.core.TransferServerTest" time="0.138" />
+  <testcase name="prefixCannotReadCancelledOrExpiredDataAndDoesNotExposeSecrets()" classname="app.fileflash.core.TransferServerTest" time="0.053" />
+  <testcase name="startupFinishesInterruptedReleaseAndBoundsCompletionReceipts()" classname="app.fileflash.core.TransferServerTest" time="0.31" />
+  <testcase name="temporaryRelayCanBeDownloadedByAnotherPairedClientAndSurvivesRestart()" classname="app.fileflash.core.TransferServerTest" time="0.091" />
+  <testcase name="sixIdlePreconnectionsCannotStarveStateOrUploadWorkers()" classname="app.fileflash.core.TransferServerTest" time="0.122" />
+  <testcase name="activeRelayDownloadPinsBeforeSourceOpenAndRenewsAfterFinishing()" classname="app.fileflash.core.TransferServerTest" time="0.077" />
+  <testcase name="legacyCompletedMetadataRemainsProtectedWhenTemporaryFlagWasAbsent()" classname="app.fileflash.core.TransferServerTest" time="0.064" />
+  <testcase name="interruptedChunkNeverAdvancesCommittedOffset()" classname="app.fileflash.core.TransferServerTest" time="0.027" />
+  <testcase name="prefixChecksOnlyCommittedBytesAndSurvivesLostAcknowledgementAndRestart()" classname="app.fileflash.core.TransferServerTest" time="0.103" />
+  <testcase name="sharedIdleBudgetEvictsOldPartialAndTemporaryCompleteWithoutTouchingRecentRelay()" classname="app.fileflash.core.TransferServerTest" time="0.167" />
+  <testcase name="cleanupOnlyDeletesPrivateReceivedCopyAndItsMetadata()" classname="app.fileflash.core.TransferServerTest" time="0.073" />
+  <testcase name="preservesUnicodeTextAndRejectsInvalidSizesAndCancelledUploads()" classname="app.fileflash.core.TransferServerTest" time="0.037" />
+  <testcase name="releasingCacheRefusesActiveDownloadAndPreservesItsSourceUntilFinished()" classname="app.fileflash.core.TransferServerTest" time="0.083" />
+  <system-out />
+  <system-err />
+</testsuite><testsuite name="app.fileflash.core.TransportDiagnosticsTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:04:32.256Z" hostname="RO" time="0.477">
+  <properties />
+  <testcase name="snapshotsRequireAuthenticationAndExcludeSensitiveValues()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.041" />
+  <testcase name="diagnosticRingAndCorrelationValuesAreBounded()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.136" />
+  <testcase name="postAliasSharesPutDurabilityIdempotencyAndAuthentication()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.096" />
+  <testcase name="partialBodyIsVisibleWithoutWaitingForUploadMonitorAndReportsEof()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.027" />
+  <testcase name="framedRequestRejectionPreservesSafeWireEvidence()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.014" />
+  <testcase name="probesReturnOnlyLengthAndDigestAndLeaveNoDiskFiles()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.021" />
+  <testcase name="standardContinueHandshakePrecedesBodyButNotHeaderRejection()" classname="app.fileflash.core.TransportDiagnosticsTest" time="0.129" />
+  <system-out />
+  <system-err />
+</testsuite></testsuites>

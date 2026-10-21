@@ -1,8 +1,19 @@
 # 复现测试
 
-本文对应 0.1.8。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
+本文对应 0.1.9。系统分享入口见 [IOS_SHARE.md](IOS_SHARE.md)，旧版脚本和证据保留为历史基线；实际验证边界见 [TEST_RESULTS.md](TEST_RESULTS.md)。
 
-0.1.8 仅修正签名快捷指令。运行 `python scripts/test-ios-shortcut-contract.py` 检查全部参数类型，再运行 `python scripts/test-ios-shortcut.py` 检查条件及隐私回归。验签报告使用 `test-evidence/ios-shortcut-signature-0.1.8.json`。交付核验逐字节比较 0.1.6 APK；仅清单版本、快捷指令资源和构建提交号可改变。下方传输与设备测试保留为 0.1.6 的复现方法，不能把它们解释为 iPhone 已执行新工作流。
+0.1.9 增加安卓服务端全局接收反馈，快捷指令与网页资源逐字节沿用 0.1.8。核心仅调整 HTTP 错误响应及连接清理边界，防止停止活动上传时平台流抛出未检查异常导致进程退出；上传和保存协议不变。`scripts/delivery_host_receive.py` 核验最终签名 APK、两台模拟器实际安装摘要、模型与核心测试、资源与核心摘要；`scripts/verify-delivery.py` 另检查源码包完整性。下方大文件与传输专项保留为 0.1.6 的复现方法。
+
+## 服务端接收进度
+
+```powershell
+.\gradlew.bat :app:assembleRelease :app:lintRelease :core:test :app:testDebugUnitTest :core:installDist
+python scripts/android-host-receive-ui-smoke.py --help
+```
+
+进度脚本用于专用、已启动的 API 29 / 34 模拟器，限速模拟网页固定长度流、快捷指令 chunked 流和原生分块上传，在真实 APK 上检查四个标签页、未知长度、并发、完成、中断、等待与重启，以及临时文件未自动保存。报告使用独立名称 `host-receive-ui-api29.json` / `host-receive-ui-api34.json`，不覆盖旧证据。脚本只清理本轮登记的任务与文件，并校验升级前已有公共文件；它不执行 iPhone 快捷指令。
+
+0.1.8 的独立快捷指令结构回归仍可用 `python scripts/test-ios-shortcut-contract.py` 和 `python scripts/test-ios-shortcut.py` 复现；验签报告为 `test-evidence/ios-shortcut-signature-0.1.8.json`。
 
 ## 系统分享
 

@@ -1,0 +1,73 @@
+0.1.9: source-only ZIP extraction; offline public dependency cache; no private signing files.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :core:compileJava
+> Task :core:processResources NO-SOURCE
+> Task :core:classes
+> Task :core:jar
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:parseDebugLocalResources
+> Task :app:mergeDebugAssets
+> Task :app:generateDebugRFile
+> Task :app:compressDebugAssets
+> Task :core:compileTestJava
+> Task :core:processTestResources NO-SOURCE
+> Task :core:testClasses
+> Task :app:generateDebugGlobalSynthetics
+> Task :app:desugarDebugFileDependencies
+> Task :app:checkDebugAarMetadata
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeLibDexDebug
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugNativeLibs
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebugUnitTest
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :app:mergeDebugResources
+> Task :app:mergeExtDexDebug
+> Task :app:processDebugResources
+
+> Task :app:compileDebugKotlin
+w: file:///E:/FileFlash/.test-data/host-receive-rebuild-y_n67n44/FileFlash/app/src/main/java/app/fileflash/MainActivity.kt:373:16 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: @Composable() ComposableFunction1<@ParameterName(...) List<TabPosition>, Unit> = ..., divider: @Composable() ComposableFunction0<Unit> = ..., tabs: @Composable() ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///E:/FileFlash/.test-data/host-receive-rebuild-y_n67n44/FileFlash/app/src/main/java/app/fileflash/MainActivity.kt:393:16 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: @Composable() ComposableFunction1<@ParameterName(...) List<TabPosition>, Unit> = ..., divider: @Composable() ComposableFunction0<Unit> = ..., tabs: @Composable() ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///E:/FileFlash/.test-data/host-receive-rebuild-y_n67n44/FileFlash/app/src/main/java/app/fileflash/TransferRepository.kt:240:36 'val allNetworks: Array<(out) Network!>' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:dexBuilderDebug
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+> Task :app:testDebugUnitTest
+> Task :core:test
+
+BUILD SUCCESSFUL in 17s
+46 actionable tasks: 46 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html
+Core tests: 73 passed (fresh extracted project XML).
+Android model tests: 22 passed (fresh extracted project XML).
