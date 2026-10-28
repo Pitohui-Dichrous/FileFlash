@@ -1,0 +1,204 @@
+{
+  "date": "2026-10-29",
+  "version": "0.1.10-acid.1",
+  "versionCode": 15,
+  "environment": "Dedicated rooted Android API34 x86_64 emulator; actual installed native app; desktop HTTP fixture",
+  "apiLevel": 34,
+  "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17",
+  "installedApkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17",
+  "passed": true,
+  "tests": [
+    {
+      "name": "Frozen signed APK and actual installed base.apk SHA-256 agree",
+      "passed": true
+    },
+    {
+      "name": "Light and dark shared screens retain functional Start, Stop and actual QR",
+      "passed": true
+    },
+    {
+      "name": "Light connection, text and history pages render without control collisions",
+      "passed": true
+    },
+    {
+      "name": "320dp / font scale 1.3 keeps all four navigation labels complete",
+      "passed": true
+    },
+    {
+      "name": "Narrow shared QR and file actions are reachable by scrolling; Copy label stays on one line",
+      "passed": true
+    },
+    {
+      "name": "Narrow connection address stays visible above the shown keyboard",
+      "passed": true
+    },
+    {
+      "name": "Narrow pairing-code input stays visible above the shown keyboard",
+      "passed": true
+    },
+    {
+      "name": "Narrow text input stays visible above the shown keyboard",
+      "passed": true
+    },
+    {
+      "name": "Dismissing the keyboard restores all four navigation tabs",
+      "passed": true
+    },
+    {
+      "name": "Cache-details dialog opens and closes at 320dp / font scale 1.3",
+      "passed": true
+    },
+    {
+      "name": "Cache-clear confirmation opens and Keep cancels it without clearing",
+      "passed": true
+    },
+    {
+      "name": "Paced desktop HTTP upload displays known-length progress and completion feedback on Text page",
+      "passed": true
+    },
+    {
+      "name": "Independent client download and private temporary bytes match the generated fixture",
+      "passed": true
+    },
+    {
+      "name": "Exact own fixture metadata, part and received bytes are removed",
+      "passed": true
+    },
+    {
+      "name": "Eight pre-existing shared file identities and saved ledger remain unchanged",
+      "passed": true
+    },
+    {
+      "name": "Server stopped, screenshot QR/session credentials revoked before public image copy",
+      "passed": true
+    },
+    {
+      "name": "Original size, font scale and light setting restored; physical phone untouched",
+      "passed": true
+    }
+  ],
+  "layouts": {
+    "normal": {
+      "pixels": "1080x2340",
+      "densityDpi": 420,
+      "fontScale": 1.0
+    },
+    "narrow": {
+      "pixels": "840x1800",
+      "widthDp": 320,
+      "densityDpi": 420,
+      "fontScale": 1.3
+    }
+  },
+  "focusedUpload": {
+    "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17",
+    "environment": "Desktop paced HTTP fixture against dedicated API34 Android server; not physical iPhone or native-sender testing",
+    "bytes": 4194331,
+    "sha256": "514f03eff3496e68b737520c866fe4013a82ed80b446304e0d6ac7d89c1db581",
+    "passed": true,
+    "progressFeedbackVisible": true,
+    "progressKnownLength": true,
+    "completionFeedbackVisible": true,
+    "independentClientBytesMatch": true,
+    "privateTemporaryBytesMatch": true,
+    "exactFixtureCleanupVerified": true,
+    "preexistingSharedFilesUnchanged": 8,
+    "savedLedgerUnchanged": true
+  },
+  "screenshots": [
+    {
+      "path": "docs/acid-design/screenshots/android-light-host-off.png",
+      "sha256": "ca1ee2f710832c7e30d7fb2437e823ea4a0a9a2cac0726ec8dc062631b06fb73",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-light-host-on.png",
+      "sha256": "c4b7bfdca621392a22586afb2c24afd32eb6d42f4c1014589bb3c5f2524d9c5e",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-dark-host-off.png",
+      "sha256": "3b86a065fe37c25c5df09224bdb3a7225cbe71846f569541948c532f44e4207c",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-dark-host-on.png",
+      "sha256": "24f19d72dc322c6253290ea35697e517f2743014a2d58c8d87ed77506cebc4d7",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-light-connect.png",
+      "sha256": "4436dd5504c429c88ac12911d72cc10b9c6814677a4e3b0d2cdee9e063295d74",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-light-text.png",
+      "sha256": "0de9d77f005791b86215020348398d8137bcc1cb386fb37517a1208796a6364b",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-light-history.png",
+      "sha256": "a0abcb8cb952d6890a31d1c3307891cadc946a09e676fd7ee1b56d75988c8c07",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-host-controls.png",
+      "sha256": "6450a201897af929cdc0231bb55bb91a7534ac0615fedb19fcbcecd30a1dd1aa",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-address-ime.png",
+      "sha256": "ae30ad32443e0caa875d44d01862b66ca8e339510243c5dbb77efe29b56c89d6",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-code-ime.png",
+      "sha256": "5263913cb493128b03818804654774a2f3b1fcb6851e4eb980ece3a7bdcee4a1",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-text-ime.png",
+      "sha256": "58e4fe2e7cdb56f69847be1220751f3d976f81bb78e293eda4b8e387dc96ed78",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-navbar-restored.png",
+      "sha256": "3ca729621db854e378f92afe6d22c2de7def59a71ee222805aafda6c490724bb",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-cache-details.png",
+      "sha256": "261ed6053b1f1f80bfa3665855af2d211ef00d2cfceb1bb87e145c19c253e0be",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-narrow-cache-confirm.png",
+      "sha256": "9a803fe7fd6be2aea55028080137a2ee3de55f5c68b3542d49621d5d7f0c813d",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-receive-progress.png",
+      "sha256": "35509b9fb02e01a06a7c62943305dfd24f39fdb9ec71387fba2d0b276582491e",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    },
+    {
+      "path": "docs/acid-design/screenshots/android-receive-complete.png",
+      "sha256": "9ac02a8b539938c25ac5f6b7bb1e3c6ae1804fe277410467ed2a0644f03872ba",
+      "apkSha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+    }
+  ],
+  "cleanup": {
+    "clearCacheExecuted": false,
+    "oldDataUninstalledOrCleared": false,
+    "ownFixtureRemoved": true,
+    "serverStopped": true,
+    "credentialsRevokedBeforeCopy": true,
+    "testSettingsRestored": true,
+    "physicalDeviceOperated": false
+  },
+  "limits": [
+    "Only API34 emulator runtime inspected in this UI round; no physical iPhone, phone Wi-Fi or API29 runtime test",
+    "Paced desktop HTTP protocol traffic is not an Apple Shortcuts, browser picker or native sender UI test",
+    "No full 56-case media-filename or large-file regression was repeated for this visual change"
+  ]
+}

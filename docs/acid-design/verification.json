@@ -1,0 +1,40 @@
+{
+  "version": "0.1.10-acid.1",
+  "versionCode": 15,
+  "baseline": "d9a18b161ad1359c8daef94421d18a6474e9e531",
+  "branch": "codex/acid-design",
+  "minimumAndroidApi": 29,
+  "targetAndroidApi": 37,
+  "artifact": {
+    "name": "FileFlash-0.1.10-acid.1.apk",
+    "bytes": 22304471,
+    "sha256": "40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17"
+  },
+  "originalSigningCertificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "coreTestsPassed": 85,
+  "androidModelTestsPassed": 22,
+  "lintErrors": 0,
+  "zipCrcPassed": true,
+  "bundledAssetsMatchSource": 40,
+  "unchangedShortcutSha256": "26d5b7380182d2c85cd7a726ceabc25377e77541c8f874e9f7c5b10024335a70",
+  "unchangedSources": [
+    "app/src/main/assets/web/app.js",
+    "app/src/main/assets/web/sha256.js",
+    "app/src/main/java/app/fileflash/FileFlashApplication.kt",
+    "app/src/main/java/app/fileflash/HostReceiveFeedback.kt",
+    "app/src/main/java/app/fileflash/NativeClient.kt",
+    "app/src/main/java/app/fileflash/Storage.kt",
+    "app/src/main/java/app/fileflash/TransferRepository.kt",
+    "app/src/main/java/app/fileflash/TransferService.kt",
+    "core/src/main/java/app/fileflash/core/AssetProvider.java",
+    "core/src/main/java/app/fileflash/core/ClientInfo.java",
+    "core/src/main/java/app/fileflash/core/DesktopServer.java",
+    "core/src/main/java/app/fileflash/core/HttpServer.java",
+    "core/src/main/java/app/fileflash/core/ShareFile.java",
+    "core/src/main/java/app/fileflash/core/Source.java",
+    "core/src/main/java/app/fileflash/core/TransportDiagnostics.java"
+  ],
+  "coreChangeScope": "Only static asset allowlist and font/ttf MIME for the bundled Anton font",
+  "physicalIPhoneTested": false,
+  "physicalAndroidTested": false
+}

@@ -1,0 +1,65 @@
+{
+  "environment": "Chromium in-app browser against the real local Java DesktopServer; screenshots from the implemented HTML/CSS",
+  "baseline": "d9a18b161ad1359c8daef94421d18a6474e9e531",
+  "visualWidths": [
+    320,
+    390,
+    1280
+  ],
+  "inspectedThemes": [
+    "light",
+    "dark"
+  ],
+  "font": {
+    "family": "Anton",
+    "loaded": true,
+    "source": "bundled local TTF"
+  },
+  "checks": [
+    {
+      "name": "Real pairing and two shared fixture files",
+      "passed": true
+    },
+    {
+      "name": "Long Chinese filenames and download actions remain readable",
+      "passed": true
+    },
+    {
+      "name": "320px media actions reflow into full-width rows without broken Chinese words",
+      "passed": true
+    },
+    {
+      "name": "Media Shortcut dialog opens and its close/download actions remain visible",
+      "passed": true
+    },
+    {
+      "name": "Text sends, clears the composer and appears in the real record list",
+      "passed": true
+    },
+    {
+      "name": "31,000-byte UI-selected file uploads and reaches complete with full progress",
+      "passed": true
+    },
+    {
+      "name": "320px and 1280px document width equals viewport width",
+      "passed": true
+    },
+    {
+      "name": "No browser error logs observed in this verification session",
+      "passed": true
+    }
+  ],
+  "iosEntryPreview": "A temporary iPhone user-agent override exposed the existing media buttons in Chromium; this does not execute iOS or Apple Shortcuts.",
+  "physicalIPhoneTested": false,
+  "assets": {
+    "htmlSha256": "43efc3841c811597cdcc0507c5709e139531c7d4d2decb10a67a80c59c2ac61b",
+    "cssSha256": "3e5d9591186ac94de3639e4937c613ccdb10595815773607786749dc47be15d0"
+  },
+  "screenshots": [
+    "screenshots/web-320-media.png",
+    "screenshots/web-320-tasks.png",
+    "screenshots/web-desktop-light.png",
+    "screenshots/web-desktop-dark.png",
+    "screenshots/web-mobile-dark.png"
+  ]
+}

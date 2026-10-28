@@ -942,13 +942,13 @@ public final class TransferServer implements AutoCloseable {
         requireDownloadMethod(request);
         boolean shortcut=request.path.equals("/FileFlash.shortcut");
         String name=request.path.equals("/")?"index.html":request.path.substring(1);
-        if(!shortcut&&!Arrays.asList("index.html","app.js","sha256.js","styles.css","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest").contains(name)) throw error(404,"not_found","页面不存在");
+        if(!shortcut&&!Arrays.asList("index.html","app.js","sha256.js","styles.css","fonts/anton-regular.ttf","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest").contains(name)) throw error(404,"not_found","页面不存在");
         try(InputStream input=assets.open(name)) {
             if(input==null) throw error(404,"not_found","页面不存在");
             ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count;
             while((count=input.read(buffer))>=0) {if(out.size()+count>2*1024*1024)throw error(500,"asset_too_large","页面资源过大");out.write(buffer,0,count);}
             if(shortcut&&out.size()==0)throw error(404,"not_found","快捷指令尚未就绪");
-            String mime=shortcut?"application/x-apple-shortcut":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webmanifest")?"application/manifest+json":"text/html; charset=utf-8";
+            String mime=shortcut?"application/x-apple-shortcut":name.endsWith(".ttf")?"font/ttf":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webmanifest")?"application/manifest+json":"text/html; charset=utf-8";
             Map<String,String> headers=new LinkedHashMap<>();headers.put("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
             if(shortcut)headers.put("Content-Disposition","attachment; filename=\"FileFlash.shortcut\"");
             if(request.method.equals("HEAD")) {response.begin(200,mime,out.size(),headers);response.flush();}

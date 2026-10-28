@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f6f7fa">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#d7ff00" media="(prefers-color-scheme: light)">
   <meta name="referrer" content="no-referrer">
   <meta name="apple-mobile-web-app-title" content="FileFlash">
   <title>FileFlash · 闪传</title>
@@ -14,20 +15,52 @@
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
-    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M13.5 2 5 13h6l-.5 9L19 11h-6l.5-9Z"/></symbol>
-    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></symbol>
-    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
-    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8l-5-5Zm0 0v5h5M8 13h8m-8 4h5"/></symbol>
-    <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 5h16M12 5v15m-4 0h8M4 9V5m16 4V5"/></symbol>
-    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
-    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a9 9 0 1 0 1 7M20 3v5h-5"/></symbol>
-    <symbol id="i-copy" viewBox="0 0 24 24"><path d="M8 8h13v13H8zM16 8V3H3v13h5"/></symbol>
-    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 3 18 9-18 9 4-9-4-9Zm4 9h14"/></symbol>
-    <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 14 4-4M8 16l-2 2a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0M16 8l2-2a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></symbol>
+    <symbol id="i-flash" viewBox="0 0 24 24"><path d="M7 7h10v10" />
+  <path d="M7 17 17 7" />
+</symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+  <polyline points="17 8 12 3 7 8" />
+  <line x1="12" x2="12" y1="3" y2="15" />
+</symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+  <polyline points="7 10 12 15 17 10" />
+  <line x1="12" x2="12" y1="15" y2="3" />
+</symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+  <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+  <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+</symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7" />
+  <line x1="9" x2="15" y1="20" y2="20" />
+  <line x1="12" x2="12" y1="4" y2="20" />
+</symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+  <path d="M3 3v5h5" />
+  <path d="M12 7v5l4 2" />
+</symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+  <path d="M21 3v5h-5" />
+</symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+  <path d="m21.854 2.147-10.94 10.939" />
+</symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2" />
+  <path d="M15 7h2a5 5 0 1 1 0 10h-2" />
+  <line x1="8" x2="16" y1="12" y2="12" />
+</symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10" />
+  <path d="M7 17 17 7" />
+</symbol>
   </defs></svg>
   <header class="header">
-    <a class="brand" href="/" aria-label="FileFlash 首页"><span class="brand-mark"><svg aria-hidden="true"><use href="#i-flash"/></svg></span><span>FileFlash</span></a>
-    <button id="connection-button" class="connection" type="button" aria-expanded="false" aria-controls="connection-details"><span id="connection-dot" class="dot"></span><span id="connection-label">未连接</span><svg aria-hidden="true"><use href="#i-link"/></svg></button>
+    <div class="masthead">
+      <a class="brand" href="/" aria-label="FileFlash 首页"><span class="brand-first">FILE</span><span class="brand-last">FLASH</span></a>
+      <span class="brand-direction" aria-hidden="true"><svg><use href="#i-arrow-up-right"/></svg></span>
+      <button id="connection-button" class="connection" type="button" aria-expanded="false" aria-controls="connection-details"><span id="connection-dot" class="dot"></span><span id="connection-label">未连接</span><svg aria-hidden="true"><use href="#i-link"/></svg></button>
+    </div>
   </header>
   <main class="shell">
     <section id="connection-details" class="connection-details" hidden>
@@ -41,8 +74,7 @@
     </section>
     <div id="connection-error" class="notice warning" role="status" hidden></div>
     <section id="pair-panel" class="pair-panel" aria-labelledby="pair-title">
-      <h1 id="pair-title">连接设备</h1>
-      <p class="pair-help">在 Android 上启动闪传，扫描二维码，或填写配对码。</p>
+      <div class="pair-heading"><span class="section-index" aria-hidden="true">01</span><h1 id="pair-title">连接设备</h1></div>
       <form id="pair-form">
         <label for="pair-token">配对码</label>
         <input id="pair-token" name="token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" required>
@@ -54,15 +86,15 @@
     </section>
     <div id="workspace" hidden>
       <nav class="tabs" aria-label="传输内容">
-        <button class="tab active" data-tab="files" type="button" aria-current="page"><svg aria-hidden="true"><use href="#i-file"/></svg>文件</button>
-        <button class="tab" data-tab="texts" type="button"><svg aria-hidden="true"><use href="#i-text"/></svg>文字<span id="text-badge" class="badge" hidden></span></button>
-        <button class="tab" data-tab="tasks" type="button"><svg aria-hidden="true"><use href="#i-activity"/></svg>任务<span id="task-badge" class="badge" hidden></span></button>
+        <button class="tab active" data-tab="files" type="button" aria-current="page"><span class="tab-number" aria-hidden="true">01</span><span class="tab-label">文件</span><svg aria-hidden="true"><use href="#i-file"/></svg></button>
+        <button class="tab" data-tab="texts" type="button"><span class="tab-number" aria-hidden="true">02</span><span class="tab-label">文字</span><span id="text-badge" class="badge" hidden></span><svg aria-hidden="true"><use href="#i-text"/></svg></button>
+        <button class="tab" data-tab="tasks" type="button"><span class="tab-number" aria-hidden="true">03</span><span class="tab-label">任务</span><span id="task-badge" class="badge" hidden></span><svg aria-hidden="true"><use href="#i-activity"/></svg></button>
       </nav>
       <section id="panel-files" class="panel" aria-label="文件">
-        <div class="send-bar"><span id="queue-summary" class="help" role="status" hidden></span><div class="send-actions"><button id="choose-media" class="button primary" type="button" aria-haspopup="dialog" hidden>照片 / 视频</button><button id="choose-files" class="button primary" type="button"><svg aria-hidden="true"><use href="#i-upload"/></svg><span id="choose-files-label">选择文件</span></button></div></div>
-        <div class="section-heading"><h1>可接收文件</h1><span id="file-count" class="count"></span></div>
+        <div class="send-bar"><span id="queue-summary" class="help" role="status" hidden></span><div class="send-actions"><button id="choose-media" class="button primary" type="button" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="#i-arrow-up-right"/></svg>照片 / 视频</button><button id="choose-files" class="button primary" type="button"><svg aria-hidden="true"><use href="#i-upload"/></svg><span id="choose-files-label">选择文件</span></button></div></div>
+        <div class="section-heading"><span class="section-index" aria-hidden="true">01</span><h1>接收文件</h1><span id="file-count" class="count"></span></div>
         <div id="file-list" class="list"></div>
-        <p id="download-note" class="help download-note" hidden>下载进度请查看 Safari 下载管理器。保存位置由 Safari 决定；页面无法确认文件已保存，也无法保证下载自动恢复。</p>
+        <p id="download-note" class="help download-note" hidden>下载进度见浏览器。</p>
       </section>
       <section id="panel-texts" class="panel" aria-label="文字" hidden>
         <form id="text-form" class="composer">
@@ -71,12 +103,12 @@
           <div class="composer-footer"><span id="text-count" class="help">0 字符</span><button id="send-text" class="button primary" type="submit"><svg aria-hidden="true"><use href="#i-send"/></svg>发送</button></div>
           <p id="text-error" class="field-error" role="alert" hidden></p>
         </form>
-        <div class="section-heading"><h1>文字记录</h1><span id="text-total" class="count"></span></div>
+        <div class="section-heading"><span class="section-index" aria-hidden="true">02</span><h1>文字记录</h1><span id="text-total" class="count"></span></div>
         <div id="text-list" class="text-list"></div>
       </section>
       <section id="panel-tasks" class="panel" aria-label="任务" hidden>
-        <div class="section-heading task-heading"><h1>传输任务</h1><button id="clear-tasks" class="button quiet small" type="button">清除已结束</button></div>
-        <p id="foreground-note" class="notice" hidden>大文件传输时请保持此页面在前台。锁屏或切换应用可能中断上传，失败后需重新发送。</p>
+        <div class="section-heading task-heading"><span class="section-index" aria-hidden="true">03</span><h1>传输任务</h1><button id="clear-tasks" class="button quiet small" type="button">清除已结束</button></div>
+        <p id="foreground-note" class="notice" hidden>传输时保持前台；中断后重新发送。</p>
         <div id="task-list" class="list"></div>
       </section>
     </div>

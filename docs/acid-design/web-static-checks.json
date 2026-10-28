@@ -1,0 +1,20 @@
+{
+  "scope": "Static HTML and script preservation plus actual current Java DesktopServer font response; visual runtime verification is recorded separately.",
+  "baseline": "d9a18b161ad1359c8daef94421d18a6474e9e531",
+  "originalIdsPreserved": 58,
+  "currentUniqueIds": 59,
+  "scriptsUnchanged": {
+    "app.js": "5186d645a4bae07aa59f5454d12621887e57452122ce200e707a3e9f6dad0fa7",
+    "sha256.js": "42d387b43f61a0e8a1c76cdb0d104e1657676a674ad15eb5b4ce3dc022141b48"
+  },
+  "font": {
+    "httpStatus": 200,
+    "contentType": "font/ttf",
+    "bytes": 170812,
+    "sha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab"
+  },
+  "assets": {
+    "index.html": "43efc3841c811597cdcc0507c5709e139531c7d4d2decb10a67a80c59c2ac61b",
+    "styles.css": "3e5d9591186ac94de3639e4937c613ccdb10595815773607786749dc47be15d0"
+  }
+}
