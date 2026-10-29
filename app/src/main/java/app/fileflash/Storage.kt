@@ -1,10 +1,14 @@
 package app.fileflash
 
+import android.app.DownloadManager
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
@@ -18,6 +22,8 @@ data class LocalFile(val uri: String, val name: String, val size: Long, val mime
 data class SavedFile(val id: String, val name: String, val size: Long, val mime: String, val uri: String, val sha256: String? = null, val hostReceived: Boolean = false, val createdAt: Long = System.currentTimeMillis(), val hiddenFromHost: Boolean = false)
 
 object Storage {
+    private val downloadsPath = "${Environment.DIRECTORY_DOWNLOADS}/FileFlash"
+
     fun describe(context: Context, uri: Uri): LocalFile {
         var name = uri.lastPathSegment ?: "文件"
         var size = -1L
@@ -40,7 +46,7 @@ object Storage {
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
             put(MediaStore.Downloads.MIME_TYPE, mime)
-            put(MediaStore.Downloads.RELATIVE_PATH, "Download/FileFlash")
+            put(MediaStore.Downloads.RELATIVE_PATH, downloadsPath)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
@@ -116,7 +122,7 @@ object Storage {
         if (cleanupPending) runCatching {
             val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
             val selection = "${MediaStore.Downloads.IS_PENDING}=1 AND ${MediaStore.Downloads.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.OWNER_PACKAGE_NAME}=?"
-            val arguments = arrayOf("Download/FileFlash/", context.packageName)
+            val arguments = arrayOf("$downloadsPath/", context.packageName)
             val projection = arrayOf(MediaStore.Downloads._ID)
             // Android 10 requires the URI flag; its provider predates the API 30 query argument.
             val pendingRows = if (Build.VERSION.SDK_INT >= 30) {
@@ -141,6 +147,26 @@ object Storage {
     fun isReadable(context: Context, file: SavedFile): Boolean = runCatching {
         context.contentResolver.openFileDescriptor(Uri.parse(file.uri), "r")?.use { it.statSize == file.size } ?: false
     }.getOrDefault(false)
+
+    fun openDownloads(context: Context) {
+        val directory = DocumentsContract.buildDocumentUri(
+            "com.android.externalstorage.documents", "primary:$downloadsPath"
+        )
+        val openDirectory = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(directory, DocumentsContract.Document.MIME_TYPE_DIR)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(openDirectory)
+        } catch (_: ActivityNotFoundException) {
+            openSystemDownloads(context)
+        } catch (_: SecurityException) {
+            openSystemDownloads(context)
+        }
+    }
+
+    private fun openSystemDownloads(context: Context) {
+        context.startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 
     fun open(context: Context, file: SavedFile) {
         val uri = if (file.uri.startsWith("content:")) Uri.parse(file.uri) else FileProvider.getUriForFile(context, "${context.packageName}.files", File(file.uri))

@@ -1,0 +1,17 @@
+{
+  "version": "0.1.10-acid.5",
+  "versionCode": 19,
+  "minSdk": 29,
+  "apk": "FileFlash-0.1.10-acid.5.apk",
+  "bytes": 22745360,
+  "sha256": "ca029fcb4b969e1ebc9f9545a6305a7744174b988f12e4decdd162ccff564959",
+  "signingCertificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "signatureVerified": true,
+  "zipCrcPassed": true,
+  "packagedWebAssetsMatchSource": true,
+  "coreTestsPassed": 102,
+  "androidModelTestsPassed": 26,
+  "explicitCleanupTestsPassed": 8,
+  "lintErrors": 0,
+  "physicalPhoneTested": false
+}

@@ -10,8 +10,8 @@ android {
         applicationId = "app.fileflash"
         minSdk = 29
         targetSdk = 37
-        versionCode = 18
-        versionName = "0.1.10-acid.4"
+        versionCode = 19
+        versionName = "0.1.10-acid.5"
     }
     buildFeatures { compose = true }
     val releaseKey = rootProject.file(".signing/fileflash.p12")

@@ -21,6 +21,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -145,7 +146,8 @@ class MainActivity : ComponentActivity() {
                     onPickFiles = { files.launch(arrayOf("*/*")) }, onUpload = { uploads.launch(arrayOf("*/*")) },
                     onConnect = { address, token -> withNetwork { withNotification { repository.connect(address, token) } } },
                     onCopy = { text -> (getSystemService(ClipboardManager::class.java)).setPrimaryClip(ClipData.newPlainText("FileFlash", text)); repository.notice("已复制") },
-                    onSettings = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName"))) }
+                    onSettings = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName"))) },
+                    onDownloads = { runCatching { Storage.openDownloads(this) }.onFailure { repository.notice("无法打开下载目录：${it.message ?: "未找到文件管理器"}") } }
                 )
             }
         }
@@ -175,7 +177,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FileFlashScreen(state: AppState, repository: TransferRepository, scanned: String?, onScanned: () -> Unit, onStart: () -> Unit, onScan: () -> Unit, onPickFiles: () -> Unit, onUpload: () -> Unit, onConnect: (String, String) -> Unit, onCopy: (String) -> Unit, onSettings: () -> Unit) {
+private fun FileFlashScreen(state: AppState, repository: TransferRepository, scanned: String?, onScanned: () -> Unit, onStart: () -> Unit, onScan: () -> Unit, onPickFiles: () -> Unit, onUpload: () -> Unit, onConnect: (String, String) -> Unit, onCopy: (String) -> Unit, onSettings: () -> Unit, onDownloads: () -> Unit) {
     var page by rememberSaveable { mutableStateOf(0) }
     var address by rememberSaveable { mutableStateOf("") }
     var token by rememberSaveable { mutableStateOf("") }
@@ -207,7 +209,12 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         }
     }
     qr?.let { value -> AlertDialog(onDismissRequest = { qr = null }, title = { Text("扫码连接") }, text = { Column(horizontalAlignment = Alignment.CenterHorizontally) { QrImage(value); Spacer(Modifier.height(12.dp)); SelectionContainer { Text(value.substringBefore("/#"), fontSize = 14.sp) } } }, confirmButton = { TextButton(onClick = { onCopy(value) }) { Text("复制链接") } }, dismissButton = { TextButton(onClick = { qr = null }) { Text("关闭") } }) }
-    if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, title = { Text("使用与权限") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("设备连接同一个 Wi-Fi。开启共享后，iPhone 用相机扫码并在 Safari 打开；另一台 Android 在“连接”中扫码。", fontSize = 14.sp); Text("使用可信局域网：HTTP 传输未加密。二维码链接授予访问权限，请仅与接收方分享。停止共享会撤销当前连接。", fontSize = 14.sp); Text("其他设备上传到本机的文件先临时存放，连接本机的第三台设备可直接下载。只有本机点击“保存”，才会保存到“下载 / FileFlash”。临时文件会按缓存规则清理，请及时转发或保存。", fontSize = 14.sp); Text("在“连接”页面点击“接收”，会将所选文件保存到本机。网页中断后需重新选择文件，从零发送；大文件传输保持前台。", fontSize = 14.sp); Text("系统可能限制长时间后台传输。网络改变后重新扫码；访客 Wi-Fi 可能禁止设备互通。", fontSize = 14.sp) } }, confirmButton = { TextButton(onClick = { showInfo = false }) { Text("关闭") } }, dismissButton = { TextButton(onClick = onSettings) { Text("系统设置") } })
+    if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, title = { Text("使用与权限") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("设备连接同一个 Wi-Fi。开启共享后，iPhone 用相机扫码并在 Safari 打开；另一台 Android 在“连接”中扫码。", fontSize = 14.sp); Text("使用可信局域网：HTTP 传输未加密。二维码链接授予访问权限，请仅与接收方分享。停止共享会撤销当前连接。", fontSize = 14.sp); Text("其他设备上传到本机的文件先临时存放，连接本机的第三台设备可直接下载。只有本机点击“保存”，才会保存到“下载 / FileFlash”。临时文件会按缓存规则清理，请及时转发或保存。", fontSize = 14.sp); Text("在“连接”页面点击“接收”，会将所选文件保存到本机。网页中断后需重新选择文件，从零发送；大文件传输保持前台。", fontSize = 14.sp); Text("系统可能限制长时间后台传输。网络改变后重新扫码；访客 Wi-Fi 可能禁止设备互通。", fontSize = 14.sp) } }, confirmButton = { TextButton(onClick = { showInfo = false }) { Text("关闭") } }, dismissButton = {
+        FlowRow {
+            TextButton(onClick = { showInfo = false; onDownloads() }) { Text("下载目录") }
+            TextButton(onClick = onSettings) { Text("系统设置") }
+        }
+    })
 }
 
 @Composable private fun HostReceiveProgress(feedback: HostReceiveFeedback) {
@@ -245,7 +252,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     val temporaryIds = state.hostTemporary.map { it.id }.toSet()
     val sharedFiles = state.hostState.files.filterNot { it.id in temporaryIds }
     discard?.let { file -> DiscardHostFileDialog(file, onDismiss = { discard = null }, onDiscard = { discard = null; repository.discardHostFile(file.id) }) }
-    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
         item { AcidPoster("01", "共享", "FILE", "FLASH.", if (state.hostRunning) "本机服务器 / 已开启" else "", compact = state.hostRunning, backdrop = acid.surface) }
         item {
             SurfaceBlock {
@@ -338,7 +345,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
             onPause = { task?.let { repository.cancelTask(it.id) } },
             onOpen = { saved?.let { repository.openSaved(it) } })
     }
-    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)) {
+    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), state = listState) {
         item { AcidPoster("02", "连接", "LINK", "UP.", when { state.remotePairingExpired -> "配对已失效"; connectionFault && state.remoteConnected -> "连接中断"; connectionFault -> "配对失败"; state.remoteConnected -> "连接至其他设备"; else -> "扫码 / 配对码" }, compact = true, disrupted = connectionFault, backdrop = acid.surface) }
         item { SurfaceBlock {
             if (connectionFault) {
@@ -420,7 +427,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     var sending by remember { mutableStateOf(false) }
     val entries = if (remote) state.remoteState.texts else state.hostState.texts
     val available = if (remote) state.remoteConnected else state.hostRunning
-    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
         item { AcidPoster("03", "文字", "TEXT", "DROP.", "文字 / 链接 / 剪贴板", compact = true) }
         item { TabRow(selectedTabIndex = if (remote) 1 else 0, containerColor = Background) { Tab(selected = !remote, onClick = { remote = false }, text = { Text("本机共享") }); Tab(selected = remote, onClick = { remote = true }, text = { Text("已连接设备") }) } }
         item { SurfaceBlock { OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("输入或粘贴文字") }, minLines = 4, maxLines = 10, modifier = Modifier.fillMaxWidth(), shape = Corner); Spacer(Modifier.height(12.dp)); Row(verticalAlignment = Alignment.CenterVertically) { if (!available) Text(if (remote) "请先连接设备" else "请先开启共享", fontSize = 13.sp, color = Muted, modifier = Modifier.weight(1f)) else Spacer(Modifier.weight(1f)); Button(onClick = { val sent = text; sending = true; repository.sendText(sent, remote) { success -> sending = false; if (success && text == sent) text = "" } }, enabled = available && text.isNotBlank() && !sending, shape = Corner) { Text(if (sending) "发送中" else "发送") } } } }
@@ -439,16 +446,16 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     val visibleTasks = state.tasks.filterNot { it.id.startsWith("save-") && it.id.removePrefix("save-") in temporaryIds }
     val hostUploads = state.hostState.uploads.filterNot { it.status == "complete" && it.id in temporaryIds }
     LaunchedEffect(Unit) { repository.refreshStorageInfo() }
-    if (cachePolicy) AlertDialog(onDismissRequest = { cachePolicy = false }, title = { Text("临时文件") }, text = { Text("无缩略图磁盘缓存。临时中转文件和闲置续传数据保留 24 小时，以 256 MB 为闲置清理目标；超过目标时优先清理闲置超过 30 分钟的数据。正在传输、下载或保存，以及保存失败待重试和旧版待保存的文件会保留。") }, confirmButton = { TextButton(onClick = { cachePolicy = false }) { Text("关闭") } })
-    if (clearCache) AlertDialog(onDismissRequest = { clearCache = false }, title = { Text("清理临时文件？") }, text = { Text("将删除未在使用的临时中转文件，以及已暂停或失败任务的续传数据。删除后其他设备无法再下载这些文件，需要重新上传。\n\n正在传输、下载或保存的文件、保存失败待重试的文件和旧版待保存文件会保留。已保存到“下载 / FileFlash”的文件不受影响。") }, confirmButton = { TextButton(onClick = { clearCache = false; repository.clearReceivedCache() }) { Text("清理") } }, dismissButton = { TextButton(onClick = { clearCache = false }) { Text("保留") } })
+    if (cachePolicy) AlertDialog(onDismissRequest = { cachePolicy = false }, title = { Text("自动清理") }, text = { Text("无缩略图磁盘缓存。临时中转文件和闲置续传数据保留 24 小时，以 256 MB 为闲置清理目标；超过目标时优先清理闲置超过 30 分钟的数据。正在传输、下载或保存，以及保存失败待重试和旧版待保存的文件会保留。") }, confirmButton = { TextButton(onClick = { cachePolicy = false }) { Text("关闭") } })
+    if (clearCache) AlertDialog(onDismissRequest = { clearCache = false }, title = { Text("清理记录与临时文件？") }, text = { Text("将停止并丢弃未完成任务，删除任务历史、已保存历史和临时文件。\n\n“下载 / FileFlash”中的已下载文件保留。") }, confirmButton = { TextButton(onClick = { clearCache = false; repository.clearReceivedCache() }) { Text("清理") } }, dismissButton = { TextButton(onClick = { clearCache = false }) { Text("保留") } })
     discard?.let { task -> AlertDialog(onDismissRequest = { discard = null }, title = { Text("丢弃未完成任务？") }, text = { Text("${task.name}\n\n删除此任务的临时数据，之后需要重新传输。原文件和已保存文件会保留。") }, confirmButton = { TextButton(onClick = { discard = null; repository.discardTask(task) }) { Text("丢弃") } }, dismissButton = { TextButton(onClick = { discard = null }) { Text("保留") } }) }
     discardHost?.let { file -> DiscardHostFileDialog(file, onDismiss = { discardHost = null }, onDiscard = { discardHost = null; repository.discardHostFile(file.id) }) }
-    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
         item { AcidPoster("04", "记录", "LOG", "BOOK.", "传输任务 / 已保存文件", compact = true) }
         item { TabRow(selectedTabIndex = tab, containerColor = Background) { Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("任务") }); Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("已保存") }) } }
         item { SurfaceBlock {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { Text("临时占用", fontSize = 12.sp, color = Muted); Text(bytes(state.temporaryBytes), fontFamily = AcidDisplay, fontSize = 32.sp); Text("可清理 ${bytes(state.reclaimableBytes)}", fontFamily = AcidMono, fontSize = 12.sp, color = Muted) }
+                Column(Modifier.weight(1f)) { Text("临时占用", fontSize = 12.sp, color = Muted); Text(bytes(state.temporaryBytes), fontFamily = AcidDisplay, fontSize = 32.sp); Text("闲置 ${bytes(state.reclaimableBytes)}", fontFamily = AcidMono, fontSize = 12.sp, color = Muted) }
                 androidx.compose.material3.IconButton(onClick = { cachePolicy = true }) { AcidIcon(R.drawable.ic_acid_info, "清理规则") }
                 OutlinedButton(onClick = { clearCache = true }, enabled = !state.cacheCleaning, shape = Corner) { AcidActionLabel(if (state.cacheCleaning) "清理中" else "清理", R.drawable.ic_acid_trash_2) }
             }
@@ -523,7 +530,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
 }
 @Composable private fun EmptyRow(text: String) {
-    Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         AcidIcon(R.drawable.ic_acid_folder_open, modifier = Modifier.size(30.dp), tint = Muted)
         Text(text, color = Muted, fontSize = 16.sp)
     }

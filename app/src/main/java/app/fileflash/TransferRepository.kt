@@ -79,6 +79,8 @@ class TransferRepository(private val context: Context) {
     private val shareQueue = Mutex()
     private val hostGeneration = AtomicLong()
     private val remoteGeneration = AtomicLong()
+    // Invalidate callbacks that were queued before an explicit history clear.
+    private val workGeneration = AtomicLong()
     private val hashing = ConcurrentHashMap<String, AtomicBoolean>()
     private val shareSources = ConcurrentHashMap<String, LocalFile>()
     private val hostSamples = mutableMapOf<String, Pair<Long, Long>>()
@@ -116,10 +118,10 @@ class TransferRepository(private val context: Context) {
             while (true) {
                 val s = server
                 val generation = hostGeneration.get()
-                if (s != null) {
+                if (s != null && !_state.value.cacheCleaning) {
                     runCatching { gson.fromJson(s.state(), ServerState::class.java) }.onSuccess { value ->
                         synchronized(lock) {
-                            if (server === s && generation == hostGeneration.get()) {
+                            if (!_state.value.cacheCleaning && server === s && generation == hostGeneration.get()) {
                                 val feedback = hostReceiveFeedback.update(generation, value, monotonicMillis())
                                 _state.update { it.copy(hostState = withHostSpeeds(value), hostReceiveFeedback = feedback) }
                                 value.files.filter { it.received }.forEach { item ->
@@ -129,7 +131,7 @@ class TransferRepository(private val context: Context) {
                             }
                         }
                     }.onFailure { failure -> synchronized(lock) {
-                        if (server === s && generation == hostGeneration.get()) {
+                        if (!_state.value.cacheCleaning && server === s && generation == hostGeneration.get()) {
                             val feedback = hostReceiveFeedback.tick(generation, monotonicMillis())
                             _state.update { it.copy(hostReceiveFeedback = feedback) }
                             notice("读取传输状态失败：${failure.message}")
@@ -137,7 +139,7 @@ class TransferRepository(private val context: Context) {
                     } }
                     updateAddresses()
                 } else synchronized(lock) {
-                    if (server == null && generation == hostGeneration.get()) {
+                    if (!_state.value.cacheCleaning && server == null && generation == hostGeneration.get()) {
                         val feedback = hostReceiveFeedback.tick(generation, monotonicMillis())
                         _state.update { it.copy(hostReceiveFeedback = feedback) }
                     }
@@ -170,9 +172,11 @@ class TransferRepository(private val context: Context) {
 
     fun notice(message: String?) { _state.update { it.copy(notice = message) } }
     fun clearPreviews() { previews.clear(); _previewEpoch.update { it + 1 } }
+    private fun acceptsWork(generation: Long) = !_state.value.cacheCleaning && generation == workGeneration.get()
 
     /** Visible rows request small images; leaving composition cancels remote preview requests. */
     suspend fun thumbnail(file: RemoteFile, remote: Boolean): Bitmap? = previewQueue.withLock {
+        if (_state.value.cacheCleaning) return@withLock null
         val bytes = if (remote) {
             val client = this.remote?.taskClient() ?: return@withLock null
             val generation = remoteGeneration.get()
@@ -206,7 +210,7 @@ class TransferRepository(private val context: Context) {
                     // Recover offline data only when no live server or save owns these files.
                     val live = server
                     if (live != null) runCatching { live.thumbnail(file.id) }.getOrNull()
-                    else if (_state.value.hostStarting || _state.value.hostStopping || activeExports.isNotEmpty()) null
+                    else if (_state.value.cacheCleaning || _state.value.hostStarting || _state.value.hostStopping || activeExports.isNotEmpty()) null
                     else previews.get("host:${file.id}:${file.size}:${file.createdAt}")
                         ?: newEngine().use { engine -> runCatching { engine.thumbnail(file.id) }.getOrNull() }
                 } }
@@ -244,10 +248,13 @@ class TransferRepository(private val context: Context) {
     }
 
     fun startHost() {
-        if (server != null || _state.value.hostStarting) return
-        if (_state.value.hostStopping) return notice("正在停止，请稍后重试")
-        val generation = hostGeneration.incrementAndGet()
-        _state.update { it.copy(hostStarting = true) }
+        val generation = synchronized(lock) {
+            if (_state.value.cacheCleaning) return notice("清理中")
+            if (server != null || _state.value.hostStarting) return
+            if (_state.value.hostStopping) return notice("正在停止，请稍后重试")
+            _state.update { it.copy(hostStarting = true) }
+            hostGeneration.incrementAndGet()
+        }
         scope.launch {
             var fresh: TransferServer? = null
             try {
@@ -328,6 +335,8 @@ class TransferRepository(private val context: Context) {
     }
 
     fun addShared(uris: List<android.net.Uri>) {
+        val generation = workGeneration.get()
+        if (!acceptsWork(generation)) return notice("清理中")
         scope.launch {
             var count = 0
             uris.forEach { uri ->
@@ -335,6 +344,7 @@ class TransferRepository(private val context: Context) {
                     runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                     val item = Storage.describe(context, uri)
                     synchronized(lock) {
+                        if (!acceptsWork(generation)) return@launch
                         if (shared.none { it.uri == item.uri }) {
                             shared.add(item)
                             prefs.edit().putString("shared", gson.toJson(shared)).apply()
@@ -349,6 +359,7 @@ class TransferRepository(private val context: Context) {
     }
 
     private fun prepareShare(s: TransferServer, file: LocalFile, generation: Long) {
+        if (_state.value.cacheCleaning || generation != hostGeneration.get()) return
         val task = NativeTask(name = file.name, size = file.size, direction = "共享", source = file)
         val cancelled = AtomicBoolean(false)
         hashing[task.id] = cancelled
@@ -417,6 +428,7 @@ class TransferRepository(private val context: Context) {
     }
 
     private fun releaseSavedCache(engine: TransferServer, snapshot: SavedFile, original: RemoteFile? = null): Long = synchronized(lock) {
+        if (_state.value.cacheCleaning) return@synchronized 0L
         val saved = _state.value.saved.firstOrNull { it.id == snapshot.id } ?: snapshot
         val privateFile = engine.receivedFile(saved.id)
         if (privateFile == null) {
@@ -437,10 +449,12 @@ class TransferRepository(private val context: Context) {
     }
 
     fun removeShared(id: String, name: String) {
+        val generation = workGeneration.get()
         scope.launch {
             runCatching {
-                _state.value.saved.firstOrNull { it.id == id && it.hostReceived }?.let { saved -> addSaved(saved.copy(hostReceived = false, hiddenFromHost = true)) }
                 synchronized(lock) {
+                    if (!acceptsWork(generation)) return@launch
+                    _state.value.saved.firstOrNull { it.id == id && it.hostReceived }?.let { saved -> addSaved(saved.copy(hostReceived = false, hiddenFromHost = true)) }
                     server?.removeFile(id)
                     val selected = shareSources.remove(id)
                     if (selected != null) shared.removeAll { it.uri == selected.uri }
@@ -488,6 +502,8 @@ class TransferRepository(private val context: Context) {
     }
 
     fun upload(uris: List<android.net.Uri>) {
+        val generation = workGeneration.get()
+        if (!acceptsWork(generation)) return notice("清理中")
         val client = remote ?: return notice("请先连接设备")
         scope.launch {
             uris.forEach { uri ->
@@ -495,17 +511,22 @@ class TransferRepository(private val context: Context) {
                     runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
                     val file = Storage.describe(context, uri)
                     val task = NativeTask(name = file.name, size = file.size, direction = "发送", source = file, endpoint = client.endpoint)
-                    addTask(task)
-                    persistTasks()
-                    runTask(task, client.taskClient())
+                    synchronized(lock) {
+                        if (!acceptsWork(generation)) return@launch
+                        addTask(task)
+                        persistTasks()
+                    }
+                    runTask(task, client.taskClient(), generation = generation)
                 }.onFailure { notice("发送失败：${it.message}") }
             }
         }
     }
 
     fun download(file: RemoteFile) {
+        val generation = workGeneration.get()
         val client = remote ?: return notice("请先连接设备")
         val (task, retrying) = synchronized(lock) {
+            if (!acceptsWork(generation)) return notice("清理中")
             val unfinished = _state.value.tasks.filter {
                 it.direction == "接收" && it.endpoint == client.endpoint && it.remote?.id == file.id && it.status !in listOf("完成", "已取消")
             }
@@ -520,24 +541,30 @@ class TransferRepository(private val context: Context) {
                 created to false
             }
         }
-        if (retrying) retry(task) else runTask(task, client.taskClient())
+        runTask(task, client.taskClient(), retrying = retrying, generation = generation)
     }
 
     fun retry(task: NativeTask) {
+        val generation = workGeneration.get()
+        if (!acceptsWork(generation)) return notice("清理中")
         if (task.direction == "保存") { saveHostFile(task.id.removePrefix("save-")); return }
         if (task.direction == "共享") {
             val s = server ?: return notice("请先开启共享")
-            task.source?.let { prepareShare(s, it, hostGeneration.get()) }
+            synchronized(lock) {
+                if (!acceptsWork(generation)) return
+                task.source?.let { prepareShare(s, it, hostGeneration.get()) }
+            }
             return
         }
         val client = remote ?: return notice("请先重新连接原设备")
         if (task.endpoint != null && task.endpoint != client.endpoint) return notice("此任务属于 ${task.endpoint}，请重新连接原设备")
         if (clients.containsKey(task.id)) return notice("正在暂停，请稍后重试")
-        runTask(task, client.taskClient(), retrying = true)
+        runTask(task, client.taskClient(), retrying = true, generation = generation)
     }
 
-    private fun runTask(task: NativeTask, client: NativeClient, retrying: Boolean = false) {
+    private fun runTask(task: NativeTask, client: NativeClient, retrying: Boolean = false, generation: Long) {
         synchronized(maintenanceLock) {
+            if (!acceptsWork(generation)) { client.cancel(); return }
             if (clients.putIfAbsent(task.id, client) != null) return
             hostWake.trySend(Unit)
         }
@@ -603,6 +630,7 @@ class TransferRepository(private val context: Context) {
     // Keep publication identity independently of visible recency, so restart never re-exports old files.
     private fun addSaved(file: SavedFile) {
         synchronized(persistenceLock) {
+            if (_state.value.cacheCleaning) return
             // A stale crash journal must never undo a later, durably recorded “remove from sharing”.
             val previous = _state.value.saved.firstOrNull { it.id == file.id }
             val durable = if (previous?.hiddenFromHost == true) file.copy(hiddenFromHost = true, hostReceived = false) else file
@@ -622,6 +650,7 @@ class TransferRepository(private val context: Context) {
     fun saveHostFile(id: String) {
         val cancelled = AtomicBoolean(false)
         synchronized(lock) {
+            if (_state.value.cacheCleaning) return notice("清理中")
             if (_state.value.hostStarting || _state.value.hostStopping) return notice("请等待共享状态更新后重试")
             if (activeExports.isNotEmpty()) return notice("正在保存另一个文件，请稍后重试")
             activeExports[id] = cancelled
@@ -685,24 +714,88 @@ class TransferRepository(private val context: Context) {
         }
     }
     fun retrySaving() {
+        val generation = workGeneration.get()
         scope.launch {
-            if (_state.value.hostStopping || _state.value.hostStarting) return@launch notice("请等待共享状态更新后重试")
-            Storage.recoverPublications(context, cleanupPending = false).forEach { recovered -> runCatching { addSaved(recovered) } }
-            // Only retry a save the host previously requested; never save all relay files.
-            _state.value.tasks.firstOrNull { it.direction == "保存" && it.status in listOf("失败", "已暂停", "已取消") }
-                ?.let { saveHostFile(it.id.removePrefix("save-")) }
+            synchronized(lock) {
+                if (!acceptsWork(generation)) return@launch
+                if (_state.value.hostStopping || _state.value.hostStarting) return@launch notice("请等待共享状态更新后重试")
+                Storage.recoverPublications(context, cleanupPending = false).forEach { recovered -> runCatching { addSaved(recovered) } }
+                // Only retry a save the host previously requested; never save all relay files.
+                _state.value.tasks.firstOrNull { it.direction == "保存" && it.status in listOf("失败", "已暂停", "已取消") }
+                    ?.let { saveHostFile(it.id.removePrefix("save-")) }
+            }
         }
     }
     fun clearReceivedCache() {
-        scope.launch {
-            if (_state.value.hostStopping || _state.value.hostStarting) return@launch notice("请等待共享状态更新后重试")
-            if (_state.value.cacheCleaning) return@launch
+        val unfinishedShares = synchronized(maintenanceLock) { synchronized(lock) {
+            if (_state.value.hostStopping || _state.value.hostStarting) return notice("请等待共享状态更新后重试")
+            if (_state.value.cacheCleaning) return
             _state.update { it.copy(cacheCleaning = true) }
-            runCatching {
+            workGeneration.incrementAndGet()
+            hostGeneration.incrementAndGet()
+            val publishedUris = shareSources.values.map { it.uri }.toSet()
+            _state.value.tasks.filter { it.direction == "共享" && it.status != "完成" }
+                .mapNotNull { it.source?.uri }.filterNot { it in publishedUris }.toSet()
+        } }
+        scope.launch {
+            try {
                 clearPreviews()
-                maintainStorage(force = true, explicit = true)
-            }.onSuccess { notice("已清理 ${bytes(it)}；已保存文件和进行中的传输保留") }.onFailure { notice("清理失败：${it.message}") }
-            _state.update { it.copy(cacheCleaning = false) }
+                clients.values.forEach { it.cancel() }
+                hashing.values.forEach { it.set(true) }
+                activeExports.values.forEach { it.set(true) }
+                // Their finally blocks need both repository locks, so drain without holding either.
+                val drained = withTimeoutOrNull(15_000L) {
+                    while (clients.isNotEmpty() || hashing.isNotEmpty() || activeExports.isNotEmpty() || _state.value.hostStopping) delay(25)
+                    true
+                } == true
+                if (!drained) throw IOException("任务仍在停止，请稍后重试")
+                synchronized(maintenanceLock) { synchronized(lock) {
+                    if (_state.value.hostStarting || _state.value.hostStopping) throw IOException("请等待共享状态更新后重试")
+                    val current = server
+                    val engine = current ?: newEngine()
+                    try {
+                        engine.clearTransferHistory(15_000L)
+                        _state.value.tasks.forEach { discardLocalTask(it) }
+                        // This app-private folder also contains orphaned/verified download parts.
+                        File(context.filesDir, "client-parts").listFiles().orEmpty().forEach { file ->
+                            if (file.isFile && !file.delete()) throw IOException("临时文件仍被占用，请稍后重试")
+                        }
+                        if (!context.getSharedPreferences("client-resume", Context.MODE_PRIVATE).edit().clear().commit()) throw IOException("无法清理断点记录")
+                        // Only unfinished, app-owned MediaStore rows are removed. Completed rows stay.
+                        Storage.recoverPublications(context, cleanupPending = true)
+                        if (!context.getSharedPreferences("publication-journal", Context.MODE_PRIVATE).edit().clear().commit()) throw IOException("无法清理保存记录")
+                        shared.removeAll { it.uri in unfinishedShares }
+                        synchronized(persistenceLock) {
+                            if (!prefs.edit().putString("tasks", "[]").putString("saved", "[]")
+                                    .putString("shared", gson.toJson(shared)).commit()) throw IOException("无法清理历史记录")
+                            _state.update { it.copy(tasks = emptyList(), saved = emptyList()) }
+                        }
+                        synchronized(reboundShares) { reboundShares.clear() }
+                        hostSamples.clear()
+                        val snapshot = gson.fromJson(engine.state(), ServerState::class.java)
+                        hostReceiveFeedback.start(hostGeneration.get(), snapshot, monotonicMillis())
+                        _state.update { it.copy(hostState = if (current != null) snapshot else ServerState(),
+                            hostTemporary = emptyList(), hostReceiveFeedback = null, temporaryBytes = 0, reclaimableBytes = 0) }
+                        lastMaintenance = 0
+                    } finally { if (current == null) engine.close() }
+                } }
+                notice("已清理")
+            } catch (failure: Exception) {
+                synchronized(lock) {
+                    // A failed clear also changed the poll generation. Keep later receive feedback alive.
+                    val baseline = server?.let { runCatching { gson.fromJson(it.state(), ServerState::class.java) }.getOrNull() } ?: ServerState()
+                    hostReceiveFeedback.start(hostGeneration.get(), baseline, monotonicMillis())
+                    hostSamples.clear()
+                    _state.update { it.copy(hostReceiveFeedback = null) }
+                }
+                notice("清理失败：${failure.message}")
+            } finally {
+                clearPreviews()
+                _state.update { it.copy(cacheCleaning = false) }
+                hostWake.trySend(Unit); remoteWake.trySend(Unit)
+                notificationChanged?.invoke()
+                stopServiceIfIdle()
+            }
         }
     }
 
@@ -757,7 +850,7 @@ class TransferRepository(private val context: Context) {
     private fun maintainStorage(force: Boolean = false, explicit: Boolean = false): Long = synchronized(maintenanceLock) {
         val now = System.currentTimeMillis()
         if (!force && now - lastMaintenance < 60_000) return@synchronized 0L
-        if (_state.value.hostStarting || _state.value.hostStopping) return@synchronized 0L
+        if (_state.value.cacheCleaning || _state.value.hostStarting || _state.value.hostStopping) return@synchronized 0L
         lastMaintenance = now
         var removed = 0L
         val dir = File(context.filesDir, "client-parts")
@@ -821,7 +914,7 @@ class TransferRepository(private val context: Context) {
         removed
     }
     fun stopEverything(reason: String? = null) { clients.values.forEach { it.cancel() }; activeExports.values.forEach { it.set(true) }; disconnect(); stopHost(); if (reason != null) notice(reason) }
-    fun hasWork(): Boolean = server != null || _state.value.hostStarting || _state.value.hostStopping || clients.isNotEmpty() || activeExports.isNotEmpty()
+    fun hasWork(): Boolean = server != null || _state.value.cacheCleaning || _state.value.hostStarting || _state.value.hostStopping || clients.isNotEmpty() || activeExports.isNotEmpty()
     private fun stopServiceIfIdle() { if (!hasWork()) serviceStopped?.invoke() }
     fun openSaved(file: SavedFile) { runCatching { Storage.open(context, file) }.onFailure { notice("无法打开：${it.message}") } }
 

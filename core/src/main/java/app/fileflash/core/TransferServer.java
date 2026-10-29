@@ -23,6 +23,7 @@ public final class TransferServer implements AutoCloseable {
     private static final long SESSION_LIFETIME = 24 * 60 * 60_000L;
     private static final long IDLE_BUDGET_GRACE = 30 * 60_000L;
     private static final int RECEIPT_LIMIT = 256;
+    private static final String CLEAR_MARKER = "clear-transfer-history.pending";
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setStrictness(Strictness.STRICT).create();
     private static final SecureRandom RANDOM = new SecureRandom();
     private final File root, incoming, received;
@@ -43,6 +44,12 @@ public final class TransferServer implements AutoCloseable {
     private final Map<String, Rate> pairingRates = new LinkedHashMap<>();
     private volatile String pairToken = randomToken(24);
     private volatile boolean running;
+    private final Object transferMaintenance=new Object();
+    private final Set<Socket> transferSockets=new HashSet<>();
+    private int transferOperations;
+    private boolean clearingTransfers,cleanupRunning;
+    private boolean hasTransferBarrier;
+    private long transferBarrierAt;
 
     public TransferServer(File storageDir, AssetProvider assets) throws IOException {
         this.root = storageDir.getCanonicalFile();
@@ -68,10 +75,14 @@ public final class TransferServer implements AutoCloseable {
         sessions.clear(); tickets.clear();
         pairToken = randomToken(24);
         http.stop();
-        for(Upload upload:uploads.values())if(upload.restartOnly&&!isComplete(upload)) {
-            requestCancel(upload);
-            if(upload.activeRequests==0)synchronized(upload) {try {discardRestartOnly(upload);}catch(IOException ignored){ }}
-        }
+        boolean cleanup;
+        synchronized(transferMaintenance) {cleanup=!clearingTransfers;if(cleanup)transferOperations++;}
+        try {
+            if(cleanup)for(Upload upload:uploads.values())if(upload.restartOnly&&!isComplete(upload)) {
+                requestCancel(upload);
+                if(upload.activeRequests==0)synchronized(upload) {try {discardRestartOnly(upload);}catch(IOException ignored){ }}
+            }
+        } finally {if(cleanup)endTransferOperation(null);}
         for (Download d : downloads.values()) synchronized (d) {
             if (d.status.equals("downloading")) { d.status="failed"; d.error="服务已停止"; }
         }
@@ -87,6 +98,11 @@ public final class TransferServer implements AutoCloseable {
 
     /** Trusted host preview; HTTP callers must first pass ordinary session authentication. */
     public byte[] thumbnail(String id) throws IOException {
+        beginTransferOperation(null);
+        try {return createThumbnail(id);}finally {endTransferOperation(null);}
+    }
+
+    private byte[] createThumbnail(String id) throws IOException {
         ShareFile file=getFile(id);
         ThumbnailProvider provider=thumbnailProvider;
         if(provider==null || !FileKind.classify(file.name,file.mime).isMedia())return null;
@@ -136,7 +152,12 @@ public final class TransferServer implements AutoCloseable {
         if(!validId(id)||size<0||(sha256!=null&&!isSha(sha256)))throw new IllegalArgumentException("Invalid saved file metadata");
         ShareFile file=new ShareFile();file.id=id;file.name=safeName(name);file.size=size;file.mime=safeMime(mime);
         file.sha256=sha256==null?null:sha256.toLowerCase(Locale.ROOT);file.createdAt=createdAt;file.received=true;
-        file.source=Objects.requireNonNull(source);files.put(id,file);return file;
+        file.source=Objects.requireNonNull(source);
+        synchronized(transferMaintenance) {
+            if(clearingTransfers)throw new IllegalStateException("正在清理，请稍后重试");
+            files.put(id,file);
+        }
+        return file;
     }
 
     /** Convenience for desktop tests and locally received files; reopening uses a long seek. */
@@ -162,9 +183,17 @@ public final class TransferServer implements AutoCloseable {
     /**
      * Pins the private source while the host explicitly saves it. Save intent is durable before
      * returning the file: a failed export remains protected for retry, including after restart.
-     * Close the claim in a finally block; only releaseReceivedCache may discard its verified copy.
+     * Close the claim in a finally block. The copy survives automatic cleanup until exported or
+     * explicitly discarded by clearTransferHistory.
      */
     public ReceivedSave claimReceivedSave(String id) throws IOException {
+        beginTransferOperation(null);
+        boolean accepted=false;
+        try {ReceivedSave claim=claimSave(id);accepted=true;return claim;}
+        finally {if(!accepted)endTransferOperation(null);}
+    }
+
+    private ReceivedSave claimSave(String id) throws IOException {
         Upload upload=uploads.get(id);
         if(upload==null)throw new IOException("临时文件已清理，请重新上传");
         synchronized(upload.lifecycle) {
@@ -182,21 +211,27 @@ public final class TransferServer implements AutoCloseable {
                     try {persist(upload);}catch(IOException failure){upload.saveRequested=false;throw failure;}
                     ShareFile file=files.get(id);if(file!=null)file.temporary=false;
                 }
-                claimed=true;return new ReceivedSave(upload,source);
+                claimed=true;return new ReceivedSave(this,upload,source);
             }
         } finally {if(!claimed)synchronized(upload.lifecycle){upload.activeRequests--;}}
     }
 
     public static final class ReceivedSave implements Closeable {
+        private final TransferServer owner;
         private Upload upload;
         private final File source;
-        private ReceivedSave(Upload upload,File source){this.upload=upload;this.source=source;}
+        private ReceivedSave(TransferServer owner,Upload upload,File source){this.owner=owner;this.upload=upload;this.source=source;}
         public File file(){return source;}
-        @Override public synchronized void close(){if(upload!=null){synchronized(upload.lifecycle){upload.activeRequests--;}upload=null;}}
+        @Override public synchronized void close(){if(upload!=null){synchronized(upload.lifecycle){upload.activeRequests--;}upload=null;owner.endTransferOperation(null);}}
     }
 
     /** Deletes only this engine's private received copy. SAF sources and exported copies are untouched. */
     public void removeReceivedFile(String id) throws IOException {
+        beginTransferOperation(null);
+        try {removeReceivedFileInternal(id);}finally {endTransferOperation(null);}
+    }
+
+    private void removeReceivedFileInternal(String id) throws IOException {
         Upload upload=uploads.get(id);
         if(upload==null) throw new IOException("该文件不属于接收缓存");
         synchronized(upload.lifecycle) {
@@ -231,6 +266,11 @@ public final class TransferServer implements AutoCloseable {
      * Removing the share before cleanup keeps it hidden; cleanup never recreates a removed share.
      */
     public void releaseReceivedCache(String id,Source replacement) throws IOException {
+        beginTransferOperation(null);
+        try {releaseReceivedCacheInternal(id,replacement);}finally {endTransferOperation(null);}
+    }
+
+    private void releaseReceivedCacheInternal(String id,Source replacement) throws IOException {
         Objects.requireNonNull(replacement);
         Upload upload=uploads.get(id);
         if(upload==null)throw new IOException("该文件不属于接收缓存");
@@ -260,6 +300,11 @@ public final class TransferServer implements AutoCloseable {
      * Recent/resuming transfers may exceed the budget; explicitly retained user files are never swept.
      */
     public long cleanupStaleUploads(long maxIdleMs,long budgetBytes,long currentTime) throws IOException {
+        beginTransferOperation(null);
+        try {return cleanupStaleUploadsInternal(maxIdleMs,budgetBytes,currentTime);}finally {endTransferOperation(null);}
+    }
+
+    private long cleanupStaleUploadsInternal(long maxIdleMs,long budgetBytes,long currentTime) throws IOException {
         if(maxIdleMs<0||budgetBytes<0||currentTime<0)throw new IllegalArgumentException("Invalid cleanup policy");
         List<Upload> candidates=new ArrayList<>();long idleBytes=0,reclaimed=0;
         for(Upload upload:uploads.values()) {
@@ -287,6 +332,99 @@ public final class TransferServer implements AutoCloseable {
             } finally {synchronized(upload.lifecycle){upload.maintenance=false;}}
         }
         reclaimed=saturatedAdd(reclaimed,cleanupOrphanUploadBytes());pruneReceipts();return reclaimed;
+    }
+
+    /**
+     * Explicit host cleanup: cancel transfers, wait for all private readers/writers, then discard
+     * their bytes and history. Original shared sources, exported files, text and pairing survive.
+     * A timeout leaves pinned data intact. If deletion fails, transfer admission stays closed until
+     * this operation is retried; a durable marker completes the cleanup after process restart.
+     */
+    public long clearTransferHistory(long timeoutMs) throws IOException {
+        if(timeoutMs<0)throw new IllegalArgumentException("Invalid cleanup timeout");
+        List<Socket> sockets;
+        synchronized(transferMaintenance) {
+            if(cleanupRunning)throw new IOException("正在清理，请稍后重试");
+            cleanupRunning=true;clearingTransfers=true;
+            sockets=new ArrayList<>(transferSockets);
+        }
+        boolean durable=Files.exists(new File(root,CLEAR_MARKER).toPath(),LinkOption.NOFOLLOW_LINKS);
+        boolean complete=false;
+        try {
+            for(Upload upload:uploads.values())requestCancel(upload);
+            for(Download download:downloads.values())cancelDownload(download.id);
+            // Includes requests still allocating an upload, before it has an Upload.activeSocket.
+            for(Socket socket:sockets)try{socket.close();}catch(IOException ignored){ }
+            long started=System.nanoTime();
+            synchronized(transferMaintenance) {
+                while(transferOperations>0) {
+                    long elapsed=TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started);
+                    long remaining=timeoutMs-elapsed;
+                    if(remaining<=0)throw new IOException("文件仍在使用，请稍后重试清理");
+                    try {transferMaintenance.wait(remaining);}
+                    catch(InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();throw new IOException("清理已中断，请重试",interrupted);
+                    }
+                }
+            }
+            File marker=ownedFile(root,CLEAR_MARKER);
+            // Once this marker exists, admission must stay closed even if sync or deletion fails.
+            try(FileOutputStream output=new FileOutputStream(marker)) {
+                durable=true;output.write(1);output.getFD().sync();
+            }
+            long reclaimed=clearPrivateTransferFiles();
+            files.entrySet().removeIf(entry->entry.getValue().received);
+            uploads.clear();downloads.clear();tickets.clear();
+            Files.deleteIfExists(marker.toPath());
+            complete=true;return reclaimed;
+        } finally {
+            synchronized(transferMaintenance) {
+                cleanupRunning=false;
+                // A queued or partially received HTTP header from the old generation must not
+                // create a new task after the clearing gate reopens.
+                transferBarrierAt=System.nanoTime();hasTransferBarrier=true;
+                if(complete||!durable)clearingTransfers=false;
+                transferMaintenance.notifyAll();
+            }
+        }
+    }
+
+    private void beginTransferOperation(Socket socket) throws IOException {
+        beginTransferOperation(socket,0);
+    }
+
+    private void beginTransferOperation(Socket socket,long acceptedAt) throws IOException {
+        synchronized(transferMaintenance) {
+            if(clearingTransfers)throw error(503,"cleanup_in_progress","正在清理，请稍后重试");
+            if(socket!=null&&hasTransferBarrier&&acceptedAt-transferBarrierAt<0)
+                throw error(409,"transfer_cleared","任务已清理，请重新发送");
+            transferOperations++;
+            if(socket!=null)transferSockets.add(socket);
+        }
+    }
+
+    private void endTransferOperation(Socket socket) {
+        synchronized(transferMaintenance) {
+            transferOperations--;
+            if(socket!=null)transferSockets.remove(socket);
+            transferMaintenance.notifyAll();
+        }
+    }
+
+    /** Never opens a Source or follows links: only immediate engine-owned cache entries are removed. */
+    private long clearPrivateTransferFiles() throws IOException {
+        long reclaimed=0;
+        for(File directory:Arrays.asList(incoming,received)) {
+            File[] entries=directory.listFiles();
+            if(entries==null)throw new IOException("接收缓存无法读取，请稍后重试");
+            for(File entry:entries) {
+                Path path=entry.toPath();
+                if(Files.isDirectory(path,LinkOption.NOFOLLOW_LINKS))throw new IOException("接收缓存包含异常目录，无法清理");
+                long bytes=Files.isSymbolicLink(path)?0:Files.size(path);
+                Files.delete(path);reclaimed=saturatedAdd(reclaimed,bytes);
+            }
+        }
+        return reclaimed;
     }
 
     /** Current idle temporary bytes eligible for an explicit clear; excludes active and saved files. */
@@ -334,6 +472,10 @@ public final class TransferServer implements AutoCloseable {
         tickets.entrySet().removeIf(e -> e.getValue().clientId.equals(id));
     }
     public void cancelUpload(String id) throws IOException {
+        beginTransferOperation(null);
+        try {cancelUploadInternal(id);}finally {endTransferOperation(null);}
+    }
+    private void cancelUploadInternal(String id) throws IOException {
         Upload upload=uploads.get(id);
         if (upload == null) return;
         requestCancel(upload);
@@ -372,6 +514,15 @@ public final class TransferServer implements AutoCloseable {
     }
 
     private void handle(HttpServer.Request request,HttpServer.Response response) throws Exception {
+        String path=request.path;
+        boolean transfer=path.equals("/api/uploads")||path.startsWith("/api/uploads/")
+                ||path.equals("/api/shortcuts/files")||path.startsWith("/api/files/")
+                ||path.startsWith("/api/downloads/")||path.startsWith("/api/downloads-cancel/");
+        if(transfer)beginTransferOperation(request.socket,request.trace.acceptedAt);
+        try {handleRequest(request,response);}finally {if(transfer)endTransferOperation(request.socket);}
+    }
+
+    private void handleRequest(HttpServer.Request request,HttpServer.Response response) throws Exception {
         checkHostAndOrigin(request);
         String path=request.path;
         if (path.equals("/api/pair")) {
@@ -1049,6 +1200,10 @@ public final class TransferServer implements AutoCloseable {
     }
 
     private void recover() throws IOException {
+        File marker=ownedFile(root,CLEAR_MARKER);
+        if(Files.exists(marker.toPath(),LinkOption.NOFOLLOW_LINKS)) {
+            clearPrivateTransferFiles();Files.delete(marker.toPath());
+        }
         File[] records=incoming.listFiles((dir,name)->name.endsWith(".json"));
         if(records==null)throw new IOException("无法读取接收缓存目录");
         for(File record:records) {

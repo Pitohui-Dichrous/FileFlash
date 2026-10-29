@@ -1,0 +1,10 @@
+{
+  "credentialProtectedFilesRestoredAndVerified": 13,
+  "deviceProtectedFilesRestoredAndVerified": 0,
+  "originalPublicFilesPreservedAndVerified": 22,
+  "originalApkRestored": true,
+  "displaySettingsRestored": true,
+  "testPublicFixtureRemoved": true,
+  "temporaryStagingFileRemoved": true,
+  "dedicatedEmulatorStopped": true
+}

@@ -1,0 +1,70 @@
+{
+  "version": "0.1.10-acid.5",
+  "apkSha256": "ca029fcb4b969e1ebc9f9545a6305a7744174b988f12e4decdd162ccff564959",
+  "checkedAtUtc": "2026-10-29T10:53:30.110690+00:00",
+  "device": {
+    "type": "Android emulator",
+    "sdk": 34
+  },
+  "actualAppScenarios": {
+    "explicitSave": {
+      "completedViaUi": true,
+      "savedHistoryCreated": true,
+      "completedTaskCreated": true,
+      "publicFilesCreated": 1
+    },
+    "activeIncomingUpload": {
+      "declaredBytes": 67108864,
+      "bodyPrefixSentBytes": 65536,
+      "cancelledByUiClear": true,
+      "serverAndPairingRetained": true
+    },
+    "activeNativeDownload": {
+      "startedViaUiReceive": true,
+      "bytesObservedBeforeClear": 131072,
+      "senderObservedConnectionClose": true,
+      "cancelledByUiClear": true
+    },
+    "historyAndPrivateStorage": {
+      "savedHistoryBefore": 1,
+      "nativeTaskHistoryBefore": 3,
+      "seededPausedNativeDownload": true,
+      "seededVerifiedUnsavedNativeDownload": true,
+      "seededIncompleteServerUpload": true,
+      "seededSaveFailureProtectedBytes": true,
+      "nativeTasksAfter": 0,
+      "savedHistoryAfter": 0,
+      "serverUploadHistoryAfter": 0,
+      "serverDownloadHistoryAfter": 0,
+      "receivedSharesAfter": 0,
+      "privateTransferFilesAfter": 0,
+      "resumeAndPublicationLedgersEmpty": true
+    },
+    "publicDownloads": {
+      "existingFilesProtected": 22,
+      "allFilesHashChecked": 23,
+      "allHashesUnchangedAfterClearAndRestart": true
+    },
+    "restart": {
+      "forceStopAndRelaunchAfterClear": true,
+      "taskAndSavedHistoryRemainEmpty": true,
+      "privateTransferFilesRemainEmpty": true,
+      "publicFileHashesRemainUnchanged": true
+    }
+  },
+  "additionalCoreIntegrationCoverage": {
+    "focusedTests": 8,
+    "failures": 0,
+    "activeServerDownloadCancellation": true,
+    "queuedOldHttpRequestRejected": true,
+    "waitForSaveAndThumbnailReaders": true,
+    "timeoutPreservesPinnedBytes": true,
+    "deletionFailureCanBeRetried": true,
+    "interruptedClearRecovery": true,
+    "originalSharedSourcesAndTextPreserved": true
+  },
+  "limits": [
+    "Runtime checks were performed on an emulator; no physical phone was used.",
+    "The paused/verified native tasks and server save-failure data were seeded persisted fixtures. Both live network cancellation scenarios and the public Save action used real application behavior."
+  ]
+}

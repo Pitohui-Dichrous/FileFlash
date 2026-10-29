@@ -1,0 +1,66 @@
+{
+  "version": "0.1.10-acid.5",
+  "apiLevel": 34,
+  "normalDisplay": {
+    "widthPx": 1080,
+    "heightPx": 2340,
+    "densityDpi": 420,
+    "fontScale": 1.0
+  },
+  "fitContentSwipe": [
+    {
+      "page": "shared",
+      "positionsUnchanged": true,
+      "scrollableContainers": 0
+    },
+    {
+      "page": "connection",
+      "positionsUnchanged": true,
+      "scrollableContainers": 0
+    },
+    {
+      "page": "text",
+      "positionsUnchanged": true,
+      "scrollableContainers": 0
+    },
+    {
+      "page": "history",
+      "positionsUnchanged": true,
+      "scrollableContainers": 0
+    }
+  ],
+  "downloadsDirectory": {
+    "directFolderOpened": true,
+    "breadcrumbs": [
+      "Download",
+      "FileFlash"
+    ],
+    "fallbackInjection": "Temporarily disabled directory activity; restored default state",
+    "fallbackAction": "android.intent.action.VIEW_DOWNLOADS",
+    "fallbackOpened": true,
+    "permissionsAdded": false
+  },
+  "narrowDialog": {
+    "widthDp": 320,
+    "fontScale": 1.3,
+    "allThreeButtonsVisible": true,
+    "buttonOverlap": false,
+    "bodyScrollable": true
+  },
+  "originalPublicFileCount": 22,
+  "narrowConnection": {
+    "widthDp": 320,
+    "fontScale": 1.3,
+    "darkTheme": true,
+    "requiresRealScrolling": true,
+    "lastConnectActionFullyVisibleAboveNavigation": true,
+    "checkedOnFinalApk": true
+  },
+  "screenshots": [
+    "connection-fit.png",
+    "text-fit.png",
+    "help-narrow-large.png",
+    "connection-narrow-large-dark.png"
+  ],
+  "scope": "Layout and directory behavior checked before the final automatic-cleanup label-only update; no geometry changes in that update."
+}
