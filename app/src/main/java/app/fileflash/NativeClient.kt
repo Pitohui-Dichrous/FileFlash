@@ -82,6 +82,36 @@ class NativeClient(private val context: Context, val endpoint: String, private v
     fun state(): ServerState = gson.fromJson(request("GET", "/api/state"), ServerState::class.java)
     fun sendText(text: String) { request("POST", "/api/texts", mapOf("text" to text)) }
 
+    /** A separate task client fetches only a bounded preview, never the original file. */
+    fun thumbnail(fileId: String): ByteArray? {
+        if (!fileId.matches(Regex("[A-Za-z0-9_-]{1,128}"))) return null
+        checkCancel()
+        val c = connection("GET", "/api/files/$fileId/thumbnail")
+        c.connectTimeout = 5_000; c.readTimeout = 5_000
+        try {
+            val code = c.responseCode
+            if (code == 429) throw HttpFailure(429, "缩略图繁忙")
+            if (code != 200 || c.contentType?.substringBefore(';') != "image/jpeg") return null
+            val limit = 256 * 1024
+            if (c.contentLengthLong > limit) return null
+            return c.inputStream.use { input ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                while (true) {
+                    checkCancel()
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (output.size() + count > limit) return null
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray().takeIf { it.isNotEmpty() }
+            }
+        } finally {
+            c.disconnect()
+            if (currentConnection === c) currentConnection = null
+        }
+    }
+
     fun upload(file: LocalFile, progress: (Long, String) -> Unit) {
         val cacheKey = sha256((endpoint + "|" + file.uri + "|" + file.size).toByteArray())
         var resume = prefs.getString(cacheKey, null)?.let { runCatching { gson.fromJson(it, UploadResume::class.java) }.getOrNull() }

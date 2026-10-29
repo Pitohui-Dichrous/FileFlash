@@ -1,0 +1,204 @@
+{
+  "date": "2026-10-29",
+  "version": "0.1.10-acid.4",
+  "versionCode": 18,
+  "environment": "Dedicated rooted API34 emulator running final signed APK as host and native loopback receiver; desktop HTTP fixture senders and root-agent browser over adb forward, no physical phone test",
+  "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459",
+  "installedApkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459",
+  "passed": true,
+  "tests": [
+    {
+      "name": "Installed APK SHA256 equals the final signed artifact",
+      "passed": true
+    },
+    {
+      "name": "Actual Android host returns bounded JPEG previews for PNG, JPEG, MP4 and MOV",
+      "passed": true
+    },
+    {
+      "name": "EXIF orientation6 yields portrait128x256 thumbnail from landscape640x320 JPEG",
+      "passed": true
+    },
+    {
+      "name": "Broken image, PDF, NCM and unknown file return204 without a full original download",
+      "passed": true
+    },
+    {
+      "name": "Receive list renders real image and video previews in light and dark themes",
+      "passed": true
+    },
+    {
+      "name": "Original document, audio and unknown SVG artwork renders with intended viewport boundaries",
+      "passed": true
+    },
+    {
+      "name": "Host temporary relay list renders image and video previews",
+      "passed": true
+    },
+    {
+      "name": "320dp width with1.3fontscale remains usable in light and dark themes",
+      "passed": true
+    },
+    {
+      "name": "Native receive saves89922originalbytes with matchingSHA256 and completion feedback",
+      "passed": true
+    },
+    {
+      "name": "Completed local file preview remains after manual remote disconnect",
+      "passed": true
+    },
+    {
+      "name": "Thumbnail request does not create a download record",
+      "passed": true
+    },
+    {
+      "name": "Only owned fixtures and owned saved MediaStore row removed; original preferences restored",
+      "passed": true
+    },
+    {
+      "name": "Own server, forward and emulator stopped; display settings restored; no physical device operated",
+      "passed": true
+    }
+  ],
+  "apiPreviewChecks": [
+    {
+      "name": "preview-150eda8c-package.bin",
+      "status": 204,
+      "bytes": 0,
+      "sourceBytes": 33
+    },
+    {
+      "name": "preview-150eda8c-music.ncm",
+      "status": 204,
+      "bytes": 0,
+      "sourceBytes": 31
+    },
+    {
+      "name": "preview-150eda8c-document.pdf",
+      "status": 204,
+      "bytes": 0,
+      "sourceBytes": 43
+    },
+    {
+      "name": "preview-150eda8c-broken.jpg",
+      "status": 204,
+      "bytes": 0,
+      "sourceBytes": 20
+    },
+    {
+      "name": "preview-150eda8c-original.png",
+      "status": 200,
+      "bytes": 11891,
+      "sourceBytes": 89922,
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "ebae57da0481de8f92851ccb88a103bd571cf37dc404a902265eafd9fec95dc1"
+    },
+    {
+      "name": "preview-150eda8c-video.mp4",
+      "status": 200,
+      "bytes": 1145,
+      "sourceBytes": 1533,
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "5c2a1e93dda0588084e532cc13ef0b8e9721a5289df3912d36295aa9a0e78c2c"
+    },
+    {
+      "name": "preview-150eda8c-movie.mov",
+      "status": 200,
+      "bytes": 1145,
+      "sourceBytes": 1480,
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "5c2a1e93dda0588084e532cc13ef0b8e9721a5289df3912d36295aa9a0e78c2c"
+    },
+    {
+      "name": "preview-150eda8c-portrait-exif.jpg",
+      "status": 200,
+      "bytes": 1065,
+      "sourceBytes": 4094,
+      "size": [
+        128,
+        256
+      ],
+      "sha256": "80fafff9dd04a5caa2304dff0527ac43f0c0fb2364b6b7a5e149207d5159ddd8"
+    }
+  ],
+  "downloadCheck": {
+    "nativeReceiveSha256Matches": true,
+    "bytes": 89922,
+    "thumbnailDoesNotCreateDownloadRecord": true,
+    "downloadRecordCount": 1
+  },
+  "layouts": [
+    "1080x2340 /420dpi /font1.0",
+    "840x1820 /420dpi /font1.3 (320dp wide)"
+  ],
+  "screenshots": [
+    {
+      "path": "native-screenshots/light-receive-top.png",
+      "sha256": "8884287111d6c37425e176845cdaf4cc5985a66c638dc5eea2e7d7398d615bd5",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/dark-media.png",
+      "sha256": "e429801bd5fd5446659f7cc07375b791ca097321e6db20abafade81df0486dc3",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/light-categories.png",
+      "sha256": "67327682d5c26339411767ee3def21dcd15f290d09d33deff6da9932db6c2f25",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/dark-categories.png",
+      "sha256": "3c8809aa02fed71850cec885bf8402655d9fb4cbc2d0a9736028b2e7e70e7964",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/dark-receive-complete.png",
+      "sha256": "5c92b8abed0aec75cecdd41fd3bf2c2e0416402b18ffcfdb71318fdab03290be",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/narrow-large-receive.png",
+      "sha256": "b35512db6028207371ad9c6c88caae7ee6e8de3feab5eaf8d9830d881a210c22",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/narrow-large-light.png",
+      "sha256": "f7cccc64da5de9c04e2f495e55dd8d9fa2ec006bdb886b91f6082f544a476c4d",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/local-saved-after-disconnect.png",
+      "sha256": "ad3b7feb7e3138d6db9dd2d6ace1f298e3e6581bd7fe618a706ff5285f299569",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    },
+    {
+      "path": "native-screenshots/light-relay-media.png",
+      "sha256": "9d224a04f30d8397457cf060891160fa781f3ec9b2ad0f07fd4949e075dfdbfa",
+      "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459"
+    }
+  ],
+  "fixtureNotes": "Original user-provided FF.png plus synthetic EXIF JPEG, embedded valid generated64x64 H264 MP4/MOV clips, malformed JPEG and category-only PDF/NCM/BIN data. No physical iOS/HEIC playback claimed.",
+  "cleanup": {
+    "privateFixturesRemoved": true,
+    "publicSavedIdsRemoved": [
+      "8b2a46d4-e891-4d33-bcfc-f4f280d6279a"
+    ],
+    "originalPreferencesRestored": true,
+    "forwardRemoved": true,
+    "displaySettingsRestored": true,
+    "taskOwnedEmulatorClosed": true,
+    "testServerStopped": true,
+    "physicalDeviceOperated": false
+  },
+  "corrections": "Initial candidate exposed AndroidSVG commands outside root viewport. Final APK clips its preview container to the original SVG viewport; source SVG files remain byte-identical."
+}

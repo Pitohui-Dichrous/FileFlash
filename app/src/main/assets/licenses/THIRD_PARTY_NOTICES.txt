@@ -5,6 +5,7 @@ AndroidX Activity, Core, Lifecycle and Compose — The Android Open Source Proje
 Gson 2.13.1 — Google Inc.
 ZXing core 3.5.3 — ZXing authors
 ZXing Android Embedded 4.3.0 — ZXing Android Embedded authors
+AndroidSVG 1.4 — Paul LeBeau
 
 These libraries are licensed under Apache License, Version 2.0.
 The full license is included in this directory as Apache-2.0.txt.
@@ -15,3 +16,4 @@ https://android.googlesource.com/platform/frameworks/support/
 https://github.com/google/gson
 https://github.com/zxing/zxing
 https://github.com/journeyapps/zxing-android-embedded
+https://github.com/BigBadaboom/androidsvg

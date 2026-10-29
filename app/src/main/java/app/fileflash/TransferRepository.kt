@@ -2,6 +2,8 @@ package app.fileflash
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
@@ -22,6 +24,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -63,6 +68,10 @@ class TransferRepository(private val context: Context) {
     private val persistenceLock = Any()
     private val _state = MutableStateFlow(AppState())
     val state = _state.asStateFlow()
+    private val previews = MediaThumbnails(context)
+    private val previewQueue = Mutex()
+    private val _previewEpoch = MutableStateFlow(0L)
+    val previewEpoch = _previewEpoch.asStateFlow()
     @Volatile private var server: TransferServer? = null
     @Volatile private var remote: NativeClient? = null
     private val clients = ConcurrentHashMap<String, NativeClient>()
@@ -160,6 +169,66 @@ class TransferRepository(private val context: Context) {
     }
 
     fun notice(message: String?) { _state.update { it.copy(notice = message) } }
+    fun clearPreviews() { previews.clear(); _previewEpoch.update { it + 1 } }
+
+    /** Visible rows request small images; leaving composition cancels remote preview requests. */
+    suspend fun thumbnail(file: RemoteFile, remote: Boolean): Bitmap? = previewQueue.withLock {
+        val bytes = if (remote) {
+            val client = this.remote?.taskClient() ?: return@withLock null
+            val generation = remoteGeneration.get()
+            val key = "remote:$generation:${file.id}:${file.size}:${file.createdAt}"
+            var result: ByteArray? = null
+            for (attempt in 0..2) {
+                try {
+                    result = suspendCancellableCoroutine { continuation ->
+                        val worker = scope.launch {
+                            val data = runCatching { previews.cached(key) { client.thumbnail(file.id) } }
+                            if (continuation.isActive) continuation.resumeWith(data)
+                        }
+                        continuation.invokeOnCancellation { client.cancel(); worker.cancel() }
+                    }
+                    break
+                } catch (failure: HttpFailure) {
+                    if (failure.statusCode != 429 || attempt == 2) return@withLock null
+                    delay(300L * (attempt + 1))
+                }
+            }
+            if (generation != remoteGeneration.get()) return@withLock null
+            result
+        } else withContext(Dispatchers.IO) {
+            val saved = _state.value.saved.firstOrNull { it.id == file.id }
+            if (saved != null) previews.cached("saved:${saved.id}:${saved.uri}:${saved.size}") {
+                previews.create(Uri.parse(saved.uri), saved.name, saved.mime)
+            } else {
+                val current = server
+                if (current != null) runCatching { current.thumbnail(file.id) }.getOrNull()
+                else synchronized(maintenanceLock) { synchronized(lock) {
+                    // Recover offline data only when no live server or save owns these files.
+                    val live = server
+                    if (live != null) runCatching { live.thumbnail(file.id) }.getOrNull()
+                    else if (_state.value.hostStarting || _state.value.hostStopping || activeExports.isNotEmpty()) null
+                    else previews.get("host:${file.id}:${file.size}:${file.createdAt}")
+                        ?: newEngine().use { engine -> runCatching { engine.thumbnail(file.id) }.getOrNull() }
+                } }
+            }
+        }
+        withContext(Dispatchers.IO) {
+            coroutineContext.ensureActive()
+            bytes?.let(MediaThumbnails::decode)
+        }
+    }
+
+    private fun configurePreviews(engine: TransferServer): TransferServer {
+        engine.setThumbnailProvider { file ->
+            previews.cached("host:${file.id}:${file.size}:${file.createdAt}") {
+                val uri = shareSources[file.id]?.let { Uri.parse(it.uri) }
+                    ?: _state.value.saved.firstOrNull { it.id == file.id }?.let { Uri.parse(it.uri) }
+                    ?: engine.receivedFile(file.id)?.let(Uri::fromFile)
+                uri?.let { previews.create(it, file.name, file.mime) }
+            }
+        }
+        return engine
+    }
     private fun monotonicMillis() = System.nanoTime() / 1_000_000L
 
     private fun withHostSpeeds(value: ServerState): ServerState {
@@ -188,7 +257,7 @@ class TransferRepository(private val context: Context) {
                     delay(50)
                 }
                 if (generation != hostGeneration.get()) return@launch
-                val created = synchronized(lock) { TransferServer(File(context.filesDir, "server")) { path -> runCatching { context.assets.open("web/$path") }.getOrNull() } }
+                val created = synchronized(lock) { newEngine() }
                 fresh = created
                 restoreSavedShares(created)
                 val baseline = gson.fromJson(created.state(), ServerState::class.java)
@@ -205,6 +274,7 @@ class TransferRepository(private val context: Context) {
                 synchronized(lock) {
                     if (generation != hostGeneration.get()) { created.stop(); return@launch }
                     server = created
+                    clearPreviews()
                     hostWake.trySend(Unit)
                     _state.update { it.copy(hostRunning = true, hostStarting = false) }
                     shared.toList().forEach { prepareShare(created, it, generation) }
@@ -219,6 +289,7 @@ class TransferRepository(private val context: Context) {
     }
 
     fun stopHost() {
+        clearPreviews()
         val generation = hostGeneration.incrementAndGet()
         hashing.values.forEach { it.set(true) }
         val old = synchronized(lock) {
@@ -233,6 +304,7 @@ class TransferRepository(private val context: Context) {
         if (old != null) scope.launch {
             runCatching { old.stop() }
             _state.update { it.copy(hostStopping = false) }
+            clearPreviews()
             stopServiceIfIdle()
         } else stopServiceIfIdle()
     }
@@ -399,6 +471,7 @@ class TransferRepository(private val context: Context) {
             runCatching { NativeClient.pair(context, address, token) }.onSuccess { (client, endpoint) ->
                 if (generation != remoteGeneration.get()) { client.cancel(); return@onSuccess }
                 remote?.let { previous -> val revoke = previous.taskClient(); previous.cancel(); scope.launch { runCatching { revoke.request("DELETE", "/api/session") } } }; remote = client
+                clearPreviews()
                 remoteWake.trySend(Unit); hostWake.trySend(Unit)
                 _state.update { it.copy(remoteConnecting = false, remoteConnected = true, remoteAddress = endpoint, remoteError = null, remoteState = ServerState(), remotePairingExpired = false) }
             }.onFailure { failure -> if (generation == remoteGeneration.get()) _state.update { s -> s.copy(remoteConnecting = false, remoteError = networkError(failure), remotePairingExpired = failure.isPairingExpiredFailure()) } }
@@ -406,6 +479,7 @@ class TransferRepository(private val context: Context) {
     }
 
     fun disconnect() {
+        clearPreviews()
         remoteGeneration.incrementAndGet()
         remote?.let { previous -> val revoke = previous.taskClient(); previous.cancel(); scope.launch { runCatching { revoke.request("DELETE", "/api/session") } } }; remote = null
         clients.values.forEach { it.cancel() }
@@ -625,6 +699,7 @@ class TransferRepository(private val context: Context) {
             if (_state.value.cacheCleaning) return@launch
             _state.update { it.copy(cacheCleaning = true) }
             runCatching {
+                clearPreviews()
                 maintainStorage(force = true, explicit = true)
             }.onSuccess { notice("已清理 ${bytes(it)}；已保存文件和进行中的传输保留") }.onFailure { notice("清理失败：${it.message}") }
             _state.update { it.copy(cacheCleaning = false) }
@@ -658,7 +733,7 @@ class TransferRepository(private val context: Context) {
         }
     }
 
-    private fun newEngine() = TransferServer(File(context.filesDir, "server")) { path -> runCatching { context.assets.open("web/$path") }.getOrNull() }
+    private fun newEngine() = configurePreviews(TransferServer(File(context.filesDir, "server")) { path -> runCatching { context.assets.open("web/$path") }.getOrNull() })
 
     fun refreshStorageInfo() { scope.launch { runCatching { maintainStorage(force = true) } } }
 

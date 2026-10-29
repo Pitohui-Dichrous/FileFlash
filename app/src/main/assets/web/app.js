@@ -23,6 +23,17 @@
   let filesSignature = '', textsSignature = '', storageWarned = false, renderPending = false;
   let toastTimer, seenTexts = new Set();
   const taskRows = new Map(), textRows = new Map();
+  const filePreviews = new Map(), PREVIEW_LIMIT = 256 * 1024, PREVIEW_VISIBLE_LIMIT = 16;
+  let previewActive = 0, previewEnabled = false, previewSession = session;
+  const previewObserver = typeof IntersectionObserver === 'function' ? new IntersectionObserver(changes => {
+    changes.forEach(change => {
+      const entry = filePreviews.get(change.target);
+      if (!entry) return;
+      entry.visible = previewEnabled && change.isIntersecting;
+      if (!entry.visible) releasePreview(entry);
+    });
+    pumpPreviews();
+  }, { threshold: 0.01 }) : null;
   const pickerEvents = [], pickerAttempts = new Map(), pickerStartedAt = performance.now();
   function pickerFiles(files) {
     let total = 0;
@@ -169,8 +180,103 @@
     } finally { clearTimeout(timeout); if (outer) outer.removeEventListener('abort', abort); }
   }
   function uploadHeaders(t) { return t.resumeKey ? { 'X-Upload-Key':t.resumeKey } : {}; }
+  function fileKind(file) {
+    const name = String(file.name || '').trim().toLowerCase(), dot = name.lastIndexOf('.');
+    const extension = dot < 0 ? '' : name.slice(dot + 1), mime = String(file.mime || '').split(';')[0].trim().toLowerCase();
+    if (/^(jpg|jpeg|jpe|png|gif|webp|bmp|heic|heif|avif|tif|tiff|dng|ico|svg)$/.test(extension)) return 'image';
+    if (/^(mp4|m4v|mov|qt|webm|mkv|avi|3gp|3g2|mpeg|mpg|mpe|ts|m2ts|mts|wmv|flv)$/.test(extension)) return 'video';
+    if (/^(pdf|xml|txt|text|md|markdown|csv|tsv|json|yaml|yml|log|rtf|doc|docx|odt|xls|xlsx|ods|ppt|pptx|odp|epub|html|htm|xhtml|ini|conf|toml)$/.test(extension)) return 'document';
+    if (/^(mp3|wav|wave|ncm|flac|aac|m4a|m4b|ogg|oga|opus|wma|aiff|aif|amr|ape|alac|mid|midi)$/.test(extension)) return 'audio';
+    if (mime.startsWith('image/')) return 'image';
+    if (mime.startsWith('video/')) return 'video';
+    if (mime.startsWith('audio/')) return 'audio';
+    if (mime.startsWith('text/') || mime.endsWith('+xml') || mime.endsWith('+json') || /^application\/(pdf|xml|json|rtf|msword|vnd\.openxmlformats-officedocument\..*|vnd\.oasis\.opendocument\..*|vnd\.ms-excel|vnd\.ms-powerpoint|epub\+zip)$/.test(mime)) return 'document';
+    return 'other';
+  }
+  function filePreview(file) {
+    const kind = fileKind(file), mark = node('span', 'file-icon'), picture = node('img', 'file-picture');
+    const asset = kind === 'document' ? 'documents-folder' : kind === 'audio' ? 'audio-eighth-note' : 'unknown-file';
+    picture.src = '/file-icons/' + asset + '.svg'; picture.alt = {image:'图片',video:'视频',audio:'音频',document:'文档',other:'文件'}[kind];
+    picture.width = 80; picture.height = 80; picture.decoding = 'async'; mark.append(picture);
+    if (kind === 'video') { const badge = node('span','file-video'); badge.setAttribute('aria-hidden','true'); badge.append(icon('play')); mark.append(badge); }
+    if (kind === 'image' || kind === 'video') {
+      const entry = { file, mark, picture, fallback:picture.src, visible:false, controller:null, url:null, failed:false, retries:0, timer:null };
+      filePreviews.set(mark, entry);
+      picture.addEventListener('error', () => { if (entry.url) { releasePreview(entry); entry.failed = true; } });
+      if (previewEnabled && previewObserver) previewObserver.observe(mark);
+    }
+    return mark;
+  }
+  function releasePreview(entry) {
+    if (entry.controller) entry.controller.abort();
+    clearTimeout(entry.timer); entry.timer = null;
+    if (entry.url) { URL.revokeObjectURL(entry.url); entry.url = null; }
+    entry.picture.src = entry.fallback; entry.mark.classList.toggle('media-ready',false);
+  }
+  function clearPreviews() {
+    if (previewObserver) previewObserver.disconnect();
+    filePreviews.forEach(releasePreview); filePreviews.clear();
+  }
+  function syncPreviews() {
+    if (previewSession !== session) { clearPreviews(); filesSignature = ''; previewSession = session; }
+    const enabled = !!session && connection === 'connected' && !disconnecting && tab === 'files' && !document.hidden;
+    if (enabled === previewEnabled) return;
+    previewEnabled = enabled;
+    if (!enabled) {
+      if (previewObserver) previewObserver.disconnect();
+      filePreviews.forEach(entry => { entry.visible = false; releasePreview(entry); });
+    } else if (previewObserver) filePreviews.forEach(entry => { entry.failed = false; entry.retries = 0; previewObserver.observe(entry.mark); });
+  }
+  async function thumbnailBlob(response) {
+    if (!/^image\/jpeg(?:;|$)/i.test(response.headers.get('Content-Type') || '')) return null;
+    if (Number(response.headers.get('Content-Length')) > PREVIEW_LIMIT) return null;
+    const reader = response.body && response.body.getReader();
+    if (!reader) return null;
+    let size = 0; const chunks = [];
+    try {
+      while (true) {
+        const {done,value} = await reader.read(); if (done) break;
+        size += value.byteLength;
+        if (size > PREVIEW_LIMIT) { await reader.cancel(); return null; }
+        chunks.push(value);
+      }
+      return size ? new Blob(chunks,{type:'image/jpeg'}) : null;
+    } finally { reader.releaseLock(); }
+  }
+  function pumpPreviews() {
+    if (!previewEnabled || previewActive || Array.from(filePreviews.values()).filter(item => item.url).length >= PREVIEW_VISIBLE_LIMIT) return;
+    const entry = Array.from(filePreviews.values()).find(item => item.visible && !item.controller && !item.url && !item.failed && !item.timer);
+    if (!entry) return;
+    const requestSession = session, controller = new AbortController();
+    entry.controller = controller; previewActive++;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); },15000);
+    (async () => {
+      try {
+        const response = await fetch('/api/files/' + encodeURIComponent(entry.file.id) + '/thumbnail', {
+          headers:{Authorization:'Bearer ' + requestSession}, signal:controller.signal, cache:'no-store', redirect:'error', credentials:'omit'
+        });
+        if (controller.signal.aborted || !previewEnabled || !entry.visible || session !== requestSession || filePreviews.get(entry.mark) !== entry) return;
+        if (response.status === 429 && entry.retries < 2) {
+          entry.retries++; entry.timer = setTimeout(() => { entry.timer = null; pumpPreviews(); },350 * entry.retries); return;
+        }
+        if (response.status !== 200) { entry.failed = true; return; }
+        const blob = await thumbnailBlob(response);
+        if (!blob) { entry.failed = true; return; }
+        if (controller.signal.aborted || !previewEnabled || !entry.visible || session !== requestSession || filePreviews.get(entry.mark) !== entry) return;
+        entry.url = URL.createObjectURL(blob); entry.picture.src = entry.url; entry.mark.classList.toggle('media-ready',true);
+      } catch (_) { if (!controller.signal.aborted) entry.failed = true; }
+      finally {
+        clearTimeout(timeout); controller.abort(); entry.controller = null; previewActive--;
+        // A timeout must not turn into an endless background retry loop.
+        if (timedOut && entry.visible && previewEnabled) entry.failed = true;
+        pumpPreviews();
+      }
+    })();
+  }
   function setConnection(next, reason) {
     connection = next;
+    syncPreviews();
     const labels = { connected:'已连接', disconnected:'连接中断', disconnecting:'正在断开', pairing:'正在连接', restoring:'正在连接', failed:'配对失败', expired:'配对已失效', unpaired:'未连接' };
     document.body.classList.toggle('connection-fault', !disconnecting && ['failed','disconnected','expired'].includes(next));
     $('connection-label').textContent = labels[next] || '未连接';
@@ -233,15 +339,17 @@
     document.querySelectorAll('[data-tab]').forEach(el => { const active = el.dataset.tab === value; el.classList.toggle('active',active); if(active) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current'); });
     ['files','texts','tasks'].forEach(id => { $('panel-'+id).hidden = id!==value; });
     if(value === 'texts') { server.texts.forEach(t => seenTexts.add(t.id)); $('text-badge').hidden = true; }
+    syncPreviews();
   }
   function renderFiles() {
     const signature = JSON.stringify(server.files);
     $('file-count').textContent = server.files.length ? server.files.length + ' 个文件' : '';
     if(signature === filesSignature) return; filesSignature = signature;
+    clearPreviews();
     const list = $('file-list'); list.replaceChildren();
     if(!server.files.length) { list.append(node('p','empty','暂无可接收文件')); return; }
     server.files.slice().reverse().forEach(file => {
-      const row=node('div','file-row'),mark=node('span','file-icon'),info=node('div','file-info');mark.append(icon('file'));
+      const row=node('div','file-row'),mark=filePreview(file),info=node('div','file-info');
       info.append(node('div','file-name',file.name),node('div','file-meta',[bytes(file.size),file.temporary?'临时中转':null,date(file.createdAt)].filter(Boolean).join(' · ')));
       const download=button('下载','file-action',async () => {
         download.disabled=true; download.textContent='准备中';
@@ -461,10 +569,11 @@
     catch(err){message($('text-error'),errorText(err));}
     finally{textSending=false;$('send-text').disabled=connection!=='connected'||!$('text-input').value.length;}
   });
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session)refresh(false);});
+  document.addEventListener('visibilitychange',()=>{syncPreviews();if(!document.hidden&&session)refresh(false);});
   window.addEventListener('online',()=>{if(session)refresh(false);});
   window.addEventListener('offline',()=>{if(session && !disconnecting)setConnection('disconnected');});
-  window.addEventListener('pagehide',()=>{if(current)interruptTask(current);persistTasks();});
+  window.addEventListener('pagehide',()=>{previewEnabled=false;filePreviews.forEach(entry=>{entry.visible=false;releasePreview(entry);});if(previewObserver)previewObserver.disconnect();if(current)interruptTask(current);persistTasks();});
+  window.addEventListener('pageshow',()=>{syncPreviews();});
   window.addEventListener('beforeunload',event=>{if(tasks.some(t=>t.status==='uploading')){event.preventDefault();event.returnValue='';}});
   $('device-name').value=(saved&&saved.name)||(/iPhone/i.test(navigator.userAgent)?'iPhone':/iPad/i.test(navigator.userAgent)?'iPad':/Android/i.test(navigator.userAgent)?'Android':'浏览器');
   persistTasks();renderTasks();$('send-text').disabled=true;

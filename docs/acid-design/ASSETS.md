@@ -132,3 +132,9 @@ Anton 与 Barlow Condensed Black 的字样对照仅用于字体选择，未将�
 | `app/src/main/assets/licenses/Anton-OFL.txt` | https://raw.githubusercontent.com/google/fonts/main/ofl/anton/OFL.txt | 4484 | `ee67e6ee22790b7929f1a3769ca2801d565c64b5a9096942c1adf5596de9c9e4` |
 
 未打包 Marathon、Kurppa Hosk 或其他产品的商业图像、标志和品牌素材。它们若用于研究，仅作为构图参考，与本表中的可再分发资产分开。
+
+## 文件预览图标（ACID.04）
+
+`assets/web/file-icons/` 中的 `documents-folder.svg`、`audio-eighth-note.svg`、`unknown-file.svg` 由用户提供，按原始字节直接打包。SVG 内保留 Phosphor Icons 的 MIT 许可与来源说明。网页使用原始 SVG，Android 使用 AndroidSVG 1.4 直接绘制矢量；不重绘、不改色、不转为位图资源。
+
+AndroidSVG 来源：https://github.com/BigBadaboom/androidsvg ，Apache 2.0 许可随应用打包。

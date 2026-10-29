@@ -17,6 +17,7 @@ import static app.fileflash.core.HttpServer.HttpError;
 /** Android-independent, bounded-memory LAN transfer engine. All timestamps use epoch milliseconds. */
 public final class TransferServer implements AutoCloseable {
     public static final int CHUNK_SIZE = 2 * 1024 * 1024;
+    public static final int MAX_THUMBNAIL_BYTES = 256 * 1024;
     private static final int JSON_LIMIT = 1024 * 1024;
     private static final long TICKET_LIFETIME = 10 * 60_000L;
     private static final long SESSION_LIFETIME = 24 * 60 * 60_000L;
@@ -35,6 +36,9 @@ public final class TransferServer implements AutoCloseable {
     // Keep a worker available for state, cancellation and pairing during large transfers.
     private final Semaphore downloadSlots=new Semaphore(3);
     private final Semaphore uploadSlots=new Semaphore(2);
+    private final Semaphore thumbnailSlots=new Semaphore(1);
+    private final Set<String> activeThumbnails=ConcurrentHashMap.newKeySet();
+    private volatile ThumbnailProvider thumbnailProvider;
     private final Deque<TextMessage> texts = new ArrayDeque<>();
     private final Map<String, Rate> pairingRates = new LinkedHashMap<>();
     private volatile String pairToken = randomToken(24);
@@ -77,6 +81,40 @@ public final class TransferServer implements AutoCloseable {
     public int getPort() { return http.port(); }
     public String getPairToken() { return pairToken; }
     public boolean isRunning() { return running; }
+
+    /** The platform owns decoding and its bounded memory cache. No thumbnail is persisted here. */
+    public void setThumbnailProvider(ThumbnailProvider provider) { thumbnailProvider=provider; }
+
+    /** Trusted host preview; HTTP callers must first pass ordinary session authentication. */
+    public byte[] thumbnail(String id) throws IOException {
+        ShareFile file=getFile(id);
+        ThumbnailProvider provider=thumbnailProvider;
+        if(provider==null || !FileKind.classify(file.name,file.mime).isMedia())return null;
+        if(!thumbnailSlots.tryAcquire())throw error(429,"thumbnail_busy","缩略图正在生成");
+        Upload upload=uploads.get(id);boolean claimed=false;
+        try {
+            if(upload!=null)synchronized(upload.lifecycle) {
+                if(upload.maintenance||uploads.get(id)!=upload)throw error(404,"file_expired","临时文件已清理，请重新上传");
+                upload.activeRequests++;claimed=true;
+            }
+            synchronized(file) {
+                if(files.get(id)!=file)throw error(404,"file_not_found","文件已移除");
+                activeThumbnails.add(id);
+            }
+            // Decode without metadata monitors: state polling and transfer progress remain responsive.
+            byte[] jpeg;
+            try {jpeg=provider.create(file);}catch(IOException unsupported){return null;}
+            if(files.get(id)!=file)throw error(404,"file_not_found","文件已移除");
+            if(jpeg==null || jpeg.length<4 || jpeg.length>MAX_THUMBNAIL_BYTES
+                    || (jpeg[0]&255)!=255 || (jpeg[1]&255)!=216
+                    || (jpeg[jpeg.length-2]&255)!=255 || (jpeg[jpeg.length-1]&255)!=217)return null;
+            return jpeg;
+        } finally {
+            synchronized(file){activeThumbnails.remove(id);}
+            if(claimed)synchronized(upload.lifecycle){upload.activeRequests--;}
+            thumbnailSlots.release();
+        }
+    }
 
     public ShareFile share(String name, long size, String mime, Source source) {
         if (size < 0) throw new IllegalArgumentException("File size must be known");
@@ -200,6 +238,7 @@ public final class TransferServer implements AutoCloseable {
             ShareFile file=files.get(id);
             Object guard=file==null?upload:file;
             synchronized(guard) {
+                if(activeThumbnails.contains(id))throw new IOException("缩略图正在读取，请稍后清理");
                 if("released".equals(upload.status)) {if(file!=null){file.source=replacement;file.temporary=false;}return;}
                 if(!"complete".equals(upload.status)||upload.finalName==null)throw new IOException("文件尚未接收完成");
                 for(Download d:downloads.values())if(id.equals(d.fileId)&&"downloading".equals(d.status))throw new IOException("文件正在发送，请稍后清理");
@@ -364,6 +403,12 @@ public final class TransferServer implements AutoCloseable {
         if (path.startsWith("/api/uploads/")) { uploadRoute(request,response,session);return; }
         if (path.startsWith("/api/files/")) {
             String[] parts=path.split("/");
+            if (parts.length==5 && parts[4].equals("thumbnail") && path.equals("/api/files/"+parts[3]+"/thumbnail")) {
+                requireMethod(request,"GET");
+                byte[] jpeg=thumbnail(parts[3]);
+                if(!running || !valid(session))throw error(401,"session_expired","连接已失效，请重新配对");
+                response.bytes(jpeg==null?204:200,"image/jpeg",jpeg==null?new byte[0]:jpeg,null);return;
+            }
             if (parts.length==5 && parts[4].equals("ticket")) {
                 requireMethod(request,"POST"); getFile(parts[3]);
                 if (tickets.size()>256) tickets.entrySet().removeIf(e -> e.getValue().expiresAt < now());
@@ -942,14 +987,14 @@ public final class TransferServer implements AutoCloseable {
         requireDownloadMethod(request);
         boolean shortcut=request.path.equals("/FileFlash.shortcut");
         String name=request.path.equals("/")?"index.html":request.path.substring(1);
-        if(!shortcut&&!Arrays.asList("index.html","app.js","sha256.js","styles.css","fonts/anton-regular.ttf","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest").contains(name)) throw error(404,"not_found","页面不存在");
+        if(!shortcut&&!Arrays.asList("index.html","app.js","sha256.js","styles.css","fonts/anton-regular.ttf","icon.svg","icon.png","apple-touch-icon.png","favicon.ico","manifest.webmanifest","file-icons/documents-folder.svg","file-icons/audio-eighth-note.svg","file-icons/unknown-file.svg").contains(name)) throw error(404,"not_found","页面不存在");
         try(InputStream input=assets.open(name)) {
             if(input==null) throw error(404,"not_found","页面不存在");
             ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count;
             while((count=input.read(buffer))>=0) {if(out.size()+count>2*1024*1024)throw error(500,"asset_too_large","页面资源过大");out.write(buffer,0,count);}
             if(shortcut&&out.size()==0)throw error(404,"not_found","快捷指令尚未就绪");
             String mime=shortcut?"application/x-apple-shortcut":name.endsWith(".ttf")?"font/ttf":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webmanifest")?"application/manifest+json":"text/html; charset=utf-8";
-            Map<String,String> headers=new LinkedHashMap<>();headers.put("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+            Map<String,String> headers=new LinkedHashMap<>();headers.put("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
             if(shortcut)headers.put("Content-Disposition","attachment; filename=\"FileFlash.shortcut\"");
             if(request.method.equals("HEAD")) {response.begin(200,mime,out.size(),headers);response.flush();}
             else response.bytes(200,mime,out.toByteArray(),headers);

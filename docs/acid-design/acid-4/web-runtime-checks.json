@@ -1,0 +1,75 @@
+{
+  "version": "0.1.10-acid.4",
+  "apkSha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459",
+  "environment": "Actual in-app Chromium browser paired with signed APK in API34 emulator through localhost ADB forward",
+  "viewportWidths": [
+    1280,
+    390,
+    320
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "mediaPreviews": [
+    {
+      "type": "PNG",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "type": "MP4",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "type": "MOV",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "type": "EXIF JPEG",
+      "width": 128,
+      "height": 256
+    }
+  ],
+  "checks": [
+    "All three original SVG assets loaded visibly and retained their supplied colors",
+    "Actual image and video previews loaded from the Android thumbnail provider",
+    "Invalid JPEG used the unknown-file SVG without a broken image marker",
+    "Video previews retained the existing vector play marker",
+    "Long names and download buttons remained readable with no horizontal overflow",
+    "Switching files to texts removed every blob image from the DOM",
+    "Returning to files loaded visible previews again",
+    "Native media previews were fitted and image EXIF orientation remained portrait",
+    "Manual disconnect returned to the unpaired state"
+  ],
+  "observedNetworkWindow": {
+    "thumbnailRequests": 5,
+    "originalDownloadRequests": 0,
+    "eventLogTruncated": false
+  },
+  "blobImagesAfterLeaving": 0,
+  "javascriptErrors": [],
+  "screenshots": [
+    {
+      "path": "web-screenshots/desktop-light.png",
+      "sha256": "04b913221313eb278dfd41a1e9ce41260f8bf75f27dcceff6c61e48cf4b8ea4d"
+    },
+    {
+      "path": "web-screenshots/mobile-dark.png",
+      "sha256": "e36fc114aa78eefd8815bf532a51b5d2c1ee6d5d707ee28c4f0f94a6307fab8a"
+    },
+    {
+      "path": "web-screenshots/narrow-light.png",
+      "sha256": "4847e75236176b83024252f820d60be84517237a1ec78f5811ebbce4a95c8206"
+    }
+  ],
+  "cleanup": {
+    "testSessionDisconnected": true,
+    "mediaEmulationRestored": true,
+    "viewportRestored": true,
+    "temporaryBrowserTabClosed": true
+  },
+  "physicalIPhoneTested": false
+}

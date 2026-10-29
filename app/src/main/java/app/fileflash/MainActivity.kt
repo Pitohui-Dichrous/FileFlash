@@ -297,12 +297,12 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         }
         if (state.hostTemporary.isNotEmpty()) {
             item { SectionTitle("临时文件", state.hostTemporary.size.toString()) }
-            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discard = file }) }
+            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, repository, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discard = file }) }
         }
         if (state.hostRunning) {
             if (sharedFiles.isNotEmpty() || state.hostTemporary.isEmpty()) item { SectionTitle("共享文件", sharedFiles.size.toString()) }
             if (sharedFiles.isEmpty() && state.hostTemporary.isEmpty()) item { EmptyRow("暂无共享文件") }
-            items(sharedFiles, key = { "share-${it.id}" }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.received) " · 已保存" else ""}") { TextButton(onClick = { repository.removeShared(file.id, file.name) }) { Text("移除") } } }
+            items(sharedFiles, key = { "share-${it.id}" }) { file -> FileRow(file.name, "${bytes(file.size)}${if (file.received) " · 已保存" else ""}", preview = { FilePreview(file, repository, remote = false) }) { TextButton(onClick = { repository.removeShared(file.id, file.name) }) { Text("移除") } } }
             if (state.hostState.clients.isNotEmpty()) {
                 item { SectionTitle("已配对设备", state.hostState.clients.size.toString()) }
                 items(state.hostState.clients, key = { "client-${it.id}" }) { client -> FileRow(client.name, "已配对") { TextButton(onClick = { repository.revoke(client.id) }) { Text("断开") } } }
@@ -332,7 +332,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
     @Composable fun receive(file: RemoteFile, task: NativeTask?) {
         val saved = task?.let { current -> state.saved.firstOrNull { it.id == current.id } ?: current.savedUri?.let { SavedFile(current.id, current.name, current.size, file.mime, it) } }
-        ReceiveFileRow(file, task, saved, state.remoteConnected && state.remoteAddress == task?.endpoint.orEmpty().ifBlank { endpoint },
+        ReceiveFileRow(file, repository, task, saved, state.remoteConnected && state.remoteAddress == task?.endpoint.orEmpty().ifBlank { endpoint },
             onReceive = { focus(file) { repository.download(file) } },
             onRetry = { task?.let { focus(file) { repository.retry(it) } } },
             onPause = { task?.let { repository.cancelTask(it.id) } },
@@ -376,10 +376,16 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
 }
 
-@Composable private fun ReceiveFileRow(file: RemoteFile, task: NativeTask?, saved: SavedFile?, connected: Boolean, onReceive: () -> Unit, onRetry: () -> Unit, onPause: () -> Unit, onOpen: () -> Unit) {
+@Composable private fun ReceiveFileRow(file: RemoteFile, repository: TransferRepository, task: NativeTask?, saved: SavedFile?, connected: Boolean, onReceive: () -> Unit, onRetry: () -> Unit, onPause: () -> Unit, onOpen: () -> Unit) {
     SurfaceBlock {
-        Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text("${bytes(file.size)}${if (file.temporary) " · 临时中转" else ""}", fontSize = 13.sp, color = Muted, modifier = Modifier.padding(top = 4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val previewFile = saved?.let { RemoteFile(id = it.id, name = it.name, size = it.size, mime = it.mime, createdAt = it.createdAt) } ?: file
+            FilePreview(previewFile, repository, remote = saved == null)
+            Column(Modifier.weight(1f)) {
+                Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("${bytes(file.size)}${if (file.temporary) " · 临时中转" else ""}", fontSize = 13.sp, color = Muted, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
         if (task != null) {
             val label = when (task.status) { "等待" -> "排队中"; "传输中" -> "下载中"; "完成" -> "已保存"; "失败" -> "下载失败"; else -> task.status }
             Text(label, fontSize = 14.sp, color = if (task.status == "失败") Error else if (task.status == "完成") Blue else Ink,
@@ -450,10 +456,10 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         if (tab == 1) {
             item { Text("下载 / FileFlash", color = Muted, fontSize = 13.sp) }
             if (state.saved.isEmpty()) item { EmptyRow("暂无已保存文件") }
-            items(state.saved, key = { it.id }) { saved -> FileRow(saved.name, bytes(saved.size)) { TextButton(onClick = { repository.openSaved(saved) }) { AcidActionLabel("打开", R.drawable.ic_acid_external_link) } } }
+            items(state.saved, key = { it.id }) { saved -> FileRow(saved.name, bytes(saved.size), preview = { FilePreview(RemoteFile(id = saved.id, name = saved.name, size = saved.size, mime = saved.mime, createdAt = saved.createdAt), repository, remote = false) }) { TextButton(onClick = { repository.openSaved(saved) }) { AcidActionLabel("打开", R.drawable.ic_acid_external_link) } } }
         } else {
             if (state.hostTemporary.isNotEmpty()) item { SectionTitle("临时文件", state.hostTemporary.size.toString()) }
-            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discardHost = file }) }
+            items(state.hostTemporary, key = { "temp-${it.id}" }) { file -> HostTemporaryRow(file, repository, state.tasks.firstOrNull { it.id == "save-${file.id}" }, state.hostRunning, onSave = { repository.saveHostFile(file.id) }, onDiscard = { discardHost = file }) }
             if (state.hostTemporary.isEmpty() && visibleTasks.isEmpty() && hostUploads.isEmpty() && state.hostState.downloads.isEmpty()) item { EmptyRow("暂无传输任务") }
             items(visibleTasks, key = { "task-${it.id}" }) { task ->
                 TaskRow(task.name, task.direction, task.transferred, task.size, task.status, task.speed, task.error) {
@@ -473,13 +479,18 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     }
 }
 
-@Composable private fun HostTemporaryRow(file: RemoteFile, saveTask: NativeTask?, hostRunning: Boolean, onSave: () -> Unit, onDiscard: () -> Unit) {
+@Composable private fun HostTemporaryRow(file: RemoteFile, repository: TransferRepository, saveTask: NativeTask?, hostRunning: Boolean, onSave: () -> Unit, onDiscard: () -> Unit) {
     val saving = saveTask?.status == "保存中"
     val saveFailed = saveTask?.status in listOf("失败", "已暂停", "已取消")
     SurfaceBlock {
-        Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Text("${bytes(file.size)} · ${if (file.temporary) "临时中转" else "待保存"}", color = Muted, fontSize = 13.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FilePreview(file, repository, remote = false)
+            Column(Modifier.weight(1f)) {
+                Text(file.name, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(4.dp))
+                Text("${bytes(file.size)} · ${if (file.temporary) "临时中转" else "待保存"}", color = Muted, fontSize = 13.sp)
+            }
+        }
         Text(if (hostRunning) "连接本机的其他设备可下载；点击“保存”后才进入本机下载目录。" else "重新开启共享后，其他设备可下载；点击“保存”可存入本机下载目录。", color = Muted, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 4.dp))
         if (saving) {
             LinearProgressIndicator(progress = { if (file.size > 0) ((saveTask?.transferred ?: 0).toDouble() / file.size).toFloat().coerceIn(0f, 1f) else 0f }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
@@ -517,10 +528,10 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
         Text(text, color = Muted, fontSize = 16.sp)
     }
 }
-@Composable private fun FileRow(name: String, detail: String, action: @Composable () -> Unit) {
+@Composable private fun FileRow(name: String, detail: String, preview: (@Composable () -> Unit)? = null, action: @Composable () -> Unit) {
     SurfaceBlock {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            AcidIcon(R.drawable.ic_acid_files, tint = Muted)
+            if (preview != null) preview() else AcidIcon(R.drawable.ic_acid_files, tint = Muted)
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(6.dp))

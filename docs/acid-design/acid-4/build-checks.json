@@ -1,0 +1,48 @@
+{
+  "version": "0.1.10-acid.4",
+  "versionCode": 18,
+  "minSdk": 29,
+  "apk": "FileFlash-0.1.10-acid.4.apk",
+  "bytes": 22728976,
+  "sha256": "42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459",
+  "signingCertificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "signatureVerified": true,
+  "zipCrcPassed": true,
+  "packagedWebAssetsMatchSource": true,
+  "userSvgAssets": {
+    "documents-folder.svg": {
+      "bytes": 20427,
+      "sha256": "772c5a00066b2ac6918f70f09d9eb2e136bf89d97702a5097acaa5db8541f5b8",
+      "originalBytesPreserved": true
+    },
+    "audio-eighth-note.svg": {
+      "bytes": 13008,
+      "sha256": "a49614bd5569b343eaccae4bc687e55006490db1c1a76a9fedf46ebc064c3611",
+      "originalBytesPreserved": true
+    },
+    "unknown-file.svg": {
+      "bytes": 15134,
+      "sha256": "0ba647040d0f9d48c4dab4f12742ca13928d98f85067ef95912262c522116d72",
+      "originalBytesPreserved": true
+    }
+  },
+  "coreTestsPassed": 94,
+  "androidModelTestsPassed": 26,
+  "newCoreThumbnailTestsPassed": 9,
+  "webThumbnailTestGroupsPassed": 6,
+  "webConnectionRaceTestsPassed": 4,
+  "lintErrors": 0,
+  "limits": {
+    "jpegLongestEdgePx": 256,
+    "jpegBytes": 262144,
+    "androidEncodedMemoryCacheBytes": 8388608,
+    "webVisiblePreviewLimit": 16,
+    "webEncodedMemoryBytes": 4194304,
+    "thumbnailDiskCache": false
+  },
+  "runtimeReports": [
+    "native-checks.json",
+    "web-runtime-checks.json"
+  ],
+  "physicalPhoneTested": false
+}

@@ -10,8 +10,8 @@ android {
         applicationId = "app.fileflash"
         minSdk = 29
         targetSdk = 37
-        versionCode = 17
-        versionName = "0.1.10-acid.3"
+        versionCode = 18
+        versionName = "0.1.10-acid.4"
     }
     buildFeatures { compose = true }
     val releaseKey = rootProject.file(".signing/fileflash.p12")
@@ -38,6 +38,7 @@ android {
 }
 dependencies {
     implementation(project(":core"))
+    implementation("com.caverock:androidsvg-aar:1.4")
     implementation(platform("androidx.compose:compose-bom:2025.10.00"))
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
