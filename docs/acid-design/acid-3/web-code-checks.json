@@ -1,0 +1,37 @@
+{
+  "version": "0.1.10-acid.3",
+  "syntaxCheck": "node --check passed",
+  "connectionStatesWithFault": [
+    "failed",
+    "disconnected",
+    "expired"
+  ],
+  "neutralStates": [
+    "unpaired",
+    "pairing",
+    "restoring",
+    "disconnecting",
+    "connected"
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "effect": "Static two-slice heading displacement and red status accents; no animation or body-text distortion",
+  "files": [
+    {
+      "path": "app/src/main/assets/web/app.js",
+      "sha256": "99b35aab3aa95a3a8c258207fe17ae11372a960b377762dc90206ffd9b90a151"
+    },
+    {
+      "path": "app/src/main/assets/web/index.html",
+      "sha256": "f8ceacc870b9d65d53379aa055992d4f28f5520c96b75c76f46855d73cd036d2"
+    },
+    {
+      "path": "app/src/main/assets/web/styles.css",
+      "sha256": "1cb26dd694bf92dcfe442b5f09989f33ca52658d271053f980e076f7332245a7"
+    }
+  ],
+  "regressionChecksPassed": 4,
+  "regressionGuardRemovalFails": true
+}

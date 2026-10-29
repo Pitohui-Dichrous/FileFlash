@@ -1,0 +1,223 @@
+{
+  "date": "2026-10-29",
+  "version": "0.1.10-acid.3",
+  "versionCode": 17,
+  "environment": "Actual signed APK in dedicated API34 emulator; real Java TransferServer via adb reverse plus a closed local port for pairing failure; no physical phone testing",
+  "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b",
+  "installedApkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b",
+  "passed": true,
+  "tests": [
+    {
+      "name": "Installed APK digest matches final signed artifact",
+      "passed": true
+    },
+    {
+      "name": "Light and dark home/connect corner pixels exactly match the adjacent operation surface",
+      "passed": true
+    },
+    {
+      "name": "Real connection-refused pairing attempts show static title breaks and red warning in both themes",
+      "passed": true
+    },
+    {
+      "name": "Stopping the real paired server shows interrupted-link title breaks and red warning in both themes",
+      "passed": true
+    },
+    {
+      "name": "Fresh successful pairing restores ordinary title treatment after failure and after interruption",
+      "passed": true
+    },
+    {
+      "name": "Manual disconnect leaves the ordinary unpaired page without fault decoration",
+      "passed": true
+    },
+    {
+      "name": "Error details and scan/reconnect actions remain legible; compact title spacing remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "Pre-existing shared files, saved ledger and task records remain unchanged",
+      "passed": true
+    },
+    {
+      "name": "Test server stopped, reverse removed and original display settings preserved; no physical device operated",
+      "passed": true
+    }
+  ],
+  "pixelComparisons": [
+    {
+      "screenshot": "light-home.png",
+      "cornerPoint": [
+        1068,
+        1331
+      ],
+      "belowPoint": [
+        1068,
+        1355
+      ],
+      "cornerRGB": [
+        255,
+        255,
+        255
+      ],
+      "belowRGB": [
+        255,
+        255,
+        255
+      ],
+      "expectedRGB": [
+        255,
+        255,
+        255
+      ],
+      "equal": true
+    },
+    {
+      "screenshot": "light-connect.png",
+      "cornerPoint": [
+        1068,
+        1080
+      ],
+      "belowPoint": [
+        1068,
+        1104
+      ],
+      "cornerRGB": [
+        255,
+        255,
+        255
+      ],
+      "belowRGB": [
+        255,
+        255,
+        255
+      ],
+      "expectedRGB": [
+        255,
+        255,
+        255
+      ],
+      "equal": true
+    },
+    {
+      "screenshot": "dark-home.png",
+      "cornerPoint": [
+        1068,
+        1331
+      ],
+      "belowPoint": [
+        1068,
+        1355
+      ],
+      "cornerRGB": [
+        25,
+        25,
+        25
+      ],
+      "belowRGB": [
+        25,
+        25,
+        25
+      ],
+      "expectedRGB": [
+        25,
+        25,
+        25
+      ],
+      "equal": true
+    },
+    {
+      "screenshot": "dark-connect.png",
+      "cornerPoint": [
+        1068,
+        1081
+      ],
+      "belowPoint": [
+        1068,
+        1105
+      ],
+      "cornerRGB": [
+        25,
+        25,
+        25
+      ],
+      "belowRGB": [
+        25,
+        25,
+        25
+      ],
+      "expectedRGB": [
+        25,
+        25,
+        25
+      ],
+      "equal": true
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "native-screenshots/light-home.png",
+      "sha256": "bd28ff22421a1b0de0b27e45e774a90d0165648446e36c4aef9022a45be17064",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/light-connect.png",
+      "sha256": "38fc1dcfe664712d9dee2f0a6f6a47d81025a3884f8ba692d0e6564aad9b2eff",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/dark-home.png",
+      "sha256": "2675560ff336f73f13ad271cc5dc56b4d8b00975a88e5d1b7c83a5a4b19d5a60",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/dark-connect.png",
+      "sha256": "da5bf25e97d5cf320f9da273cad159832a1cdef7874d060bf316036da10d6550",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/light-pair-failed.png",
+      "sha256": "57ec2787bd7fd7feb1c006d8be2b903e97d124a08467c170c7c7b5312d5cb313",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/dark-pair-failed.png",
+      "sha256": "6b732ea9b337b7691dbc3516ea3587cfb1fd5782a235f1e54ea285e27228a67c",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/recovered-after-pair-failure.png",
+      "sha256": "005866329a532830e641c64e3678e805e782af796c8a23f58e9dc94dbc8727c0",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/light-interrupted.png",
+      "sha256": "c8666d992af65afdcf084057ae9f4bbc62d4d9a4dcf592266d8f673edf73024f",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/dark-interrupted.png",
+      "sha256": "599f6251a45203589a97e6c27bfcfda5a2e3ff2942ebcdcce5fefddd5569b85a",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/recovered-after-interruption.png",
+      "sha256": "33df7de443e75536c22539994828afec1c027914d8ee1bd6f1e129a2d00657c6",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    },
+    {
+      "path": "native-screenshots/manual-disconnect.png",
+      "sha256": "232d17e39fef53b01b740e256637496afa45e84c04a5ed96fabdfc1af3500a02",
+      "apkSha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b"
+    }
+  ],
+  "layout": "1080x2340 / 420dpi / font 1.0",
+  "cleanup": {
+    "testServerStopped": true,
+    "reverseRemoved": true,
+    "displaySettingsRestored": true,
+    "oldLedgersUnchanged": true,
+    "physicalDeviceOperated": false,
+    "taskOwnedEmulatorClosed": true
+  }
+}

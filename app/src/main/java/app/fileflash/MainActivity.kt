@@ -246,7 +246,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
     val sharedFiles = state.hostState.files.filterNot { it.id in temporaryIds }
     discard?.let { file -> DiscardHostFileDialog(file, onDismiss = { discard = null }, onDiscard = { discard = null; repository.discardHostFile(file.id) }) }
     LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
-        item { AcidPoster("01", "共享", "FILE", "FLASH.", if (state.hostRunning) "本机服务器 / 已开启" else "", compact = state.hostRunning) }
+        item { AcidPoster("01", "共享", "FILE", "FLASH.", if (state.hostRunning) "本机服务器 / 已开启" else "", compact = state.hostRunning, backdrop = acid.surface) }
         item {
             SurfaceBlock {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -312,6 +312,7 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
 }
 
 @Composable private fun RemotePage(state: AppState, repository: TransferRepository, address: String, setAddress: (String) -> Unit, token: String, setToken: (String) -> Unit, scan: () -> Unit, connect: (String, String) -> Unit, upload: () -> Unit, endpoint: String) {
+    val connectionFault = !state.remoteError.isNullOrBlank()
     val listState = rememberLazyListState()
     val openedAt = rememberSaveable { System.currentTimeMillis() }
     var focusedFile by remember { mutableStateOf<String?>(null) }
@@ -338,14 +339,14 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
             onOpen = { saved?.let { repository.openSaved(it) } })
     }
     LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)) {
-        item { AcidPoster("02", "连接", "LINK", "UP.", when { state.remotePairingExpired -> "配对已失效"; state.remoteConnected -> "连接至其他设备"; else -> "扫码 / 配对码" }, compact = true, disrupted = state.remotePairingExpired) }
+        item { AcidPoster("02", "连接", "LINK", "UP.", when { state.remotePairingExpired -> "配对已失效"; connectionFault && state.remoteConnected -> "连接中断"; connectionFault -> "配对失败"; state.remoteConnected -> "连接至其他设备"; else -> "扫码 / 配对码" }, compact = true, disrupted = connectionFault, backdrop = acid.surface) }
         item { SurfaceBlock {
-            if (state.remotePairingExpired) {
+            if (connectionFault) {
                 Row(Modifier.fillMaxWidth().background(Error.copy(alpha = .08f)).padding(12.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }, verticalAlignment = Alignment.CenterVertically) {
                     AcidIcon(R.drawable.ic_acid_circle_alert, tint = Error)
                     Spacer(Modifier.width(10.dp))
-                    Text(state.remoteError ?: "配对已失效，请重新扫码", color = Error, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text(state.remoteError.orEmpty(), color = Error, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -362,7 +363,6 @@ private fun FileFlashScreen(state: AppState, repository: TransferRepository, sca
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = upload, shape = Corner, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { AcidActionLabel("发送文件", R.drawable.ic_acid_upload) }
             }
-            if (!state.remotePairingExpired) state.remoteError?.let { Spacer(Modifier.height(12.dp)); Text(it, color = Error, fontSize = 14.sp) }
         } }
         if (detached.isNotEmpty()) {
             item { SectionTitle("接收", detached.size.toString()) }

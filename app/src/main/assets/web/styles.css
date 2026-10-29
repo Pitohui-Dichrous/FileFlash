@@ -22,6 +22,7 @@
   --action-hover: #e1ff42;
   --electric: #244cff;
   --red: #ff9388;
+  --on-red: #000000;
   --amber: #edce89;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -48,6 +49,7 @@
     --action-ink: #d7ff00;
     --action-hover: #292929;
     --red: #a32822;
+    --on-red: #ffffff;
     --amber: #78591c;
   }
 }
@@ -78,6 +80,25 @@ a { color: var(--ink); }
 .dot { width: 8px; height: 8px; border: 1px solid currentColor; flex: none; }
 .dot.connected { border-color: #d7ff00; background: #d7ff00; }
 .dot.pairing { background: #ffffff; }
+
+/* Static signal breaks stay inside the display lettering; working text never shifts. */
+.connection-fault .header { border-bottom-color: var(--red); }
+.connection-fault .brand-first, .connection-fault .brand-last { position: relative; }
+.connection-fault .brand-first::before, .connection-fault .brand-first::after,
+.connection-fault .brand-last::before, .connection-fault .brand-last::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none;
+  background: var(--main); color: var(--main-ink); text-shadow: 2px 0 var(--red);
+}
+.connection-fault .brand-first::before, .connection-fault .brand-last::before {
+  clip-path: polygon(0 34%, 100% 34%, 100% 36%, 0 36%); transform: translateX(3px);
+}
+.connection-fault .brand-first::after, .connection-fault .brand-last::after {
+  clip-path: polygon(0 68%, 100% 68%, 100% 70%, 0 70%); transform: translateX(-2px);
+}
+.connection-fault .brand-direction { color: var(--red); }
+.connection-fault .connection { background: var(--red); color: var(--on-red); }
+.connection-fault .connection .dot { background: currentColor; }
+.connection-fault #connection-error { border-left-color: var(--red); color: var(--red); }
 
 .shell { max-width: 1360px; margin: auto; padding: 0 40px 64px; }
 .mono, .section-index, .tab-number, .count, .file-meta, .task-state, .task-detail, .task-note, .badge, #text-count { font-family: var(--mono); font-variant-numeric: tabular-nums; }

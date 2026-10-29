@@ -1,0 +1,73 @@
+{
+  "version": "0.1.10-acid.3",
+  "environment": "Actual in-app Chromium browser against local DesktopServer",
+  "productionWebAssetSha256": {
+    "app.js": "99b35aab3aa95a3a8c258207fe17ae11372a960b377762dc90206ffd9b90a151",
+    "sha256.js": "42d387b43f61a0e8a1c76cdb0d104e1657676a674ad15eb5b4ce3dc022141b48",
+    "index.html": "f8ceacc870b9d65d53379aa055992d4f28f5520c96b75c76f46855d73cd036d2",
+    "styles.css": "1cb26dd694bf92dcfe442b5f09989f33ca52658d271053f980e076f7332245a7"
+  },
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "viewportWidths": [
+    320,
+    390,
+    1280
+  ],
+  "checks": [
+    "Invalid pairing token: actual HTTP 401 produces pairing failure and fault styling",
+    "Valid pairing clears the fault styling",
+    "Manual disconnect returns to a neutral unpaired state",
+    "Per-tab browser network offline after pairing produces connection interruption",
+    "Interrupted masthead stays visible on files, texts and tasks tabs",
+    "Network restoration clears the fault styling after actual successful polling",
+    "Pairing while network is offline produces pairing failure and full network error",
+    "Light and dark themes retain readable content, controls and error details",
+    "320px, 390px and 1280px layouts have no observed horizontal overflow"
+  ],
+  "observedJavascriptErrors": [],
+  "screenshots": [
+    {
+      "path": "web-screenshots/dark-disconnected.png",
+      "sha256": "90c043c3ca99c00387026d8239121876fd9064e11aed3db76d2778e2ecd5c399"
+    },
+    {
+      "path": "web-screenshots/dark-pair-failed.png",
+      "sha256": "587d3344a6195923fad86e933d8cb470fc4588ec21dd04e0829e4df528e80492"
+    },
+    {
+      "path": "web-screenshots/dark-recovered.png",
+      "sha256": "b54c73456c5ee20e6f2f2eaf1b8c2a7cd4331b4a10d3c57b21f974a68433ef11"
+    },
+    {
+      "path": "web-screenshots/desktop-disconnected.png",
+      "sha256": "0d7fbb1b9820376a0437d83885482b138747ea662b54937572259335620242c8"
+    },
+    {
+      "path": "web-screenshots/light-disconnected.png",
+      "sha256": "b822e46a6db5394c5d1eea774c95920719b27772a15ca098167f257decfb454d"
+    },
+    {
+      "path": "web-screenshots/light-network-pair-failed.png",
+      "sha256": "62a4283d237f87ffc93c64a83f1249d61972b20c041967fa8f838fa6886d2f8b"
+    },
+    {
+      "path": "web-screenshots/light-pair-failed.png",
+      "sha256": "29eed8c80328fd850d91734ad79c58dec87badfcc9e32f468ac0e9d02b5d4f78"
+    },
+    {
+      "path": "web-screenshots/narrow-disconnected.png",
+      "sha256": "0988deb0e3e44e7837b54243557e0d25c1327274ee4cabb3d1335dd8a8f0378a"
+    }
+  ],
+  "cleanup": {
+    "networkRestored": true,
+    "mediaEmulationRestored": true,
+    "viewportRestored": true,
+    "temporaryTabClosed": true,
+    "testServerStopped": true
+  },
+  "physicalIPhoneTested": false
+}

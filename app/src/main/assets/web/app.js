@@ -18,7 +18,7 @@
     file: null, speed: 0, loaded: 0,
     error: ['complete', 'cancelled'].includes(t.status) ? t.error : '重新选择文件以重传。'
   }));
-  let busy = false, current = null, refreshing = false, poll = null, targetSelection = null, textSending = false;
+  let busy = false, current = null, refreshing = false, poll = null, targetSelection = null, textSending = false, disconnecting = false;
   let uploadChannel=DEFAULT_UPLOAD_CHANNEL;
   let filesSignature = '', textsSignature = '', storageWarned = false, renderPending = false;
   let toastTimer, seenTexts = new Set();
@@ -151,7 +151,8 @@
   async function api(path, options) {
     const opts = Object.assign({ method:'GET' }, options || {});
     opts.headers = Object.assign({}, opts.headers || {});
-    if (session) opts.headers.Authorization = 'Bearer ' + session;
+    const requestSession = session;
+    if (requestSession) opts.headers.Authorization = 'Bearer ' + requestSession;
     if (opts.json !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(opts.json); delete opts.json; }
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), opts.timeout || 45000);
     const outer = opts.signal;
@@ -163,14 +164,15 @@
       try { response = await fetch(path, opts); } catch (err) { if (outer && outer.aborted) throw err; throw new Error('连接中断或请求超时。请保持页面在前台，并检查 Android 服务与 Wi-Fi。'); }
       let data;
       try { data = await response.json(); } catch (_) { if (!response.ok) data = {}; else throw new Error('设备返回了无法识别的数据，请重新连接。'); }
-      if (!response.ok) { if (response.status === 401 && path !== '/api/pair') expired(); throw new ApiError(data.error || '操作失败（' + response.status + '）', response.status, data.code); }
+      if (!response.ok) { if (response.status === 401 && path !== '/api/pair' && requestSession && session === requestSession && !disconnecting) expired(); throw new ApiError(data.error || '操作失败（' + response.status + '）', response.status, data.code); }
       return data;
     } finally { clearTimeout(timeout); if (outer) outer.removeEventListener('abort', abort); }
   }
   function uploadHeaders(t) { return t.resumeKey ? { 'X-Upload-Key':t.resumeKey } : {}; }
   function setConnection(next, reason) {
     connection = next;
-    const labels = { connected:'已连接', disconnected:'连接中断', pairing:'正在连接', expired:'配对已失效', unpaired:'未连接' };
+    const labels = { connected:'已连接', disconnected:'连接中断', disconnecting:'正在断开', pairing:'正在连接', restoring:'正在连接', failed:'配对失败', expired:'配对已失效', unpaired:'未连接' };
+    document.body.classList.toggle('connection-fault', !disconnecting && ['failed','disconnected','expired'].includes(next));
     $('connection-label').textContent = labels[next] || '未连接';
     $('connection-dot').className = 'dot ' + next;
     $('workspace').hidden = !session;
@@ -209,18 +211,20 @@
       session = result.session; clientId = result.clientId; store(SESSION_KEY, { session,clientId,name });
       uploadChannel=DEFAULT_UPLOAD_CHANNEL;
       $('pair-token').value = ''; await refresh(true); startPolling();
-    } catch(err) { setConnection('unpaired'); message($('pair-error'), errorText(err)); }
+    } catch(err) { setConnection('failed'); message($('pair-error'), errorText(err)); }
     finally { $('pair-button').disabled = false; $('pair-button').textContent = '连接'; }
   }
   async function refresh(force) {
-    if(!session || refreshing) return; refreshing = true;
+    if(!session || refreshing || disconnecting) return; refreshing = true;
+    const refreshingSession = session;
     try {
       const state = await api('/api/state', { timeout:12000 });
+      if(session !== refreshingSession || disconnecting) return;
       server = Object.assign({files:[],texts:[],uploads:[],downloads:[]},state);
       if(!Array.isArray(server.files)||!Array.isArray(server.texts)||!Array.isArray(server.downloads)) throw new Error('设备返回了无效的传输列表。');
       setConnection('connected'); renderFiles(); renderTexts(); renderTasks(); pump();
       if(force) toast('已连接');
-    } catch(err) { if(session) setConnection('disconnected'); if(force) toast(errorText(err),6000); }
+    } catch(err) { if(session === refreshingSession && !disconnecting) { setConnection('disconnected'); if(force) toast(errorText(err),6000); } }
     finally { refreshing = false; }
   }
   function startPolling() { if(!poll) poll = setInterval(() => { if(!document.hidden) refresh(false); },2500); }
@@ -422,11 +426,14 @@
     await diagnose(task,connectionDiagnostic,$('diagnostic-button'));
   });
   $('disconnect-button').addEventListener('click',async()=>{
+    if(disconnecting) return;
+    disconnecting = true; clearInterval(poll); poll = null; setConnection('disconnecting');
     const oldSession=session;
     if(current)interruptTask(current);
     tasks.forEach(t=>{if(t.status==='queued'){t.status='failed';t.error='重新连接后重传。';}});persistTasks();
     try{await api('/api/session',{method:'DELETE',timeout:8000});}catch(_){}
-    if(session===oldSession){session=null;clientId=null;store(SESSION_KEY,null);clearInterval(poll);poll=null;server={files:[],texts:[],uploads:[],downloads:[]};filesSignature='';textsSignature='';setConnection('unpaired');$('connection-details').hidden=true;$('connection-button').setAttribute('aria-expanded','false');}
+    if(session===oldSession || !session){session=null;clientId=null;store(SESSION_KEY,null);clearInterval(poll);poll=null;server={files:[],texts:[],uploads:[],downloads:[]};filesSignature='';textsSignature='';setConnection('unpaired');$('connection-details').hidden=true;$('connection-button').setAttribute('aria-expanded','false');}
+    disconnecting = false;
   });
   document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>switchTab(el.dataset.tab)));
   $('choose-files').addEventListener('click',()=>chooseFile(null));
@@ -456,12 +463,12 @@
   });
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session)refresh(false);});
   window.addEventListener('online',()=>{if(session)refresh(false);});
-  window.addEventListener('offline',()=>{if(session)setConnection('disconnected');});
+  window.addEventListener('offline',()=>{if(session && !disconnecting)setConnection('disconnected');});
   window.addEventListener('pagehide',()=>{if(current)interruptTask(current);persistTasks();});
   window.addEventListener('beforeunload',event=>{if(tasks.some(t=>t.status==='uploading')){event.preventDefault();event.returnValue='';}});
   $('device-name').value=(saved&&saved.name)||(/iPhone/i.test(navigator.userAgent)?'iPhone':/iPad/i.test(navigator.userAgent)?'iPad':/Android/i.test(navigator.userAgent)?'Android':'浏览器');
   persistTasks();renderTasks();$('send-text').disabled=true;
   if(pendingHashToken){$('pair-token').value=pendingHashToken;session=null;clientId=null;store(SESSION_KEY,null);pair(pendingHashToken);}
-  else if(session){setConnection('disconnected','正在恢复连接…');refresh(false);startPolling();}
+  else if(session){setConnection('restoring','正在恢复连接…');refresh(false);startPolling();}
   else setConnection('unpaired');
 })();

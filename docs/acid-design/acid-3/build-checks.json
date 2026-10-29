@@ -1,0 +1,27 @@
+{
+  "version": "0.1.10-acid.3",
+  "versionCode": 17,
+  "minSdk": 29,
+  "apk": "FileFlash-0.1.10-acid.3.apk",
+  "bytes": 22476240,
+  "sha256": "ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b",
+  "signingCertificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "signatureVerified": true,
+  "zipCrcPassed": true,
+  "packagedWebAssetsMatchSource": true,
+  "webAssetSha256": {
+    "app.js": "99b35aab3aa95a3a8c258207fe17ae11372a960b377762dc90206ffd9b90a151",
+    "sha256.js": "42d387b43f61a0e8a1c76cdb0d104e1657676a674ad15eb5b4ce3dc022141b48",
+    "index.html": "f8ceacc870b9d65d53379aa055992d4f28f5520c96b75c76f46855d73cd036d2",
+    "styles.css": "1cb26dd694bf92dcfe442b5f09989f33ca52658d271053f980e076f7332245a7"
+  },
+  "lintErrors": 0,
+  "buildTasks": [
+    ":app:assembleRelease",
+    ":app:lintRelease"
+  ],
+  "buildMode": "--offline --no-parallel",
+  "unitTestsRerun": false,
+  "webRegressionReport": "web-code-checks.json",
+  "physicalPhoneTested": false
+}

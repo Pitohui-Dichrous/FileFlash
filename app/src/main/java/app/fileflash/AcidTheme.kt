@@ -168,8 +168,8 @@ internal val acid: AcidPalette @Composable get() = LocalAcid.current
 }
 
 @Composable internal fun AcidPoster(index: String, title: String, top: String, bottom: String,
-    detail: String, compact: Boolean = false, disrupted: Boolean = false) {
-    Column(Modifier.fillMaxWidth().background(acid.canvas)
+    detail: String, compact: Boolean = false, disrupted: Boolean = false, backdrop: Color = acid.canvas) {
+    Column(Modifier.fillMaxWidth().background(backdrop)
         .clip(AbsoluteCutCornerShape(bottomRight = 26.dp)).background(acid.plane)
         .padding(start = 18.dp, top = 18.dp, end = 18.dp, bottom = 24.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
