@@ -25,7 +25,7 @@ data class NativeTask(val id: String = UUID.randomUUID().toString(), val name: S
 data class UploadResume(val id: String, val key: String, val name: String, val size: Long, val uri: String, val endpoint: String, val updatedAt: Long = System.currentTimeMillis())
 
 class TransferCancelled : IOException("已暂停，可重试继续")
-class HttpFailure(val statusCode: Int, message: String) : IOException(message)
+class HttpFailure(val statusCode: Int, message: String, val errorCode: String? = null) : IOException(message)
 class NativeClient(private val context: Context, val endpoint: String, private val session: String) {
     private val gson = Gson()
     private val prefs = context.getSharedPreferences("client-resume", Context.MODE_PRIVATE)
@@ -61,7 +61,7 @@ class NativeClient(private val context: Context, val endpoint: String, private v
                 output.toString("UTF-8")
             } ?: "{}"
             val parsed = runCatching { JsonParser.parseString(raw).asJsonObject }.getOrDefault(JsonObject())
-            if (code !in 200..299) throw HttpFailure(code, parsed.get("error")?.asString ?: "连接失败（$code）")
+            if (code !in 200..299) throw HttpFailure(code, parsed.get("error")?.asString ?: "连接失败（$code）", parsed.get("code")?.takeIf { it.isJsonPrimitive }?.asString)
             return parsed
         } catch (e: Exception) {
             if (cancelled.get()) throw TransferCancelled()

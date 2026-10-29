@@ -1,0 +1,24 @@
+{
+  "version": "0.1.10-acid.2",
+  "versionCode": 16,
+  "apk": "FileFlash-0.1.10-acid.2.apk",
+  "bytes": 22475816,
+  "sha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8",
+  "originalArtworkSha256": "c2749e0d0af0031897e14e8e80f3a1eeb08b58640738862e32ac1808d2c44aa5",
+  "apkWebArtworkBytesMatch": true,
+  "apkNativeArtworkPixelsMatch": true,
+  "nativeArtworkEntries": [
+    "res/Jx.png"
+  ],
+  "signingCertificateSha256": "a314ea8f5feb453ad0e3ff383227bc27d0ac6632a37870ebb0e1fb6c32df1e51",
+  "androidModelTestsPassed": 26,
+  "pairingClassificationTestsPassed": 4,
+  "lintErrors": 0,
+  "zipCrcPassed": true,
+  "buildTasks": [
+    ":app:testDebugUnitTest",
+    ":app:assembleRelease",
+    ":app:lintRelease"
+  ],
+  "physicalPhoneTested": false
+}

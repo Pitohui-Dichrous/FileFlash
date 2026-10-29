@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-29",
+  "version": "0.1.10-acid.2",
+  "versionCode": 16,
+  "environment": "Actual signed APK in dedicated API34 emulator; real Java TransferServer via adb reverse; no physical phone or iOS testing",
+  "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70",
+  "installedApkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70",
+  "passed": true,
+  "tests": [
+    {
+      "name": "Installed APK matches frozen signed artifact",
+      "passed": true
+    },
+    {
+      "name": "Supplied image appears in launcher and persisted Recent Tasks after upgrade",
+      "passed": true
+    },
+    {
+      "name": "All four native page headers render the bottom-right corner cut",
+      "passed": true
+    },
+    {
+      "name": "Home removes the network slogan and connection/receive explanation row",
+      "passed": true
+    },
+    {
+      "name": "Valid pairing renders normal connected state",
+      "passed": true
+    },
+    {
+      "name": "Real server shutdown produces ordinary network interruption without expiry decoration",
+      "passed": true
+    },
+    {
+      "name": "Same-port server restart invalidates old session and renders red static title breaks with full error text",
+      "passed": true
+    },
+    {
+      "name": "Fresh pairing restores ordinary headline and connection actions",
+      "passed": true
+    },
+    {
+      "name": "Invalid old pairing-code submission renders the expired warning",
+      "passed": true
+    },
+    {
+      "name": "Manual disconnect clears expired decoration",
+      "passed": true
+    },
+    {
+      "name": "Light and dark expired states remain readable",
+      "passed": true
+    },
+    {
+      "name": "320dp and 1.3 font-scale warning, recovery controls and input cursor stay usable above keyboard",
+      "passed": true
+    },
+    {
+      "name": "Pre-existing shared files, saved ledger and task records remain unchanged",
+      "passed": true
+    },
+    {
+      "name": "Test server stopped and reverse removed; original emulator display settings restored; no physical device operated",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "screenshots/light-home.png",
+      "sha256": "d37d8105439362f84b5889a87028a06fc2774688ec310e7864b554cbe1d84818",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/light-connect.png",
+      "sha256": "b2b868410746cda0bcb7ca0fe20a7659bba3bf5cb8305c248e2923aee0e83aa8",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/light-text.png",
+      "sha256": "e7ea5bf02bec2a367ee739b4ab83cf89b355071a2a97908a6d48d10902cb777f",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/light-history.png",
+      "sha256": "df16b5312c18a055844639e6d894bae35949cf829a33ce52079b85d858bca4fc",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/dark-expired.png",
+      "sha256": "49385828a37e9610dfee3010056d60f47f9e63e9a03514e959de8522d181c880",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/light-expired.png",
+      "sha256": "2def27a9cbca24b688b485ab87c738830d18a0d69669b2438c4194a1f92191d1",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/narrow-expired.png",
+      "sha256": "1f30df8a32a5096a2c828af21fccd19fa9a165b017f0c442e71cdc83e8305071",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/narrow-expired-controls.png",
+      "sha256": "f8943868f6f2ab8b75a213b0c117da2caef6b318f24cd1968f55f9fb29d54171",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/narrow-expired-ime.png",
+      "sha256": "22ad1a937933d138f0a96c03937e0c2d84e681f6f9eac100bb660bc194a7d9e0",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/connected.png",
+      "sha256": "b40f42082ae628770b1c17f8fb0fc9544302ac14947e559824efb34fc009e9e5",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/network-disconnected.png",
+      "sha256": "58c4cd0cb904cbf594da2f3c25d2b871e521fd0d2793893beb49546ee14fbfdf",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/reconnected.png",
+      "sha256": "1e8685632a00cfedb4ce6fe1f6cb538153119c0ed5b03e47c94afdd5365417c6",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/manual-disconnect.png",
+      "sha256": "eca8cb64e123bdd319a4cefebc9a3cfbdd6af0650c64bafeeec649da7a9d116a",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/launcher.png",
+      "sha256": "eb397d54230b9245031d8f1a225171b6b3074f89e5c1c55397952a3d6f354346",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    },
+    {
+      "path": "screenshots/recent-tasks.png",
+      "sha256": "a4102295202df7b65945949ae932e2ae488ba6834381dc0993a690cd62c904f7",
+      "apkSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70"
+    }
+  ],
+  "layout": {
+    "normal": "1080x2340 / 420dpi / font 1.0",
+    "narrow": "840x1800 / 420dpi (320dp) / font 1.3"
+  },
+  "cleanup": {
+    "testServerStopped": true,
+    "reverseRemoved": true,
+    "displaySettingsRestored": true,
+    "oldLedgersUnchanged": true,
+    "physicalDeviceOperated": false,
+    "emulatorLeftRunningForParent": true
+  },
+  "artifactRole": "Earlier candidate before the title-line spacing adjustment; see final-layout-checks.json for final APK visual verification",
+  "supersededArtifactSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+}

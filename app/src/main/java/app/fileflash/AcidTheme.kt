@@ -7,13 +7,21 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.AbsoluteCutCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -127,9 +135,11 @@ internal val acid: AcidPalette @Composable get() = LocalAcid.current
 
 /** Actual text measurement preserves the poster rhythm without stretching CJK glyphs. */
 @Composable internal fun AcidDisplayLine(value: String, modifier: Modifier = Modifier,
-    color: Color = acid.planeInk, maximum: Int = 100) {
+    color: Color = acid.planeInk, maximum: Int = 100, disrupted: Boolean = false) {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val plane = acid.plane
+    val warning = acid.error
     BoxWithConstraints(modifier) {
         val available = with(density) { maxWidth.toPx() }
         var size = maximum
@@ -139,30 +149,56 @@ internal val acid: AcidPalette @Composable get() = LocalAcid.current
             lineHeight = (size * .98f).sp, letterSpacing = (-1).sp,
             platformStyle = PlatformTextStyle(includeFontPadding = false),
             lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both)),
-            color = color, maxLines = 1, softWrap = false)
+            color = color, maxLines = 1, softWrap = false,
+            modifier = Modifier.drawWithContent {
+                drawContent()
+                // Static, narrow signal breaks affect display lettering only, never reading text.
+                if (disrupted) {
+                    listOf(.34f to 3.dp.toPx(), .68f to (-2).dp.toPx()).forEach { (fraction, shift) ->
+                        val y = this.size.height * fraction
+                        clipRect(top = y, bottom = y + 2.dp.toPx()) {
+                            drawRect(plane)
+                            translate(left = shift) { this@drawWithContent.drawContent() }
+                        }
+                    }
+                    drawRect(warning, Offset(this.size.width * .76f, this.size.height * .34f), Size(12.dp.toPx(), 1.dp.toPx()))
+                }
+            })
     }
 }
 
 @Composable internal fun AcidPoster(index: String, title: String, top: String, bottom: String,
-    detail: String, compact: Boolean = false) {
-    Column(Modifier.fillMaxWidth().background(acid.plane).padding(18.dp)) {
+    detail: String, compact: Boolean = false, disrupted: Boolean = false) {
+    Column(Modifier.fillMaxWidth().background(acid.canvas)
+        .clip(AbsoluteCutCornerShape(bottomRight = 26.dp)).background(acid.plane)
+        .padding(start = 18.dp, top = 18.dp, end = 18.dp, bottom = 24.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("LOCAL / $index", fontFamily = AcidMono, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = acid.planeInk)
             Spacer(Modifier.weight(1f))
-            Text(detail, color = acid.planeInk, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            Text(detail, color = if (disrupted) acid.error else acid.planeInk, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 190.dp))
         }
         Spacer(Modifier.height(if (compact) 12.dp else 20.dp))
-        Row(verticalAlignment = Alignment.Top) {
-            AcidDisplayLine(top, Modifier.weight(1f), maximum = if (compact) 74 else 104)
-            Box(Modifier.padding(start = 12.dp, top = 9.dp).size(if (compact) 45.dp else 58.dp)
-                .background(AcidElectric), contentAlignment = Alignment.Center) {
-                Text(index, fontFamily = AcidDisplay, fontSize = if (compact) 27.sp else 36.sp, color = Color.White)
+        Layout(content = {
+            Row(verticalAlignment = Alignment.Top) {
+                AcidDisplayLine(top, Modifier.weight(1f), maximum = if (compact) 74 else 104, disrupted = disrupted)
+                Box(Modifier.padding(start = 12.dp, top = 9.dp).size(if (compact) 45.dp else 58.dp)
+                    .background(if (disrupted) acid.error else AcidElectric), contentAlignment = Alignment.Center) {
+                    Text(index, fontFamily = AcidDisplay, fontSize = if (compact) 27.sp else 36.sp, color = if (disrupted && acid.dark) Color.Black else Color.White)
+                }
+            }
+            AcidDisplayLine(bottom, Modifier.fillMaxWidth().padding(start = if (compact) 42.dp else 28.dp), maximum = if (compact) 74 else 104, disrupted = disrupted)
+        }) { measurables, constraints ->
+            val lines = measurables.map { it.measure(constraints.copy(minHeight = 0)) }
+            // Anton carries generous internal leading; close the two display rows proportionally.
+            val overlap = (minOf(lines[0].height, lines[1].height) * .20f).toInt()
+            layout(lines.maxOf { it.width }, lines.sumOf { it.height } - overlap) {
+                lines[0].placeRelative(0, 0)
+                lines[1].placeRelative(0, lines[0].height - overlap)
             }
         }
-        AcidDisplayLine(bottom, Modifier.fillMaxWidth().padding(start = if (compact) 42.dp else 28.dp), maximum = if (compact) 74 else 104)
         Spacer(Modifier.height(13.dp))
-        HorizontalDivider(color = acid.planeInk, thickness = 2.dp)
+        HorizontalDivider(color = if (disrupted) acid.error else acid.planeInk, thickness = 2.dp)
         Row(Modifier.fillMaxWidth().padding(top = 9.dp), verticalAlignment = Alignment.Bottom) {
             Text(title, fontSize = if (compact) 24.sp else 28.sp, fontWeight = FontWeight.Black, color = acid.planeInk)
             Spacer(Modifier.weight(1f))

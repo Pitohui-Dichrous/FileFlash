@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-29",
+  "version": "0.1.10-acid.2",
+  "versionCode": 16,
+  "artifactRole": "Final title-spacing artifact",
+  "environment": "Actual signed APK installed in dedicated API34 emulator; real local Java TransferServer for expired pairing state; no physical device testing",
+  "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8",
+  "installedApkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8",
+  "passed": true,
+  "checks": [
+    "All four native page titles render with tighter line spacing and reduced header height",
+    "Title glyphs, chapter numbers, footer labels and cut corners remain unobstructed",
+    "Light and dark expired-pairing title disruptions remain legible and preserve recovery controls",
+    "320dp / 1.3 font-scale home and expired title layouts remain readable",
+    "Final installed APK digest matches the frozen artifact"
+  ],
+  "screenshots": [
+    {
+      "path": "final-layout/light-home.png",
+      "sha256": "b4a64c182b8bc017e32c933290e4300bddcdcf4b01219d9cac620a0cd62c95dc",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/light-connect.png",
+      "sha256": "a7fbf35e73dc419f2e00defea22ed04ee512a4d1cf89b69fe90847bc2db71f71",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/light-text.png",
+      "sha256": "1a46af4990c5f1cb21a70b56c5f62e1eb0714a802864e18f033c2db5fc20f524",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/light-history.png",
+      "sha256": "94e7f185c280679e30b3ab943ac74a6aadb75fc9e3369535b6244cc408326bf3",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/light-expired.png",
+      "sha256": "7206a06b8330bdad90cad60cb0452844a291d80d866fba47ea59f90f81e79148",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/dark-expired.png",
+      "sha256": "5f1cedd8cebb2328c26682f1a2ad160a72020e3144e77b7f980f3d4104ec6be4",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/narrow-home.png",
+      "sha256": "3504a76a9a505869ade63310194f52c17632a702c086db3521f8822d8d190563",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    },
+    {
+      "path": "final-layout/narrow-dark-expired.png",
+      "sha256": "5eb84f9611b161aa83d73d416e2dbfac552988455de2efaec4e26efd277fa73f",
+      "apkSha256": "1d3e2672bc46bc050db51623fea4fa06f0c922f017301f66cafade52863666f8"
+    }
+  ],
+  "priorFunctionalCoverage": {
+    "report": "runtime-checks.json",
+    "candidateSha256": "497c7425c28c29c69f6c6d7a243b6d00e09f0dcfbdfb4668def48504d2223a70",
+    "scope": "14 focused runtime checks completed before the layout-only title spacing adjustment; earlier images retain their original candidate digest"
+  },
+  "cleanup": {
+    "testServerStopped": true,
+    "reverseRemoved": true,
+    "displaySettingsRestored": true,
+    "physicalDeviceOperated": false,
+    "taskOwnedEmulatorClosed": true
+  }
+}

@@ -45,6 +45,7 @@ data class AppState(
     val remoteAddress: String = "",
     val remoteState: ServerState = ServerState(),
     val remoteError: String? = null,
+    val remotePairingExpired: Boolean = false,
     val tasks: List<NativeTask> = emptyList(),
     val saved: List<SavedFile> = emptyList(),
     val hostTemporary: List<RemoteFile> = emptyList(),
@@ -141,14 +142,17 @@ class TransferRepository(private val context: Context) {
         }
         scope.launch {
             while (true) {
+                val generation = remoteGeneration.get()
                 val r = remote
                 if (r != null) runCatching { r.state() }.onSuccess { value ->
-                    if (remote === r) _state.update { it.copy(remoteState = value, remoteError = null, remoteConnected = true) }
-                }.onFailure { e -> if (remote === r) {
+                    if (remote === r && generation == remoteGeneration.get()) _state.update { it.copy(remoteState = value, remoteError = null, remoteConnected = true, remotePairingExpired = false) }
+                }.onFailure { e -> if (remote === r && generation == remoteGeneration.get()) {
                     if (e is HttpFailure && e.statusCode in listOf(401, 403)) {
                         remote = null
-                        _state.update { it.copy(remoteConnected = false, remoteState = ServerState(), remoteError = "连接授权已失效，请重新扫码") }
-                    } else _state.update { it.copy(remoteError = networkError(e)) }
+                        val expired = e.isPairingExpiredFailure()
+                        _state.update { it.copy(remoteConnected = false, remoteState = ServerState(), remotePairingExpired = expired,
+                            remoteError = if (expired) "连接授权已失效，请重新扫码" else networkError(e)) }
+                    } else _state.update { it.copy(remoteError = networkError(e), remotePairingExpired = false) }
                 } }
                 if (r != null) withTimeoutOrNull(1000L) { remoteWake.receive() } else remoteWake.receive()
             }
@@ -390,14 +394,14 @@ class TransferRepository(private val context: Context) {
     fun connect(address: String, token: String) {
         if (_state.value.remoteConnecting) return
         val generation = remoteGeneration.incrementAndGet()
-        _state.update { it.copy(remoteConnecting = true, remoteError = null) }
+        _state.update { it.copy(remoteConnecting = true, remoteError = null, remotePairingExpired = false) }
         scope.launch {
             runCatching { NativeClient.pair(context, address, token) }.onSuccess { (client, endpoint) ->
                 if (generation != remoteGeneration.get()) { client.cancel(); return@onSuccess }
                 remote?.let { previous -> val revoke = previous.taskClient(); previous.cancel(); scope.launch { runCatching { revoke.request("DELETE", "/api/session") } } }; remote = client
                 remoteWake.trySend(Unit); hostWake.trySend(Unit)
-                _state.update { it.copy(remoteConnecting = false, remoteConnected = true, remoteAddress = endpoint, remoteError = null, remoteState = ServerState()) }
-            }.onFailure { if (generation == remoteGeneration.get()) _state.update { s -> s.copy(remoteConnecting = false, remoteError = networkError(it)) } }
+                _state.update { it.copy(remoteConnecting = false, remoteConnected = true, remoteAddress = endpoint, remoteError = null, remoteState = ServerState(), remotePairingExpired = false) }
+            }.onFailure { failure -> if (generation == remoteGeneration.get()) _state.update { s -> s.copy(remoteConnecting = false, remoteError = networkError(failure), remotePairingExpired = failure.isPairingExpiredFailure()) } }
         }
     }
 
@@ -405,7 +409,7 @@ class TransferRepository(private val context: Context) {
         remoteGeneration.incrementAndGet()
         remote?.let { previous -> val revoke = previous.taskClient(); previous.cancel(); scope.launch { runCatching { revoke.request("DELETE", "/api/session") } } }; remote = null
         clients.values.forEach { it.cancel() }
-        _state.update { it.copy(remoteConnected = false, remoteConnecting = false, remoteState = ServerState(), remoteError = null, remoteAddress = "") }
+        _state.update { it.copy(remoteConnected = false, remoteConnecting = false, remoteState = ServerState(), remoteError = null, remoteAddress = "", remotePairingExpired = false) }
         stopServiceIfIdle()
     }
 
