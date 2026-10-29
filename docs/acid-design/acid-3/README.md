@@ -9,7 +9,7 @@
 
 ## 安装包
 
-`dist/FileFlash-0.1.10-acid.3.apk`，Android 10 及以上，原签名，可覆盖安装。主线维持 0.1.10。
+`dist/FileFlash-0.1.10-acid.3.apk`，Android 10 及以上，原签名，可覆盖安装。当时主线维持 0.1.10；本页保留该轮验证记录。
 
 SHA-256：`ed2021c0c9d8a725851ee78286436aaddf1b4cfdaef2b0b9de9f123ff42a528b`
 

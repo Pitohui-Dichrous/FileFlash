@@ -21,7 +21,7 @@ APP 的压缩缩略图内存缓存上限为 8 MiB，另有当前可见行的解�
 
 ## 安装与验证
 
-`dist/FileFlash-0.1.10-acid.4.apk`，Android 10 及以上，原签名，可覆盖安装。主线维持 0.1.10。
+`dist/FileFlash-0.1.10-acid.4.apk`，Android 10 及以上，原签名，可覆盖安装。当时主线维持 0.1.10；本页保留该轮验证记录。
 
 SHA-256：`42b0b0e59bea7986aac682528a5a03deab685b510e6e79ca5fce78730d9e6459`
 

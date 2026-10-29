@@ -1,12 +1,14 @@
-# 酸性设计 / ACID.05
+# 酸性设计 / 2.0.0
 
-当前实验版：`0.1.10-acid.5`。移除四页多余滚动留白；“清理”停止未完成任务并清空两类历史，保留系统下载目录中的文件；“使用与权限”新增“下载目录”。
+酸性设计已并入 `2.0.0` 主线。Android 与网页端采用统一的深浅主题、媒体缩略图和分类图标；移除多余滚动留白，更新手动清理并新增“下载目录”。[下载 2.0.0](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v2.0.0/FileFlash-2.0.0.apk)
 
-[本轮实图与验证](acid-5/README.md) · [构建检查](acid-5/build-checks.json) · [媒体缩略图与文件图标](acid-4/README.md) · [故障效果与切角色差](acid-3/README.md) · [图标、切角与标题间距](acid-2/README.md)
+[合并前实图与验证](acid-5/README.md) · [历史构建检查](acid-5/build-checks.json) · [媒体缩略图与文件图标](acid-4/README.md) · [故障效果与切角色差](acid-3/README.md) · [图标、切角与标题间距](acid-2/README.md)
+
+以下保留各轮实验版本的原始记录，版本号、安装包摘要与验证范围均对应当时的构建。
 
 ## 第一轮（0.1.10-acid.1）
 
-基于 `v0.1.10`（`d9a18b1`）重新设计 Android 与网页端，开发分支为 `codex/acid-design`。原 `codex/design` 分支已删除；`main` 保持 0.1.10。
+基于 `v0.1.10`（`d9a18b1`）重新设计 Android 与网页端，开发分支为 `codex/acid-design`。原 `codex/design` 分支已删除；当时 `main` 保持 0.1.10。
 
 ![Android 实际运行截图](preview.png)
 
@@ -14,9 +16,9 @@ Anton 大字与错位断行构成页面主体；黑白灰承载操作区，荧�
 
 视觉参考：[Kurppa Hosk × Bungie / Marathon](https://www.kurppahosk.com/work/bungie)。未使用游戏商标或游戏素材。[字体、图标与许可](ASSETS.md)。
 
-## 安装包
+## 第一轮安装包（历史）
 
-实验版本：`0.1.10-acid.1`（15），Android 10 及以上。原签名，可覆盖安装。构建输出：`dist/FileFlash-0.1.10-acid.1.apk`。本次未发布新的稳定版本。
+实验版本：`0.1.10-acid.1`（15），Android 10 及以上。原签名，可覆盖安装。构建输出：`dist/FileFlash-0.1.10-acid.1.apk`。该轮未发布新的稳定版本。
 
 SHA-256：`40c100ad7c69fe1da9d572b67b1b5ef1294c8af46f615cbfc0c91e7cf4235b17`
 

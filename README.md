@@ -6,7 +6,7 @@
 
 Android / iPhone 局域网文件与文字互传。
 
-[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.10/FileFlash-0.1.10.apk)
+[下载 APK](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v2.0.0/FileFlash-2.0.0.apk)
 
 Android 10 及以上安装 APK，两台设备连接同一个 Wi-Fi。iPhone 扫码收文件，使用系统快捷指令发送照片和视频。
 
@@ -14,4 +14,4 @@ Android 10 及以上安装 APK，两台设备连接同一个 Wi-Fi。iPhone 扫�
 
 [iPhone 照片](docs/IOS_SHARE.md) · [使用说明](docs/USAGE.md) · [缓存与隐私](docs/STORAGE_PRIVACY.md)
 
-[酸性设计实验版与实图](docs/acid-design/README.md)
+[2.0.0 界面与实图](docs/acid-design/README.md)

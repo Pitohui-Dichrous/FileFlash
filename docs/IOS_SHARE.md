@@ -8,7 +8,7 @@ FileFlash 使用 Apple「快捷指令」接收系统分享，再将文件直接�
 2. 点「照片 / 视频」→「添加快捷指令」。
 3. 打开下载的 `FileFlash.shortcut`，点「添加快捷指令」。
 
-已有旧快捷指令时选择「替换」，避免继续运行旧版。也可直接下载[快捷指令](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v0.1.10/FileFlash.shortcut)；与 0.1.8 相同，已安装该版快捷指令无需替换。
+已有旧快捷指令时选择「替换」，避免继续运行旧版。也可直接下载[快捷指令](https://github.com/Pitohui-Dichrous/FileFlash/releases/download/v2.0.0/FileFlash.shortcut)；与 0.1.8 相同，已安装该版快捷指令无需替换。
 
 如果删除过 Apple「快捷指令」，可从[国区 App Store](https://apps.apple.com/cn/app/快捷指令/id1462947752)重新安装。
 
@@ -24,7 +24,7 @@ FileFlash 使用 Apple「快捷指令」接收系统分享，再将文件直接�
 
 正常完成及可识别的上传错误会断开本轮会话；系统强行结束快捷指令时仍按服务端过期规则回收。
 
-安卓收到后仍为临时中转；可由其他已连接设备直接下载，点击「保存」才进入系统下载目录。自动清理和手动清理沿用原有规则。
+安卓收到后仍为临时中转；可由其他已连接设备直接下载，点击「保存」才进入系统下载目录。「记录 → 清理」会停止并丢弃未完成任务、清空历史及临时文件，已完整保存的下载文件保留。详见[缓存与清理规则](STORAGE_PRIVACY.md)。
 
 ## 原理与边界
 
